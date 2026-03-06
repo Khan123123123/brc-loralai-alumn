@@ -18,14 +18,12 @@ export default async function DirectoryPage({
 }) {
   const supabase = createClient();
   
-  // Build query
   let query = supabase
     .from("profiles")
     .select("*")
     .in("verification_status", ["basic", "full"])
     .order("graduation_year", { ascending: false });
 
-  // Apply filters
   const search = searchParams.search as string;
   const yearFilter = searchParams.year as string;
   const programFilter = searchParams.program as string;
@@ -49,18 +47,34 @@ export default async function DirectoryPage({
     query = query.eq("industry", industryFilter);
   }
 
-  const { data: profiles, error } = await query;
+  const { data: profiles } = await query;
 
-  // Get unique values for filters
+  // Get unique values using filter instead of Set
   const { data: allProfiles } = await supabase
     .from("profiles")
     .select("graduation_year, program, industry")
     .in("verification_status", ["basic", "full"]);
 
-  // Fix: Use Array.from instead of spread operator on Set
-  const years = Array.from(new Set((allProfiles || []).map((p) => p.graduation_year).filter(Boolean))).sort((a: any, b: any) => b - a);
-  const programs = Array.from(new Set((allProfiles || []).map((p) => p.program).filter(Boolean))).sort();
-  const industries = Array.from(new Set((allProfiles || []).map((p) => p.industry).filter(Boolean))).sort();
+  // Get unique values manually
+  const years: number[] = [];
+  const programs: string[] = [];
+  const industries: string[] = [];
+
+  allProfiles?.forEach((p) => {
+    if (p.graduation_year && !years.includes(p.graduation_year)) {
+      years.push(p.graduation_year);
+    }
+    if (p.program && !programs.includes(p.program)) {
+      programs.push(p.program);
+    }
+    if (p.industry && !industries.includes(p.industry)) {
+      industries.push(p.industry);
+    }
+  });
+
+  years.sort((a, b) => b - a);
+  programs.sort();
+  industries.sort();
 
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
@@ -72,11 +86,9 @@ export default async function DirectoryPage({
           </p>
         </div>
 
-        {/* Search and Filters */}
         <div className="bg-white p-6 rounded-lg shadow-sm border mb-8">
           <form className="space-y-4">
             <div className="flex flex-col md:flex-row gap-4">
-              {/* Search */}
               <div className="flex-1 relative">
                 <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                 <Input
@@ -87,7 +99,6 @@ export default async function DirectoryPage({
                 />
               </div>
 
-              {/* Year Filter */}
               <Select name="year" defaultValue={yearFilter || "all"}>
                 <SelectTrigger className="w-[180px]">
                   <GraduationCap className="w-4 h-4 mr-2" />
@@ -103,7 +114,6 @@ export default async function DirectoryPage({
                 </SelectContent>
               </Select>
 
-              {/* Program Filter */}
               <Select name="program" defaultValue={programFilter || "all"}>
                 <SelectTrigger className="w-[180px]">
                   <Filter className="w-4 h-4 mr-2" />
@@ -119,7 +129,6 @@ export default async function DirectoryPage({
                 </SelectContent>
               </Select>
 
-              {/* Industry Filter */}
               <Select name="industry" defaultValue={industryFilter || "all"}>
                 <SelectTrigger className="w-[180px]">
                   <Briefcase className="w-4 h-4 mr-2" />
@@ -155,7 +164,6 @@ export default async function DirectoryPage({
           </form>
         </div>
 
-        {/* Results Grid */}
         {!profiles || profiles.length === 0 ? (
           <div className="text-center py-12">
             <p className="text-gray-500 text-lg">No alumni found matching your criteria.</p>
