@@ -57,9 +57,10 @@ export default async function DirectoryPage({
     .select("graduation_year, program, industry")
     .in("verification_status", ["basic", "full"]);
 
-  const years = allProfiles ? [...new Set(allProfiles.map((p) => p.graduation_year).filter(Boolean))].sort((a: number, b: number) => b - a) : [];
-  const programs = allProfiles ? [...new Set(allProfiles.map((p) => p.program).filter(Boolean))].sort() : [];
-  const industries = allProfiles ? [...new Set(allProfiles.map((p) => p.industry).filter(Boolean))].sort() : [];
+  // Fix: Use Array.from instead of spread operator on Set
+  const years = Array.from(new Set((allProfiles || []).map((p) => p.graduation_year).filter(Boolean))).sort((a: any, b: any) => b - a);
+  const programs = Array.from(new Set((allProfiles || []).map((p) => p.program).filter(Boolean))).sort();
+  const industries = Array.from(new Set((allProfiles || []).map((p) => p.industry).filter(Boolean))).sort();
 
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
