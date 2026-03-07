@@ -19,7 +19,10 @@ export async function approveProfile(profileId: string, currentStatus: string) {
     })
     .eq("id", profileId);
 
-  if (error) throw error;
+  if (error) {
+    console.error("Approval error:", error);
+    throw error;
+  }
 
   revalidatePath("/admin");
   revalidatePath("/directory");
