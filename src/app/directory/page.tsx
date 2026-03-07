@@ -81,7 +81,6 @@ export default async function DirectoryPage({
   }
 
   const { data: rawProfiles } = await query;
-
   const profiles = (rawProfiles || []).filter((profile) => canAppearInDirectory(profile));
 
   const { data: filterProfiles } = await supabase
@@ -94,27 +93,15 @@ export default async function DirectoryPage({
   );
 
   const years = Array.from(
-    new Set(
-      visibleFilterProfiles
-        .map((p) => p.graduation_year)
-        .filter((v): v is number => typeof v === "number")
-    )
+    new Set(visibleFilterProfiles.map((p) => p.graduation_year).filter((v): v is number => typeof v === "number"))
   ).sort((a, b) => b - a);
 
   const districts = Array.from(
-    new Set(
-      visibleFilterProfiles
-        .map((p) => p.home_district)
-        .filter((v): v is string => Boolean(v))
-    )
+    new Set(visibleFilterProfiles.map((p) => p.home_district).filter((v): v is string => Boolean(v)))
   ).sort();
 
   const industries = Array.from(
-    new Set(
-      visibleFilterProfiles
-        .map((p) => p.industry)
-        .filter((v): v is string => Boolean(v))
-    )
+    new Set(visibleFilterProfiles.map((p) => p.industry).filter((v): v is string => Boolean(v)))
   ).sort();
 
   return (
@@ -163,7 +150,6 @@ export default async function DirectoryPage({
                 You can see basic alumni cards right now. Complete your profile and get approved to unlock full alumni details and public contact information.
               </p>
             </div>
-
             <Link
               href="/profile/complete"
               className="inline-flex items-center justify-center rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800"
@@ -174,7 +160,7 @@ export default async function DirectoryPage({
         </Card>
       )}
 
-      <Card className="mb-8 rounded-3xl border-0 shadow-md">
+      <Card className="mb-8 rounded-3xl border-0 shadow-md bg-white">
         <CardHeader>
           <CardTitle className="text-xl">Search and Filters</CardTitle>
         </CardHeader>
@@ -187,63 +173,29 @@ export default async function DirectoryPage({
                   name="search"
                   defaultValue={search}
                   placeholder="Search by name, city, profession, organization..."
-                  className="pl-9"
+                  className="pl-9 bg-slate-50 border-transparent focus:border-slate-300"
                 />
               </div>
             </div>
 
-            <select
-              name="year"
-              defaultValue={yearFilter}
-              className="h-10 rounded-md border bg-background px-3 text-sm"
-            >
+            <select name="year" defaultValue={yearFilter} className="h-10 rounded-md border border-slate-200 bg-slate-50 px-3 text-sm focus:ring-slate-900">
               <option value="all">All Years</option>
-              {years.map((year) => (
-                <option key={year} value={String(year)}>
-                  Class of {year}
-                </option>
-              ))}
+              {years.map((year) => (<option key={year} value={String(year)}>Class of {year}</option>))}
             </select>
 
-            <select
-              name="district"
-              defaultValue={districtFilter}
-              className="h-10 rounded-md border bg-background px-3 text-sm"
-            >
+            <select name="district" defaultValue={districtFilter} className="h-10 rounded-md border border-slate-200 bg-slate-50 px-3 text-sm focus:ring-slate-900">
               <option value="all">All Districts</option>
-              {districts.map((district) => (
-                <option key={district} value={district}>
-                  {district}
-                </option>
-              ))}
+              {districts.map((district) => (<option key={district} value={district}>{district}</option>))}
             </select>
 
-            <select
-              name="industry"
-              defaultValue={industryFilter}
-              className="h-10 rounded-md border bg-background px-3 text-sm"
-            >
+            <select name="industry" defaultValue={industryFilter} className="h-10 rounded-md border border-slate-200 bg-slate-50 px-3 text-sm focus:ring-slate-900">
               <option value="all">All Industries</option>
-              {industries.map((industry) => (
-                <option key={industry} value={industry}>
-                  {industry}
-                </option>
-              ))}
+              {industries.map((industry) => (<option key={industry} value={industry}>{industry}</option>))}
             </select>
 
             <div className="flex gap-2">
-              <button
-                type="submit"
-                className="inline-flex w-full items-center justify-center rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800"
-              >
-                Apply
-              </button>
-              <Link
-                href="/directory"
-                className="inline-flex w-full items-center justify-center rounded-md border px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
-              >
-                Clear
-              </Link>
+              <button type="submit" className="inline-flex w-full items-center justify-center rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 transition-colors">Apply</button>
+              <Link href="/directory" className="inline-flex w-full items-center justify-center rounded-md border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors">Clear</Link>
             </div>
           </form>
         </CardContent>
@@ -255,111 +207,95 @@ export default async function DirectoryPage({
       </div>
 
       {profiles.length === 0 ? (
-        <Card className="rounded-3xl shadow-sm">
+        <Card className="rounded-3xl shadow-sm border-0">
           <CardContent className="p-10 text-center">
-            <h3 className="text-lg font-semibold text-slate-900">
-              No alumni found
-            </h3>
-            <p className="mt-2 text-sm text-slate-500">
-              Try changing your filters or search keywords.
-            </p>
+            <h3 className="text-lg font-semibold text-slate-900">No alumni found</h3>
+            <p className="mt-2 text-sm text-slate-500">Try changing your filters or search keywords.</p>
           </CardContent>
         </Card>
       ) : (
         <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-          {profiles.map((profile) => {
+          {profiles.map((profile, index) => {
             const memberUrl = `/directory/${profile.slug || profile.id}`;
+            // Staggered delay logic built into Tailwind inline styles
+            const delay = `${Math.min(index * 75, 1000)}ms`;
 
             return (
-              <Link key={profile.id} href={memberUrl} className="group block">
-                <Card className="h-full rounded-3xl border-0 shadow-md transition-all hover:-translate-y-1 hover:shadow-xl">
-                  <CardContent className="p-6">
-                    <div className="mb-5 flex items-start gap-4">
-                      <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-900 text-lg font-bold text-white">
-                        {getAvatarFallback(profile)}
-                      </div>
-
-                      <div className="min-w-0 flex-1">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <h3 className="truncate text-lg font-semibold text-slate-900 group-hover:text-slate-700">
-                            {profile.full_name}
-                          </h3>
-
-                          {viewerHasFullAccess ? (
-                            <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100">
-                              Full details
-                            </Badge>
-                          ) : (
-                            <Badge variant="secondary">Basic view</Badge>
-                          )}
+              <div 
+                key={profile.id} 
+                className="animate-in fade-in slide-in-from-bottom-8 duration-700 fill-mode-both"
+                style={{ animationDelay: delay }}
+              >
+                <Link href={memberUrl} className="group block h-full">
+                  <Card className="h-full rounded-3xl border border-slate-100 bg-white shadow-sm transition-all duration-300 hover:-translate-y-2 hover:shadow-xl">
+                    <CardContent className="p-6">
+                      <div className="mb-5 flex items-start gap-4">
+                        <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-900 text-lg font-bold text-white shadow-md">
+                          {getAvatarFallback(profile)}
                         </div>
 
-                        <div className="mt-2 flex flex-wrap gap-2 text-sm text-slate-500">
-                          {profile.graduation_year && (
-                            <span className="inline-flex items-center gap-1">
-                              <GraduationCap className="h-4 w-4" />
-                              Class of {profile.graduation_year}
+                        <div className="min-w-0 flex-1">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <h3 className="truncate text-lg font-bold text-slate-900 group-hover:text-blue-600 transition-colors">
+                              {profile.full_name}
+                            </h3>
+                            {viewerHasFullAccess ? (
+                              <Badge className="bg-emerald-100 text-emerald-800 hover:bg-emerald-100 shadow-sm border-emerald-200">Full details</Badge>
+                            ) : (
+                              <Badge variant="secondary" className="shadow-sm">Basic view</Badge>
+                            )}
+                          </div>
+                          <div className="mt-2 flex flex-wrap gap-2 text-sm text-slate-500 font-medium">
+                            {profile.graduation_year && (
+                              <span className="inline-flex items-center gap-1">
+                                <GraduationCap className="h-4 w-4" /> Class of {profile.graduation_year}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="space-y-3 text-sm text-slate-700">
+                        {profile.current_position && (
+                          <div className="flex items-start gap-3">
+                            <Briefcase className="mt-0.5 h-4 w-4 text-slate-400 shrink-0" />
+                            <span>{profile.current_position}</span>
+                          </div>
+                        )}
+                        {viewerHasFullAccess && profile.current_organization && (
+                          <div className="flex items-start gap-3">
+                            <Building className="mt-0.5 h-4 w-4 text-slate-400 shrink-0" />
+                            <span>{profile.current_organization}</span>
+                          </div>
+                        )}
+                        {(profile.current_city || profile.current_country) && (
+                          <div className="flex items-start gap-3">
+                            <MapPin className="mt-0.5 h-4 w-4 text-slate-400 shrink-0" />
+                            <span>
+                              {profile.current_city || "Unknown city"}
+                              {profile.current_country ? `, ${profile.current_country}` : ""}
                             </span>
-                          )}
-                        </div>
+                          </div>
+                        )}
+                        {profile.home_district && (
+                          <div className="flex items-start gap-3">
+                            <UserCircle2 className="mt-0.5 h-4 w-4 text-slate-400 shrink-0" />
+                            <span>Home: {profile.home_district}</span>
+                          </div>
+                        )}
                       </div>
-                    </div>
 
-                    <div className="space-y-3 text-sm text-slate-700">
-                      {profile.current_position && (
-                        <div className="flex items-start gap-2">
-                          <Briefcase className="mt-0.5 h-4 w-4 text-slate-400" />
-                          <span>{profile.current_position}</span>
-                        </div>
-                      )}
-
-                      {viewerHasFullAccess && profile.current_organization && (
-                        <div className="flex items-start gap-2">
-                          <Building className="mt-0.5 h-4 w-4 text-slate-400" />
-                          <span>{profile.current_organization}</span>
-                        </div>
-                      )}
-
-                      {(profile.current_city || profile.current_country) && (
-                        <div className="flex items-start gap-2">
-                          <MapPin className="mt-0.5 h-4 w-4 text-slate-400" />
-                          <span>
-                            {profile.current_city || "Unknown city"}
-                            {profile.current_country ? `, ${profile.current_country}` : ""}
-                          </span>
-                        </div>
-                      )}
-
-                      {profile.home_district && (
-                        <div className="flex items-start gap-2">
-                          <UserCircle2 className="mt-0.5 h-4 w-4 text-slate-400" />
-                          <span>Home District: {profile.home_district}</span>
-                        </div>
-                      )}
-                    </div>
-
-                    {viewerHasFullAccess && profile.bio && (
-                      <div className="mt-5 rounded-2xl bg-slate-50 p-4 text-sm text-slate-600">
-                        “{profile.bio}”
+                      <div className="mt-6 flex items-center gap-2 text-sm font-semibold text-slate-500 group-hover:text-blue-600 transition-colors">
+                        {viewerHasFullAccess ? (
+                          <><ShieldCheck className="h-4 w-4" /> Open profile</>
+                        ) : (
+                          <><Lock className="h-4 w-4" /> Open preview</>
+                        )}
                       </div>
-                    )}
-
-                    <div className="mt-5 flex items-center gap-2 text-sm font-medium text-slate-600">
-                      {viewerHasFullAccess ? (
-                        <>
-                          <ShieldCheck className="h-4 w-4" />
-                          Open full alumni profile
-                        </>
-                      ) : (
-                        <>
-                          <Lock className="h-4 w-4" />
-                          Open limited preview
-                        </>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              </Link>
+                    </CardContent>
+                  </Card>
+                </Link>
+              </div>
             );
           })}
         </div>

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Inter } from "next/font/google";
 import "./globals.css";
 import { createClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
@@ -12,6 +13,8 @@ import {
   ShieldCheck,
   LogOut,
 } from "lucide-react";
+
+const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 
 export const metadata: Metadata = {
   title: "BRC Loralai Alumni Network",
@@ -50,7 +53,7 @@ export default async function RootLayout({
 
   return (
     <html lang="en">
-      <body className="min-h-screen bg-slate-50 text-slate-900">
+      <body className={`${inter.variable} font-sans min-h-screen bg-slate-50 text-slate-900`}>
         <div className="min-h-screen flex flex-col">
           <header className="sticky top-0 z-50 border-b bg-white/90 backdrop-blur">
             <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
