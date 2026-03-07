@@ -16,75 +16,41 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
+import { Education, Job } from "@/types/database";
 import {
   AlertCircle,
   ArrowLeft,
   ArrowRight,
   BadgeCheck,
-  Eye,
-  Globe,
-  Linkedin,
-  Lock,
-  Mail,
-  MapPin,
-  Phone,
+  Plus,
+  Trash2,
   Save,
   ShieldCheck,
   UserCircle2,
 } from "lucide-react";
 
 const districts = [
-  "Loralai",
-  "Qila Saifullah",
-  "Zhob",
-  "Barkhan",
-  "Musakhel",
-  "Duki",
-  "Quetta",
-  "Pishin",
-  "Other",
+  "Loralai", "Qila Saifullah", "Zhob", "Barkhan", "Musakhel", 
+  "Duki", "Quetta", "Pishin", "Other",
 ];
 
 const studentTypes = ["Hostelite", "Day Scholar"];
 const financeTypes = ["Regular", "Self-Finance"];
 const employmentStatuses = [
-  "Employed",
-  "Self-Employed",
-  "Business Owner",
-  "Student",
-  "Retired",
-  "Not Working",
-  "House Wife/Husband",
+  "Employed", "Self-Employed", "Business Owner", "Student", 
+  "Retired", "Not Working", "House Wife/Husband",
 ];
 
 const languagesList = [
-  "Balochi",
-  "Pashto",
-  "Urdu",
-  "English",
-  "Punjabi",
-  "Sindhi",
-  "Brahvi",
-  "Other",
+  "Balochi", "Pashto", "Urdu", "English", "Punjabi", "Sindhi", "Brahvi", "Other",
 ];
 
 const industries = [
-  "Healthcare/Medical",
-  "IT/Software/Technology",
-  "Education/Teaching",
-  "Government/Public Sector",
-  "Business/Trade",
-  "Banking/Finance",
-  "Engineering",
-  "Law/Legal",
-  "Media/Journalism",
-  "Agriculture",
-  "Military/Defense",
-  "Real Estate",
-  "Transportation",
-  "Construction",
-  "Mining",
-  "Other",
+  "Healthcare/Medical", "IT/Software/Technology", "Education/Teaching", 
+  "Government/Public Sector", "Business/Trade", "Banking/Finance", 
+  "Engineering", "Law/Legal", "Media/Journalism", "Agriculture", 
+  "Military/Defense", "Real Estate", "Transportation", "Construction", 
+  "Mining", "Other",
 ];
 
 type FormDataType = {
@@ -104,6 +70,9 @@ type FormDataType = {
   industry: string;
   experience_years: string;
   employment_status: string;
+
+  higher_education: Education[];
+  job_history: Job[];
 
   phone: string;
   linkedin_url: string;
@@ -129,44 +98,17 @@ type FormDataType = {
 };
 
 const emptyForm: FormDataType = {
-  full_name: "",
-  entry_year: "",
-  graduation_year: "",
-  home_district: "",
-  student_type: "",
-  regular_self_finance: "",
-  roll_number: "",
-
-  current_country: "Pakistan",
-  current_city: "",
-  current_position: "",
-  profession: "",
-  current_organization: "",
-  industry: "",
-  experience_years: "",
+  full_name: "", entry_year: "", graduation_year: "", home_district: "", 
+  student_type: "", regular_self_finance: "", roll_number: "",
+  current_country: "Pakistan", current_city: "", current_position: "", 
+  profession: "", current_organization: "", industry: "", experience_years: "", 
   employment_status: "",
-
-  phone: "",
-  linkedin_url: "",
-  languages: [],
-  bio: "",
-  achievements: "",
-
-  featured_in_presentation: false,
-  available_for_mentoring: false,
-
-  show_phone_publicly: false,
-  show_email_publicly: false,
-  show_linkedin_publicly: true,
-  show_in_directory: true,
-
-  verification_answers: {
-    houses: "",
-    teachers: "",
-    staff: "",
-    principal: "",
-    established_year: "",
-  },
+  higher_education: [], job_history: [],
+  phone: "", linkedin_url: "", languages: [], bio: "", achievements: "",
+  featured_in_presentation: false, available_for_mentoring: false,
+  show_phone_publicly: false, show_email_publicly: false, 
+  show_linkedin_publicly: true, show_in_directory: true,
+  verification_answers: { houses: "", teachers: "", staff: "", principal: "", established_year: "" },
 };
 
 export default function CompleteProfilePage() {
@@ -186,22 +128,11 @@ export default function CompleteProfilePage() {
 
   useEffect(() => {
     const load = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
-      if (!user) {
-        router.push("/auth/login");
-        return;
-      }
-
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) { router.push("/auth/login"); return; }
       setUser(user);
 
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", user.id)
-        .single();
+      const { data: profile } = await supabase.from("profiles").select("*").eq("id", user.id).single();
 
       if (profile) {
         setExistingAdminStatus(profile.admin_status || "pending");
@@ -225,6 +156,9 @@ export default function CompleteProfilePage() {
           experience_years: profile.experience_years?.toString() || "",
           employment_status: profile.employment_status || "",
 
+          higher_education: profile.higher_education || [],
+          job_history: profile.job_history || [],
+
           phone: profile.phone || "",
           linkedin_url: profile.linkedin_url || "",
           languages: profile.languages || [],
@@ -236,14 +170,8 @@ export default function CompleteProfilePage() {
 
           show_phone_publicly: Boolean(profile.show_phone_publicly),
           show_email_publicly: Boolean(profile.show_email_publicly),
-          show_linkedin_publicly:
-            profile.show_linkedin_publicly === null || profile.show_linkedin_publicly === undefined
-              ? true
-              : Boolean(profile.show_linkedin_publicly),
-          show_in_directory:
-            profile.show_in_directory === null || profile.show_in_directory === undefined
-              ? true
-              : Boolean(profile.show_in_directory),
+          show_linkedin_publicly: profile.show_linkedin_publicly === null ? true : Boolean(profile.show_linkedin_publicly),
+          show_in_directory: profile.show_in_directory === null ? true : Boolean(profile.show_in_directory),
 
           verification_answers: {
             houses: profile.verification_answers?.houses || "",
@@ -254,10 +182,8 @@ export default function CompleteProfilePage() {
           },
         });
       }
-
       setBootLoading(false);
     };
-
     load();
   }, [router, supabase]);
 
@@ -265,25 +191,51 @@ export default function CompleteProfilePage() {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
-  const setVerificationField = (
-    field: keyof FormDataType["verification_answers"],
-    value: string
-  ) => {
+  const setVerificationField = (field: keyof FormDataType["verification_answers"], value: string) => {
     setFormData((prev) => ({
-      ...prev,
-      verification_answers: {
-        ...prev.verification_answers,
-        [field]: value,
-      },
+      ...prev, verification_answers: { ...prev.verification_answers, [field]: value },
     }));
+  };
+
+  const addEducation = () => {
+    setFormData((prev) => ({
+      ...prev, higher_education: [...prev.higher_education, { institution: "", degree: "", field: "", start_date: "", end_date: "" }]
+    }));
+  };
+
+  const updateEducation = (index: number, field: keyof Education, value: string) => {
+    const updated = [...formData.higher_education];
+    updated[index] = { ...updated[index], [field]: value };
+    setField("higher_education", updated);
+  };
+
+  const removeEducation = (index: number) => {
+    const updated = [...formData.higher_education];
+    updated.splice(index, 1);
+    setField("higher_education", updated);
+  };
+
+  const addJob = () => {
+    setFormData((prev) => ({
+      ...prev, job_history: [...prev.job_history, { company: "", title: "", start_date: "", end_date: "", is_current: false }]
+    }));
+  };
+
+  const updateJob = (index: number, field: keyof Job, value: string | boolean) => {
+    const updated = [...formData.job_history];
+    updated[index] = { ...updated[index], [field]: value };
+    setField("job_history", updated);
+  };
+
+  const removeJob = (index: number) => {
+    const updated = [...formData.job_history];
+    updated.splice(index, 1);
+    setField("job_history", updated);
   };
 
   const toggleLanguage = (language: string) => {
     setFormData((prev) => ({
-      ...prev,
-      languages: prev.languages.includes(language)
-        ? prev.languages.filter((item) => item !== language)
-        : [...prev.languages, language],
+      ...prev, languages: prev.languages.includes(language) ? prev.languages.filter((i) => i !== language) : [...prev.languages, language],
     }));
   };
 
@@ -291,186 +243,84 @@ export default function CompleteProfilePage() {
   const computedAccessLevel = useMemo(() => getAccessLevelFromProfile(formData), [formData]);
   const profileComplete = useMemo(() => isProfileComplete(formData), [formData]);
 
-  const effectiveAdminStatusText =
-    existingAdminStatus === "approved"
-      ? "Approved"
-      : existingAdminStatus === "rejected"
-      ? "Rejected"
-      : "Pending review";
-
-  const accessText = computedAccessLevel === "full" ? "Ready for full access" : "Limited access";
+  const effectiveAdminStatusText = existingAdminStatus === "approved" ? "Approved" : existingAdminStatus === "rejected" ? "Rejected" : "Pending review";
+  const accessText = computedAccessLevel === "full" ? "Full access" : "Limited access";
 
   const handleSubmit = async () => {
     if (!user) return;
-
     setSaving(true);
     setBanner(null);
 
     try {
-      const computedSlug = slugifyProfileName(
-        formData.full_name || user.email || "member",
-        formData.graduation_year ? parseInt(formData.graduation_year) : null
-      );
-
-      const nextAdminStatus =
-        existingAdminStatus === "approved" ? "approved" : "pending";
-
+      const computedSlug = slugifyProfileName(formData.full_name || user.email || "member", formData.graduation_year ? parseInt(formData.graduation_year) : null);
+      const nextAdminStatus = existingAdminStatus === "approved" ? "approved" : "pending";
       const nextAccessLevel = computedAccessLevel;
 
       const payload = {
-        id: user.id,
-        email: user.email,
-
-        full_name: formData.full_name || null,
-        slug: computedSlug,
-
+        id: user.id, email: user.email, full_name: formData.full_name || null, slug: computedSlug,
         entry_year: formData.entry_year ? parseInt(formData.entry_year) : null,
         graduation_year: formData.graduation_year ? parseInt(formData.graduation_year) : null,
-        home_district: formData.home_district || null,
-        student_type: formData.student_type || null,
-        regular_self_finance: formData.regular_self_finance || null,
-        roll_number: formData.roll_number || null,
-
-        current_country: formData.current_country || "Pakistan",
-        current_city: formData.current_city || null,
-        current_position: formData.current_position || null,
-        profession: formData.profession || null,
-        current_organization: formData.current_organization || null,
-        industry: formData.industry || null,
+        home_district: formData.home_district || null, student_type: formData.student_type || null,
+        regular_self_finance: formData.regular_self_finance || null, roll_number: formData.roll_number || null,
+        current_country: formData.current_country || "Pakistan", current_city: formData.current_city || null,
+        current_position: formData.current_position || null, profession: formData.profession || null,
+        current_organization: formData.current_organization || null, industry: formData.industry || null,
         experience_years: formData.experience_years ? parseInt(formData.experience_years) : null,
         employment_status: formData.employment_status || null,
-
-        phone: formData.phone || null,
-        linkedin_url: formData.linkedin_url || null,
-        languages: formData.languages,
-        bio: formData.bio || null,
-        achievements: formData.achievements || null,
-
-        featured_in_presentation: formData.featured_in_presentation,
-        available_for_mentoring: formData.available_for_mentoring,
-
-        show_phone_publicly: formData.show_phone_publicly,
-        show_email_publicly: formData.show_email_publicly,
-        show_linkedin_publicly: formData.show_linkedin_publicly,
-        show_in_directory: formData.show_in_directory,
-
-        verification_answers: formData.verification_answers,
-        verification_score: score,
+        higher_education: formData.higher_education, job_history: formData.job_history,
+        phone: formData.phone || null, linkedin_url: formData.linkedin_url || null,
+        languages: formData.languages, bio: formData.bio || null, achievements: formData.achievements || null,
+        featured_in_presentation: formData.featured_in_presentation, available_for_mentoring: formData.available_for_mentoring,
+        show_phone_publicly: formData.show_phone_publicly, show_email_publicly: formData.show_email_publicly,
+        show_linkedin_publicly: formData.show_linkedin_publicly, show_in_directory: formData.show_in_directory,
+        verification_answers: formData.verification_answers, verification_score: score,
         verification_status: getLegacyVerificationStatus(nextAccessLevel, nextAdminStatus),
-        access_level: nextAccessLevel,
-        admin_status: nextAdminStatus,
-        is_profile_complete: profileComplete,
-        submitted_for_review: nextAdminStatus !== "approved",
+        access_level: nextAccessLevel, admin_status: nextAdminStatus,
+        is_profile_complete: profileComplete, submitted_for_review: nextAdminStatus !== "approved",
         updated_at: new Date().toISOString(),
       };
 
       const { error } = await supabase.from("profiles").upsert(payload);
-
       if (error) throw error;
 
       setExistingAdminStatus(nextAdminStatus);
       setExistingAccessLevel(nextAccessLevel);
 
-      setBanner({
-        type: "success",
-        text:
-          nextAdminStatus === "approved"
-            ? "Profile saved successfully. Your approval remains active."
-            : "Profile saved successfully. Your profile is ready for admin review.",
-      });
-
+      setBanner({ type: "success", text: "Profile saved successfully." });
       router.refresh();
-      setTimeout(() => {
-        router.push("/profile/me");
-      }, 900);
+      setTimeout(() => router.push("/profile/me"), 900);
     } catch (err: any) {
-      setBanner({
-        type: "error",
-        text: err.message || "Unable to save your profile.",
-      });
+      setBanner({ type: "error", text: err.message || "Unable to save your profile." });
     } finally {
       setSaving(false);
     }
   };
 
   if (bootLoading) {
-    return (
-      <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
-        <Card className="rounded-3xl border-0 shadow-md">
-          <CardContent className="p-10 text-center text-slate-500">
-            Loading your profile...
-          </CardContent>
-        </Card>
-      </div>
-    );
+    return <div className="text-center p-10 mt-20 text-slate-500">Loading your profile...</div>;
   }
-
-  const progressWidth = `${Math.min(score, 100)}%`;
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
-      <div className="mb-8 rounded-3xl bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 p-8 text-white shadow-xl">
+      <div className="mb-8 rounded-3xl bg-primary p-8 text-white shadow-xl">
         <div className="flex flex-col gap-5 md:flex-row md:items-start md:justify-between">
           <div>
-            <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-sm text-slate-200">
-              <ShieldCheck className="h-4 w-4" />
-              Member profile and privacy settings
+            <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-sm">
+              <ShieldCheck className="h-4 w-4" /> Member Profile & Privacy
             </div>
-            <h1 className="text-3xl font-bold">Complete or edit your profile</h1>
-            <p className="mt-2 max-w-2xl text-slate-300">
-              Add your BRC background, professional details, and choose what contact information other alumni can see.
-            </p>
+            <h1 className="text-3xl font-bold">Edit your profile</h1>
           </div>
-
-          <div className="grid gap-3 md:min-w-[240px]">
+          <div className="grid gap-3 min-w-[200px]">
             <div className="rounded-2xl bg-white/10 px-4 py-3 text-sm">
-              <div className="text-slate-300">Admin status</div>
+              <div className="text-slate-300">Status</div>
               <div className="mt-1 font-semibold">{effectiveAdminStatusText}</div>
             </div>
-            <div className="rounded-2xl bg-white/10 px-4 py-3 text-sm">
-              <div className="text-slate-300">Access preview</div>
-              <div className="mt-1 font-semibold">{accessText}</div>
-            </div>
-          </div>
-        </div>
-
-        <div className="mt-6">
-          <div className="mb-2 flex items-center justify-between text-sm">
-            <span>Profile strength</span>
-            <span className="font-semibold">{score}/100</span>
-          </div>
-          <div className="h-3 overflow-hidden rounded-full bg-white/10">
-            <div
-              className="h-full rounded-full bg-emerald-400 transition-all"
-              style={{ width: progressWidth }}
-            />
-          </div>
-          <div className="mt-3 flex items-center gap-2 text-sm text-slate-200">
-            {profileComplete ? (
-              <>
-                <BadgeCheck className="h-4 w-4 text-emerald-300" />
-                <span>Your profile has enough detail to be review-ready.</span>
-              </>
-            ) : (
-              <>
-                <AlertCircle className="h-4 w-4 text-amber-300" />
-                <span>Complete the important fields to move beyond limited access.</span>
-              </>
-            )}
           </div>
         </div>
       </div>
 
       {banner && (
-        <div
-          className={`mb-6 rounded-2xl border px-4 py-3 text-sm ${
-            banner.type === "success"
-              ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-              : banner.type === "error"
-              ? "border-red-200 bg-red-50 text-red-700"
-              : "border-slate-200 bg-slate-50 text-slate-700"
-          }`}
-        >
+        <div className={`mb-6 rounded-2xl border px-4 py-3 text-sm ${banner.type === "success" ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-red-200 bg-red-50 text-red-700"}`}>
           {banner.text}
         </div>
       )}
@@ -480,472 +330,185 @@ export default function CompleteProfilePage() {
           <CardTitle>Step {step} of 4</CardTitle>
           <CardDescription>
             {step === 1 && "BRC and batch details"}
-            {step === 2 && "Professional and personal details"}
-            {step === 3 && "Privacy and visibility controls"}
-            {step === 4 && "Verification and community extras"}
+            {step === 2 && "Education and Experience"}
+            {step === 3 && "Contact Details & Personal Info"}
+            {step === 4 && "Verification Questions (Admin Only)"}
           </CardDescription>
         </CardHeader>
 
         <CardContent className="space-y-8">
           {step === 1 && (
             <div className="grid gap-6 md:grid-cols-2">
-              <div>
-                <Label>Full name *</Label>
-                <Input
-                  value={formData.full_name}
-                  onChange={(e) => setField("full_name", e.target.value)}
-                  placeholder="As per BRC records"
-                />
-              </div>
-
-              <div>
-                <Label>Roll number</Label>
-                <Input
-                  value={formData.roll_number}
-                  onChange={(e) => setField("roll_number", e.target.value)}
-                  placeholder="Optional"
-                />
-              </div>
-
+              <div><Label>Full name *</Label><Input value={formData.full_name} onChange={(e) => setField("full_name", e.target.value)} /></div>
+              <div><Label>Roll number</Label><Input value={formData.roll_number} onChange={(e) => setField("roll_number", e.target.value)} /></div>
               <div>
                 <Label>Entry year *</Label>
-                <select
-                  className="mt-2 h-10 w-full rounded-md border bg-background px-3 text-sm"
-                  value={formData.entry_year}
-                  onChange={(e) => setField("entry_year", e.target.value)}
-                >
+                <select className="mt-2 h-10 w-full rounded-md border px-3 text-sm" value={formData.entry_year} onChange={(e) => setField("entry_year", e.target.value)}>
                   <option value="">Select year</option>
-                  {Array.from({ length: 50 }, (_, i) => 1980 + i).map((year) => (
-                    <option key={year} value={String(year)}>
-                      {year}
-                    </option>
-                  ))}
+                  {Array.from({ length: 50 }, (_, i) => 1980 + i).map(y => <option key={y} value={y}>{y}</option>)}
                 </select>
               </div>
-
               <div>
                 <Label>Graduation year *</Label>
-                <select
-                  className="mt-2 h-10 w-full rounded-md border bg-background px-3 text-sm"
-                  value={formData.graduation_year}
-                  onChange={(e) => setField("graduation_year", e.target.value)}
-                >
+                <select className="mt-2 h-10 w-full rounded-md border px-3 text-sm" value={formData.graduation_year} onChange={(e) => setField("graduation_year", e.target.value)}>
                   <option value="">Select year</option>
-                  {Array.from({ length: 50 }, (_, i) => 1984 + i).map((year) => (
-                    <option key={year} value={String(year)}>
-                      {year}
-                    </option>
-                  ))}
+                  {Array.from({ length: 50 }, (_, i) => 1984 + i).map(y => <option key={y} value={y}>{y}</option>)}
                 </select>
               </div>
-
               <div>
-                <Label>Student type *</Label>
-                <select
-                  className="mt-2 h-10 w-full rounded-md border bg-background px-3 text-sm"
-                  value={formData.student_type}
-                  onChange={(e) => setField("student_type", e.target.value)}
-                >
-                  <option value="">Select student type</option>
-                  {studentTypes.map((item) => (
-                    <option key={item} value={item}>
-                      {item}
-                    </option>
-                  ))}
+                <Label>Student type</Label>
+                <select className="mt-2 h-10 w-full rounded-md border px-3 text-sm" value={formData.student_type} onChange={(e) => setField("student_type", e.target.value)}>
+                  <option value="">Select</option>
+                  {studentTypes.map(i => <option key={i} value={i}>{i}</option>)}
                 </select>
               </div>
-
               <div>
-                <Label>Finance type</Label>
-                <select
-                  className="mt-2 h-10 w-full rounded-md border bg-background px-3 text-sm"
-                  value={formData.regular_self_finance}
-                  onChange={(e) => setField("regular_self_finance", e.target.value)}
-                >
-                  <option value="">Select finance type</option>
-                  {financeTypes.map((item) => (
-                    <option key={item} value={item}>
-                      {item}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="md:col-span-2">
                 <Label>Home district *</Label>
-                <select
-                  className="mt-2 h-10 w-full rounded-md border bg-background px-3 text-sm"
-                  value={formData.home_district}
-                  onChange={(e) => setField("home_district", e.target.value)}
-                >
-                  <option value="">Select district</option>
-                  {districts.map((district) => (
-                    <option key={district} value={district}>
-                      {district}
-                    </option>
-                  ))}
+                <select className="mt-2 h-10 w-full rounded-md border px-3 text-sm" value={formData.home_district} onChange={(e) => setField("home_district", e.target.value)}>
+                  <option value="">Select</option>
+                  {districts.map(i => <option key={i} value={i}>{i}</option>)}
                 </select>
               </div>
             </div>
           )}
 
           {step === 2 && (
-            <div className="grid gap-6 md:grid-cols-2">
-              <div>
-                <Label>Current city *</Label>
-                <Input
-                  value={formData.current_city}
-                  onChange={(e) => setField("current_city", e.target.value)}
-                  placeholder="Quetta, Karachi, Dubai..."
-                />
+            <div className="space-y-8">
+              <div className="grid gap-6 md:grid-cols-2">
+                <div><Label>Current Position / Title *</Label><Input value={formData.current_position} onChange={(e) => setField("current_position", e.target.value)} placeholder="e.g. Senior Engineer" /></div>
+                <div><Label>Current Organization</Label><Input value={formData.current_organization} onChange={(e) => setField("current_organization", e.target.value)} placeholder="e.g. Google" /></div>
+                <div>
+                  <Label>Industry</Label>
+                  <select className="mt-2 h-10 w-full rounded-md border px-3 text-sm" value={formData.industry} onChange={(e) => setField("industry", e.target.value)}>
+                    <option value="">Select</option>
+                    {industries.map(i => <option key={i} value={i}>{i}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <Label>Experience (years)</Label>
+                  <Input type="number" value={formData.experience_years} onChange={(e) => setField("experience_years", e.target.value)} />
+                </div>
               </div>
 
-              <div>
-                <Label>Current country</Label>
-                <Input
-                  value={formData.current_country}
-                  onChange={(e) => setField("current_country", e.target.value)}
-                />
-              </div>
-
-              <div>
-                <Label>Current position / title *</Label>
-                <Input
-                  value={formData.current_position}
-                  onChange={(e) => setField("current_position", e.target.value)}
-                  placeholder="Doctor, engineer, entrepreneur..."
-                />
-              </div>
-
-              <div>
-                <Label>Profession</Label>
-                <Input
-                  value={formData.profession}
-                  onChange={(e) => setField("profession", e.target.value)}
-                />
-              </div>
-
-              <div>
-                <Label>Current organization</Label>
-                <Input
-                  value={formData.current_organization}
-                  onChange={(e) => setField("current_organization", e.target.value)}
-                />
-              </div>
-
-              <div>
-                <Label>Industry</Label>
-                <select
-                  className="mt-2 h-10 w-full rounded-md border bg-background px-3 text-sm"
-                  value={formData.industry}
-                  onChange={(e) => setField("industry", e.target.value)}
-                >
-                  <option value="">Select industry</option>
-                  {industries.map((item) => (
-                    <option key={item} value={item}>
-                      {item}
-                    </option>
+              {/* Higher Education Block */}
+              <div className="border-t pt-6">
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-lg font-semibold text-primary">Higher Education</h3>
+                  <Button type="button" variant="outline" size="sm" onClick={addEducation}><Plus className="w-4 h-4 mr-1"/> Add Education</Button>
+                </div>
+                <div className="space-y-4">
+                  {formData.higher_education.map((edu, index) => (
+                    <div key={index} className="grid gap-4 md:grid-cols-2 bg-slate-50 p-4 rounded-xl relative border border-slate-200">
+                      <Button type="button" variant="ghost" size="icon" className="absolute top-2 right-2 text-red-500 hover:bg-red-50" onClick={() => removeEducation(index)}><Trash2 className="w-4 h-4"/></Button>
+                      <div><Label>Institution</Label><Input value={edu.institution} onChange={(e) => updateEducation(index, "institution", e.target.value)} placeholder="University Name" /></div>
+                      <div><Label>Degree</Label><Input value={edu.degree} onChange={(e) => updateEducation(index, "degree", e.target.value)} placeholder="e.g. BS, MS, PhD" /></div>
+                      <div><Label>Field of Study</Label><Input value={edu.field} onChange={(e) => updateEducation(index, "field", e.target.value)} placeholder="e.g. Computer Science" /></div>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div><Label>From</Label><Input type="number" placeholder="YYYY" value={edu.start_date} onChange={(e) => updateEducation(index, "start_date", e.target.value)} /></div>
+                        <div><Label>To</Label><Input type="number" placeholder="YYYY" value={edu.end_date} onChange={(e) => updateEducation(index, "end_date", e.target.value)} /></div>
+                      </div>
+                    </div>
                   ))}
-                </select>
+                  {formData.higher_education.length === 0 && <p className="text-sm text-slate-500 italic">No higher education added yet.</p>}
+                </div>
               </div>
 
-              <div>
-                <Label>Employment status</Label>
-                <select
-                  className="mt-2 h-10 w-full rounded-md border bg-background px-3 text-sm"
-                  value={formData.employment_status}
-                  onChange={(e) => setField("employment_status", e.target.value)}
-                >
-                  <option value="">Select employment status</option>
-                  {employmentStatuses.map((item) => (
-                    <option key={item} value={item}>
-                      {item}
-                    </option>
+              {/* Job History Block */}
+              <div className="border-t pt-6">
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-lg font-semibold text-primary">Job History</h3>
+                  <Button type="button" variant="outline" size="sm" onClick={addJob}><Plus className="w-4 h-4 mr-1"/> Add Job</Button>
+                </div>
+                <div className="space-y-4">
+                  {formData.job_history.map((job, index) => (
+                    <div key={index} className="grid gap-4 md:grid-cols-2 bg-slate-50 p-4 rounded-xl relative border border-slate-200">
+                      <Button type="button" variant="ghost" size="icon" className="absolute top-2 right-2 text-red-500 hover:bg-red-50" onClick={() => removeJob(index)}><Trash2 className="w-4 h-4"/></Button>
+                      <div><Label>Company</Label><Input value={job.company} onChange={(e) => updateJob(index, "company", e.target.value)} placeholder="Company Name" /></div>
+                      <div><Label>Title</Label><Input value={job.title} onChange={(e) => updateJob(index, "title", e.target.value)} placeholder="Job Title" /></div>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div><Label>From</Label><Input type="number" placeholder="YYYY" value={job.start_date} onChange={(e) => updateJob(index, "start_date", e.target.value)} /></div>
+                        <div><Label>To</Label><Input type="number" placeholder="YYYY" value={job.end_date} onChange={(e) => updateJob(index, "end_date", e.target.value)} disabled={job.is_current} /></div>
+                      </div>
+                      <div className="flex items-center pt-8">
+                        <label className="flex items-center gap-2 cursor-pointer text-sm">
+                          <Checkbox checked={job.is_current} onCheckedChange={(c) => updateJob(index, "is_current", Boolean(c))} />
+                          I currently work here
+                        </label>
+                      </div>
+                    </div>
                   ))}
-                </select>
-              </div>
-
-              <div>
-                <Label>Experience (years)</Label>
-                <Input
-                  value={formData.experience_years}
-                  onChange={(e) => setField("experience_years", e.target.value)}
-                  placeholder="e.g. 7"
-                />
-              </div>
-
-              <div>
-                <Label>Phone number</Label>
-                <Input
-                  value={formData.phone}
-                  onChange={(e) => setField("phone", e.target.value)}
-                  placeholder="+92..."
-                />
-              </div>
-
-              <div>
-                <Label>LinkedIn URL</Label>
-                <Input
-                  value={formData.linkedin_url}
-                  onChange={(e) => setField("linkedin_url", e.target.value)}
-                  placeholder="https://linkedin.com/in/..."
-                />
-              </div>
-
-              <div className="md:col-span-2">
-                <Label>Bio</Label>
-                <Textarea
-                  value={formData.bio}
-                  onChange={(e) => setField("bio", e.target.value)}
-                  placeholder="Tell other alumni about yourself"
-                  rows={4}
-                />
-              </div>
-
-              <div className="md:col-span-2">
-                <Label>Achievements</Label>
-                <Textarea
-                  value={formData.achievements}
-                  onChange={(e) => setField("achievements", e.target.value)}
-                  placeholder="Awards, publications, major milestones..."
-                  rows={4}
-                />
-              </div>
-
-              <div className="md:col-span-2">
-                <Label>Languages</Label>
-                <div className="mt-3 grid gap-3 sm:grid-cols-2 md:grid-cols-4">
-                  {languagesList.map((language) => (
-                    <label
-                      key={language}
-                      className="flex items-center gap-3 rounded-2xl border p-3 text-sm"
-                    >
-                      <Checkbox
-                        checked={formData.languages.includes(language)}
-                        onCheckedChange={() => toggleLanguage(language)}
-                      />
-                      <span>{language}</span>
-                    </label>
-                  ))}
+                  {formData.job_history.length === 0 && <p className="text-sm text-slate-500 italic">No job history added yet.</p>}
                 </div>
               </div>
             </div>
           )}
 
           {step === 3 && (
-            <div className="space-y-6">
-              <div className="rounded-2xl bg-slate-50 p-5 text-sm text-slate-600">
-                Choose how much contact information other verified alumni can see. Sensitive fields stay hidden unless you explicitly allow them.
-              </div>
+            <div className="grid gap-6 md:grid-cols-2">
+              <div><Label>Current City *</Label><Input value={formData.current_city} onChange={(e) => setField("current_city", e.target.value)} /></div>
+              <div><Label>Current Country</Label><Input value={formData.current_country} onChange={(e) => setField("current_country", e.target.value)} /></div>
 
-              <div className="grid gap-4">
-                <label className="flex items-start gap-4 rounded-2xl border p-4">
-                  <Checkbox
-                    checked={formData.show_phone_publicly}
-                    onCheckedChange={(checked) => setField("show_phone_publicly", Boolean(checked))}
-                  />
-                  <div>
-                    <div className="flex items-center gap-2 font-medium text-slate-900">
-                      <Phone className="h-4 w-4" />
-                      Show phone publicly to verified alumni
-                    </div>
-                    <p className="mt-1 text-sm text-slate-500">
-                      If enabled, full-access verified alumni can see your phone number.
-                    </p>
-                  </div>
-                </label>
-
-                <label className="flex items-start gap-4 rounded-2xl border p-4">
-                  <Checkbox
-                    checked={formData.show_email_publicly}
-                    onCheckedChange={(checked) => setField("show_email_publicly", Boolean(checked))}
-                  />
-                  <div>
-                    <div className="flex items-center gap-2 font-medium text-slate-900">
-                      <Mail className="h-4 w-4" />
-                      Show email publicly to verified alumni
-                    </div>
-                    <p className="mt-1 text-sm text-slate-500">
-                      If disabled, your email stays private except for your own account and admin workflows.
-                    </p>
-                  </div>
-                </label>
-
-                <label className="flex items-start gap-4 rounded-2xl border p-4">
-                  <Checkbox
-                    checked={formData.show_linkedin_publicly}
-                    onCheckedChange={(checked) => setField("show_linkedin_publicly", Boolean(checked))}
-                  />
-                  <div>
-                    <div className="flex items-center gap-2 font-medium text-slate-900">
-                      <Linkedin className="h-4 w-4" />
-                      Show LinkedIn publicly to verified alumni
-                    </div>
-                    <p className="mt-1 text-sm text-slate-500">
-                      Good for networking, mentorship, and professional connections.
-                    </p>
-                  </div>
-                </label>
-
-                <label className="flex items-start gap-4 rounded-2xl border p-4">
-                  <Checkbox
-                    checked={formData.show_in_directory}
-                    onCheckedChange={(checked) => setField("show_in_directory", Boolean(checked))}
-                  />
-                  <div>
-                    <div className="flex items-center gap-2 font-medium text-slate-900">
-                      <Eye className="h-4 w-4" />
-                      Show my profile in directory
-                    </div>
-                    <p className="mt-1 text-sm text-slate-500">
-                      Turn this off if you want an account but prefer not to appear in the alumni directory.
-                    </p>
-                  </div>
+              {/* Inline Privacy for Phone */}
+              <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                <Label>Phone Number</Label>
+                <Input className="mt-2 bg-white" value={formData.phone} onChange={(e) => setField("phone", e.target.value)} placeholder="+92..." />
+                <label className="flex items-center gap-2 mt-3 text-sm text-slate-600">
+                  <Checkbox checked={formData.show_phone_publicly} onCheckedChange={(c) => setField("show_phone_publicly", Boolean(c))} />
+                  Show phone publicly to verified alumni
                 </label>
               </div>
 
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="rounded-2xl border p-4">
-                  <div className="mb-2 flex items-center gap-2 font-medium text-slate-900">
-                    <Lock className="h-4 w-4" />
-                    Always hidden
-                  </div>
-                  <p className="text-sm text-slate-500">
-                    Verification answers, admin review details, and internal profile metadata are never shown publicly.
-                  </p>
-                </div>
+              {/* Inline Privacy for LinkedIn */}
+              <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                <Label>LinkedIn URL</Label>
+                <Input className="mt-2 bg-white" value={formData.linkedin_url} onChange={(e) => setField("linkedin_url", e.target.value)} placeholder="https://linkedin.com/in/..." />
+                <label className="flex items-center gap-2 mt-3 text-sm text-slate-600">
+                  <Checkbox checked={formData.show_linkedin_publicly} onCheckedChange={(c) => setField("show_linkedin_publicly", Boolean(c))} />
+                  Show LinkedIn publicly to verified alumni
+                </label>
+              </div>
 
-                <div className="rounded-2xl border p-4">
-                  <div className="mb-2 flex items-center gap-2 font-medium text-slate-900">
-                    <Globe className="h-4 w-4" />
-                    Directory visibility
-                  </div>
-                  <p className="text-sm text-slate-500">
-                    Limited users will still only see safe teaser information. Private contact data remains protected.
-                  </p>
-                </div>
+              {/* Email Privacy */}
+              <div className="md:col-span-2 bg-slate-50 p-4 rounded-xl border border-slate-200">
+                <p className="text-sm font-medium mb-2">Email Privacy</p>
+                <label className="flex items-center gap-2 text-sm text-slate-600">
+                  <Checkbox checked={formData.show_email_publicly} onCheckedChange={(c) => setField("show_email_publicly", Boolean(c))} />
+                  Show my email address publicly to verified alumni
+                </label>
+              </div>
+
+              <div className="md:col-span-2"><Label>Bio</Label><Textarea value={formData.bio} onChange={(e) => setField("bio", e.target.value)} rows={3} /></div>
+              
+              <div className="md:col-span-2">
+                <label className="flex items-center gap-2 text-sm font-medium">
+                  <Checkbox checked={formData.show_in_directory} onCheckedChange={(c) => setField("show_in_directory", Boolean(c))} />
+                  Make my profile visible in the directory
+                </label>
               </div>
             </div>
           )}
 
           {step === 4 && (
             <div className="grid gap-6 md:grid-cols-2">
-              <div>
-                <Label>House names or hostel references</Label>
-                <Input
-                  value={formData.verification_answers.houses}
-                  onChange={(e) => setVerificationField("houses", e.target.value)}
-                />
+              <div className="md:col-span-2 p-4 bg-amber-50 text-amber-800 rounded-xl text-sm border border-amber-200">
+                <ShieldCheck className="w-5 h-5 inline mr-2" />
+                These answers are completely private and only visible to the site administrators to verify your alumni status.
               </div>
-
-              <div>
-                <Label>Teachers you remember</Label>
-                <Input
-                  value={formData.verification_answers.teachers}
-                  onChange={(e) => setVerificationField("teachers", e.target.value)}
-                />
-              </div>
-
-              <div>
-                <Label>Staff members you remember</Label>
-                <Input
-                  value={formData.verification_answers.staff}
-                  onChange={(e) => setVerificationField("staff", e.target.value)}
-                />
-              </div>
-
-              <div>
-                <Label>Principal name you remember</Label>
-                <Input
-                  value={formData.verification_answers.principal}
-                  onChange={(e) => setVerificationField("principal", e.target.value)}
-                />
-              </div>
-
-              <div>
-                <Label>College established year</Label>
-                <Input
-                  value={formData.verification_answers.established_year}
-                  onChange={(e) => setVerificationField("established_year", e.target.value)}
-                />
-              </div>
-
-              <div className="flex flex-col justify-end gap-3">
-                <label className="flex items-center gap-3 rounded-2xl border p-4 text-sm">
-                  <Checkbox
-                    checked={formData.available_for_mentoring}
-                    onCheckedChange={(checked) =>
-                      setField("available_for_mentoring", Boolean(checked))
-                    }
-                  />
-                  <span>Available for mentoring</span>
-                </label>
-
-                <label className="flex items-center gap-3 rounded-2xl border p-4 text-sm">
-                  <Checkbox
-                    checked={formData.featured_in_presentation}
-                    onCheckedChange={(checked) =>
-                      setField("featured_in_presentation", Boolean(checked))
-                    }
-                  />
-                  <span>Allow featuring in alumni presentations</span>
-                </label>
-              </div>
-
-              <div className="md:col-span-2 rounded-2xl bg-slate-50 p-5 text-sm text-slate-600">
-                <div className="mb-2 flex items-center gap-2 font-medium text-slate-900">
-                  <UserCircle2 className="h-4 w-4" />
-                  Review note
-                </div>
-                <p>
-                  A strong profile plus alumni verification details helps move you from limited access to admin-approved full access.
-                </p>
-              </div>
+              <div><Label>House names or hostel references</Label><Input value={formData.verification_answers.houses} onChange={(e) => setVerificationField("houses", e.target.value)} /></div>
+              <div><Label>Teachers you remember</Label><Input value={formData.verification_answers.teachers} onChange={(e) => setVerificationField("teachers", e.target.value)} /></div>
+              <div><Label>Staff/Guards (e.g. Ghulam Nabi etc)</Label><Input value={formData.verification_answers.staff} onChange={(e) => setVerificationField("staff", e.target.value)} /></div>
+              <div><Label>Principal name you remember</Label><Input value={formData.verification_answers.principal} onChange={(e) => setVerificationField("principal", e.target.value)} /></div>
+              <div><Label>College established year</Label><Input value={formData.verification_answers.established_year} onChange={(e) => setVerificationField("established_year", e.target.value)} /></div>
             </div>
           )}
 
-          <div className="flex flex-col gap-3 border-t pt-6 sm:flex-row sm:items-center sm:justify-between">
-            <div className="text-sm text-slate-500">
-              Current saved level:{" "}
-              <span className="font-semibold text-slate-700 capitalize">
-                {existingAccessLevel}
-              </span>
-            </div>
-
-            <div className="flex flex-wrap gap-3">
-              {step > 1 && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setStep((value) => value - 1)}
-                  className="gap-2"
-                >
-                  <ArrowLeft className="h-4 w-4" />
-                  Previous
-                </Button>
-              )}
-
-              {step < 4 ? (
-                <Button
-                  type="button"
-                  onClick={() => setStep((value) => value + 1)}
-                  className="gap-2"
-                >
-                  Next
-                  <ArrowRight className="h-4 w-4" />
-                </Button>
-              ) : (
-                <Button
-                  type="button"
-                  onClick={handleSubmit}
-                  disabled={saving}
-                  className="gap-2"
-                >
-                  <Save className="h-4 w-4" />
-                  {saving ? "Saving profile..." : "Save profile"}
-                </Button>
-              )}
-            </div>
+          <div className="flex justify-between border-t pt-6">
+            <Button type="button" variant="outline" onClick={() => setStep((v) => Math.max(1, v - 1))} disabled={step === 1}><ArrowLeft className="h-4 w-4 mr-2" /> Previous</Button>
+            {step < 4 ? (
+              <Button type="button" onClick={() => setStep((v) => v + 1)}>Next <ArrowRight className="h-4 w-4 ml-2" /></Button>
+            ) : (
+              <Button type="button" onClick={handleSubmit} disabled={saving} className="bg-primary hover:bg-primary/90"><Save className="h-4 w-4 mr-2" /> {saving ? "Saving..." : "Save Profile"}</Button>
+            )}
           </div>
         </CardContent>
       </Card>

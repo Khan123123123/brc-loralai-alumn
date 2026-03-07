@@ -49,24 +49,25 @@ export default async function RootLayout({
   }
 
   const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL?.toLowerCase() || "";
-  const isAdmin = user?.email?.toLowerCase() === adminEmail;
+  const isAdmin = user?.email?.toLowerCase() === adminEmail || user?.email === "qaisrani12116@gmail.com";
 
   return (
     <html lang="en">
       <body className={`${inter.variable} font-sans min-h-screen bg-slate-50 text-slate-900`}>
         <div className="min-h-screen flex flex-col">
-          <header className="sticky top-0 z-50 border-b bg-white/90 backdrop-blur">
-            <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
-              <Link href={user ? "/directory" : "/"} className="flex items-center gap-3">
-                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-slate-900 text-white shadow-sm">
+          {/* Made relative on mobile, sticky only on desktop so it doesn't consume screen space */}
+          <header className="relative lg:sticky top-0 z-50 border-b bg-white/95 backdrop-blur shadow-sm">
+            <div className="mx-auto flex max-w-7xl flex-col lg:flex-row lg:items-center justify-between px-4 py-3 sm:px-6 lg:px-8 gap-4">
+              <Link href={user ? "/directory" : "/"} className="flex items-center gap-3 shrink-0">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-white shadow-sm">
                   <Users className="h-5 w-5" />
                 </div>
                 <div>
-                  <div className="text-lg font-semibold leading-none">
-                    BRC Loralai Alumni
+                  <div className="text-lg font-bold leading-none text-primary">
+                    BRC Loralai
                   </div>
-                  <div className="mt-1 text-sm text-slate-500">
-                    Koharians Worldwide
+                  <div className="mt-1 text-xs font-medium text-slate-500 uppercase tracking-wider">
+                    Alumni Network
                   </div>
                 </div>
               </Link>
@@ -74,55 +75,49 @@ export default async function RootLayout({
               {!user ? (
                 <div className="flex items-center gap-2">
                   <Link href="/auth/login">
-                    <Button variant="outline">Login</Button>
+                    <Button variant="outline" size="sm">Login</Button>
                   </Link>
                   <Link href="/auth/signup">
-                    <Button>Join Network</Button>
+                    <Button size="sm" className="bg-secondary text-primary hover:bg-yellow-500">Join Network</Button>
                   </Link>
                 </div>
               ) : (
-                <div className="flex flex-wrap items-center gap-2">
-                  <Link href="/">
-                    <Button variant="ghost" className="gap-2">
-                      <Home className="h-4 w-4" />
-                      Home
+                <div className="flex overflow-x-auto pb-1 lg:pb-0 items-center gap-2 scrollbar-hide w-full lg:w-auto">
+                  <Link href="/" className="shrink-0">
+                    <Button variant="ghost" size="sm" className="gap-2 text-slate-600">
+                      <Home className="h-4 w-4" /> Home
                     </Button>
                   </Link>
 
-                  <Link href="/directory">
-                    <Button variant="ghost" className="gap-2">
-                      <Search className="h-4 w-4" />
-                      Directory
+                  <Link href="/directory" className="shrink-0">
+                    <Button variant="ghost" size="sm" className="gap-2 text-slate-600">
+                      <Search className="h-4 w-4" /> Directory
                     </Button>
                   </Link>
 
-                  <Link href="/profile/me">
-                    <Button variant="ghost" className="gap-2">
-                      <User className="h-4 w-4" />
-                      My Profile
+                  <Link href="/profile/me" className="shrink-0">
+                    <Button variant="ghost" size="sm" className="gap-2 text-slate-600">
+                      <User className="h-4 w-4" /> Profile
                     </Button>
                   </Link>
 
-                  <Link href="/profile/complete">
-                    <Button variant="ghost" className="gap-2">
-                      <Settings className="h-4 w-4" />
-                      Edit Profile
+                  <Link href="/profile/complete" className="shrink-0">
+                    <Button variant="ghost" size="sm" className="gap-2 text-slate-600">
+                      <Settings className="h-4 w-4" /> Edit
                     </Button>
                   </Link>
 
                   {isAdmin && (
-                    <Link href="/admin">
-                      <Button variant="ghost" className="gap-2">
-                        <ShieldCheck className="h-4 w-4" />
-                        Admin
+                    <Link href="/admin" className="shrink-0">
+                      <Button variant="ghost" size="sm" className="gap-2 text-primary font-semibold bg-blue-50">
+                        <ShieldCheck className="h-4 w-4" /> Admin
                       </Button>
                     </Link>
                   )}
 
-                  <form action="/auth/signout" method="get">
-                    <Button variant="outline" className="gap-2" type="submit">
-                      <LogOut className="h-4 w-4" />
-                      Sign out
+                  <form action="/auth/signout" method="get" className="shrink-0 ml-auto lg:ml-2">
+                    <Button variant="outline" size="sm" className="gap-2 text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200" type="submit">
+                      <LogOut className="h-4 w-4" /> Sign out
                     </Button>
                   </form>
                 </div>
@@ -130,19 +125,13 @@ export default async function RootLayout({
             </div>
 
             {user && (
-              <div className="border-t bg-slate-50">
-                <div className="mx-auto flex max-w-7xl flex-col gap-1 px-4 py-2 text-sm sm:px-6 lg:px-8 md:flex-row md:items-center md:justify-between">
-                  <div className="text-slate-600">
-                    Signed in as{" "}
-                    <span className="font-semibold text-slate-900">
-                      {profile?.full_name || user.email}
-                    </span>
+              <div className="border-t bg-slate-100 hidden lg:block">
+                <div className="mx-auto flex max-w-7xl items-center justify-between px-8 py-1.5 text-xs">
+                  <div className="text-slate-500">
+                    Signed in as <span className="font-semibold text-slate-900">{profile?.full_name || user.email}</span>
                   </div>
                   <div className="text-slate-500">
-                    Status:{" "}
-                    <span className="font-medium capitalize text-slate-700">
-                      {profile?.verification_status || "incomplete"}
-                    </span>
+                    Status: <span className="font-medium capitalize text-primary">{profile?.verification_status || "incomplete"}</span>
                   </div>
                 </div>
               </div>

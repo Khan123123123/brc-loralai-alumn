@@ -23,6 +23,22 @@ export interface VerificationAnswers {
   established_year?: string;
 }
 
+export interface Education {
+  institution: string;
+  degree: string;
+  field: string;
+  start_date: string;
+  end_date: string;
+}
+
+export interface Job {
+  company: string;
+  title: string;
+  start_date: string;
+  end_date: string;
+  is_current: boolean;
+}
+
 export interface Profile {
   id: string;
   email: string;
@@ -46,6 +62,9 @@ export interface Profile {
   industry?: string | null;
   experience_years?: number | null;
   employment_status?: EmploymentStatus | null;
+
+  higher_education?: Education[] | null;
+  job_history?: Job[] | null;
 
   phone?: string | null;
   linkedin_url?: string | null;

@@ -3,7 +3,7 @@ import { AdminApprovalActions } from "@/components/admin/AdminApprovalActions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { redirect } from "next/navigation";
-import { Users, ShieldAlert, CheckCircle, XCircle, Search } from "lucide-react";
+import { Users, ShieldAlert, CheckCircle, XCircle, Search, HelpCircle } from "lucide-react";
 import { Input } from "@/components/ui/input";
 
 export default async function AdminPage({
@@ -21,7 +21,6 @@ export default async function AdminPage({
 
   const searchQuery = searchParams.search || "";
 
-  // Fetch all profiles to allow continuous management
   let query = supabase
     .from("profiles")
     .select("*")
@@ -52,59 +51,22 @@ export default async function AdminPage({
   return (
     <div className="min-h-screen bg-slate-50 py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
-        <div className="flex flex-col md:flex-row md:items-center justify-between mb-8">
-          <div>
-            <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Admin Control Center</h1>
-            <p className="text-slate-500 mt-1">Manage network access, verify identities, and control user statuses.</p>
-          </div>
-        </div>
+        <h1 className="text-3xl font-bold text-slate-900 tracking-tight mb-8">Admin Control Center</h1>
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-          <Card className="border-0 shadow-sm">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-semibold text-slate-600">Total Members</CardTitle>
-              <Users className="h-4 w-4 text-primary" />
-            </CardHeader>
-            <CardContent><div className="text-3xl font-bold text-primary">{stats.total}</div></CardContent>
-          </Card>
-          
-          <Card className="border-0 shadow-sm border-b-4 border-yellow-400">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-semibold text-slate-600">Pending Review</CardTitle>
-              <ShieldAlert className="h-4 w-4 text-yellow-600" />
-            </CardHeader>
-            <CardContent><div className="text-3xl font-bold text-yellow-600">{stats.pending}</div></CardContent>
-          </Card>
-          
-          <Card className="border-0 shadow-sm border-b-4 border-emerald-500">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-semibold text-slate-600">Approved (Full)</CardTitle>
-              <CheckCircle className="h-4 w-4 text-emerald-600" />
-            </CardHeader>
-            <CardContent><div className="text-3xl font-bold text-emerald-600">{stats.full}</div></CardContent>
-          </Card>
-          
-          <Card className="border-0 shadow-sm border-b-4 border-red-500">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-semibold text-slate-600">Rejected</CardTitle>
-              <XCircle className="h-4 w-4 text-red-600" />
-            </CardHeader>
-            <CardContent><div className="text-3xl font-bold text-red-600">{stats.rejected}</div></CardContent>
-          </Card>
+          <Card className="border-0 shadow-sm"><CardContent className="p-4 flex justify-between items-center"><span className="text-slate-600 font-semibold">Total</span><span className="text-2xl font-bold text-primary">{stats.total}</span></CardContent></Card>
+          <Card className="border-0 shadow-sm border-b-4 border-yellow-400"><CardContent className="p-4 flex justify-between items-center"><span className="text-slate-600 font-semibold">Pending</span><span className="text-2xl font-bold text-yellow-600">{stats.pending}</span></CardContent></Card>
+          <Card className="border-0 shadow-sm border-b-4 border-emerald-500"><CardContent className="p-4 flex justify-between items-center"><span className="text-slate-600 font-semibold">Approved</span><span className="text-2xl font-bold text-emerald-600">{stats.full}</span></CardContent></Card>
+          <Card className="border-0 shadow-sm border-b-4 border-red-500"><CardContent className="p-4 flex justify-between items-center"><span className="text-slate-600 font-semibold">Rejected</span><span className="text-2xl font-bold text-red-600">{stats.rejected}</span></CardContent></Card>
         </div>
 
         <Card className="border-0 shadow-md">
           <CardHeader className="border-b bg-white rounded-t-xl pb-4">
             <div className="flex flex-col md:flex-row justify-between gap-4">
-              <CardTitle className="text-xl flex items-center gap-2">User Management</CardTitle>
+              <CardTitle className="text-xl">User Verification Dashboard</CardTitle>
               <form className="relative w-full md:w-96">
                 <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
-                <Input 
-                  name="search" 
-                  defaultValue={searchQuery}
-                  placeholder="Search by name, email, or profession..." 
-                  className="pl-9 bg-slate-50 border-slate-200"
-                />
+                <Input name="search" defaultValue={searchQuery} placeholder="Search names..." className="pl-9 bg-slate-50 border-slate-200"/>
               </form>
             </div>
           </CardHeader>
@@ -113,45 +75,36 @@ export default async function AdminPage({
               <table className="w-full text-sm text-left">
                 <thead className="text-xs text-slate-500 bg-slate-50 uppercase border-b">
                   <tr>
-                    <th className="px-6 py-4 font-semibold">Alumni Member</th>
-                    <th className="px-6 py-4 font-semibold">Verification Score</th>
-                    <th className="px-6 py-4 font-semibold">Current Status</th>
-                    <th className="px-6 py-4 font-semibold text-right">Action</th>
+                    <th className="px-6 py-4 font-semibold">Alumni Details</th>
+                    <th className="px-6 py-4 font-semibold">Security Answers (Admin Only)</th>
+                    <th className="px-6 py-4 font-semibold text-right">Action / Status</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-slate-100 bg-white">
                   {!allProfiles || allProfiles.length === 0 ? (
-                    <tr><td colSpan={4} className="text-center py-8 text-slate-500">No members found</td></tr>
+                    <tr><td colSpan={3} className="text-center py-8 text-slate-500">No members found</td></tr>
                   ) : (
                     allProfiles.map((profile) => (
-                      <tr key={profile.id} className="hover:bg-slate-50 transition-colors">
-                        <td className="px-6 py-4">
-                          <div className="flex flex-col">
-                            <span className="font-semibold text-slate-900">{profile.full_name || "Unnamed User"}</span>
-                            <span className="text-xs text-slate-500">{profile.email}</span>
-                            <span className="text-xs text-slate-400 mt-1">Class of {profile.graduation_year || "N/A"} • {profile.profession || "No Profession"}</span>
+                      <tr key={profile.id} className="hover:bg-slate-50/50">
+                        <td className="px-6 py-4 align-top w-1/4">
+                          <div className="font-semibold text-slate-900">{profile.full_name || "Unnamed"}</div>
+                          <div className="text-xs text-slate-500 mt-1">{profile.email}</div>
+                          <div className="text-xs text-primary font-medium mt-2">Class of {profile.graduation_year || "N/A"}</div>
+                          <div className="text-xs text-slate-600 mt-1">{profile.profession || "No Profession"}</div>
+                        </td>
+                        <td className="px-6 py-4 align-top w-1/2">
+                          <div className="bg-amber-50 rounded-lg p-3 text-xs border border-amber-100 text-slate-800 space-y-1.5">
+                            <div className="flex gap-2"><strong className="w-20 shrink-0 text-amber-900">House:</strong> <span>{profile.verification_answers?.houses || "-"}</span></div>
+                            <div className="flex gap-2"><strong className="w-20 shrink-0 text-amber-900">Teachers:</strong> <span>{profile.verification_answers?.teachers || "-"}</span></div>
+                            <div className="flex gap-2"><strong className="w-20 shrink-0 text-amber-900">Staff/Guards:</strong> <span>{profile.verification_answers?.staff || "-"}</span></div>
+                            <div className="flex gap-2"><strong className="w-20 shrink-0 text-amber-900">Principal:</strong> <span>{profile.verification_answers?.principal || "-"}</span></div>
+                            <div className="flex gap-2"><strong className="w-20 shrink-0 text-amber-900">Est. Year:</strong> <span>{profile.verification_answers?.established_year || "-"}</span></div>
                           </div>
                         </td>
-                        <td className="px-6 py-4">
-                          <div className="flex items-center gap-2">
-                            <div className="w-16 h-2 bg-slate-200 rounded-full overflow-hidden">
-                              <div 
-                                className={`h-full ${profile.verification_score >= 70 ? 'bg-emerald-500' : 'bg-yellow-400'}`} 
-                                style={{ width: `${Math.min(profile.verification_score || 0, 100)}%` }}
-                              />
-                            </div>
-                            <span className="font-medium text-slate-700">{profile.verification_score || 0}/100</span>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          {getStatusBadge(profile.verification_status)}
-                        </td>
-                        <td className="px-6 py-4 text-right">
-                          <div className="flex justify-end">
-                            <AdminApprovalActions
-                              profileId={profile.id}
-                              currentStatus={profile.verification_status || 'limited'}
-                            />
+                        <td className="px-6 py-4 align-top text-right w-1/4">
+                          <div className="flex flex-col items-end gap-3">
+                            {getStatusBadge(profile.verification_status)}
+                            <AdminApprovalActions profileId={profile.id} currentStatus={profile.verification_status || 'limited'} />
                           </div>
                         </td>
                       </tr>
