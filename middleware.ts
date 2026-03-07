@@ -2,37 +2,65 @@ import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
+const PUBLIC_ROUTES = [
+  "/",
+  "/auth/login",
+  "/auth/signup",
+  "/auth/forgot-password",
+  "/auth/callback",
+  "/auth/signout",
+];
+
 export async function middleware(request: NextRequest) {
   const supabase = createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
   const path = request.nextUrl.pathname;
-  
-  // Public routes
-  const publicRoutes = ['/', '/auth/login', '/auth/signup', '/auth/forgot-password', '/auth/callback', '/auth/signout'];
-  const isPublicRoute = publicRoutes.includes(path) || path.startsWith('/auth/');
+  const isPublicRoute =
+    PUBLIC_ROUTES.includes(path) || path.startsWith("/auth/");
 
-  // Not logged in
   if (!user && !isPublicRoute) {
-    return NextResponse.redirect(new URL('/auth/login', request.url));
+    return NextResponse.redirect(new URL("/auth/login", request.url));
   }
 
-  // Check profile completion for protected routes
-  if (user && !isPublicRoute) {
-    // Skip for profile completion page itself
-    if (path === '/profile/complete') {
-      return NextResponse.next();
-    }
+  if (!user) {
+    return NextResponse.next();
+  }
 
+  const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL?.toLowerCase() || "";
+  const isAdmin = user.email?.toLowerCase() === adminEmail;
+
+  // Let authenticated users always access profile completion and their own profile
+  const alwaysAllowedForLoggedInUsers = [
+    "/profile/complete",
+    "/profile/me",
+  ];
+
+  if (alwaysAllowedForLoggedInUsers.includes(path)) {
+    return NextResponse.next();
+  }
+
+  // Restrict admin route
+  if (path.startsWith("/admin") && !isAdmin) {
+    return NextResponse.redirect(new URL("/directory", request.url));
+  }
+
+  // Check profile state for other protected routes
+  if (!isPublicRoute) {
     const { data: profile } = await supabase
-      .from('profiles')
-      .select('verification_status, full_name')
-      .eq('id', user.id)
+      .from("profiles")
+      .select("verification_status, full_name")
+      .eq("id", user.id)
       .single();
-    
-    // If no profile or not full verified, redirect to completion
-    if (!profile?.full_name || profile.verification_status !== 'full') {
-      return NextResponse.redirect(new URL('/profile/complete', request.url));
+
+    const isProfileComplete =
+      Boolean(profile?.full_name) && profile?.verification_status === "full";
+
+    // Users without full profile can only work on completing it or viewing their own profile
+    if (!isProfileComplete) {
+      return NextResponse.redirect(new URL("/profile/complete", request.url));
     }
   }
 
@@ -40,5 +68,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/((?!api|_next/static|_next/image|favicon.ico).*)'],
+  matcher: ["/((?!api|_next/static|_next/image|favicon.ico).*)"],
 };
