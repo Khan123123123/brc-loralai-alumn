@@ -4,7 +4,7 @@
 
 @layer base {
   :root {
-    /* Base Backgrounds */
+    /* Light Mode - BRC Institutional Theme */
     --background: 210 20% 98%; 
     --foreground: 222.2 84% 4.9%;
     --card: 0 0% 100%;
@@ -20,7 +20,6 @@
     --secondary: 46 65% 52%;
     --secondary-foreground: 215 100% 15%;
     
-    /* UI Elements */
     --muted: 210 40% 96.1%;
     --muted-foreground: 215.4 16.3% 46.9%;
     --accent: 215 100% 15%;
@@ -30,28 +29,32 @@
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
     --ring: 46 65% 52%;
-    --radius: 0.75rem; 
+    --radius: 1rem; 
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
+    /* Dark Mode - Sleek Navy/Slate */
+    --background: 222.2 47% 7%;
     --foreground: 210 40% 98%;
-    --card: 217.2 32.6% 17.5%;
+    --card: 215 35% 10%;
     --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
+    --popover: 215 35% 10%;
     --popover-foreground: 210 40% 98%;
+    
     --primary: 210 40% 98%;
     --primary-foreground: 215 100% 15%;
+    
     --secondary: 46 65% 52%;
     --secondary-foreground: 215 100% 15%;
-    --muted: 217.2 32.6% 17.5%;
+    
+    --muted: 215 35% 15%;
     --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
+    --accent: 215 35% 15%;
     --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
+    --destructive: 0 62.8% 40%;
     --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
+    --border: 215 35% 18%;
+    --input: 215 35% 18%;
     --ring: 46 65% 52%;
   }
 }
@@ -61,6 +64,15 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground antialiased;
+    @apply bg-background text-foreground antialiased transition-colors duration-300;
   }
+}
+
+/* Hide scrollbar for clean horizontal scrolls */
+.scrollbar-hide::-webkit-scrollbar {
+    display: none;
+}
+.scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
 }
