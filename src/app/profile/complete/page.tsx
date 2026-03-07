@@ -211,13 +211,11 @@ export default function CompleteProfilePage() {
     setBanner(null);
 
     try {
-      // 1. REAL-TIME DB CHECK: Check current DB status to absolutely guarantee we do not overwrite an admin approval.
       const { data: liveProfile } = await supabase.from("profiles").select("admin_status, verification_status, access_level").eq("id", user.id).single();
       const currentlyApprovedInDb = liveProfile?.admin_status === "approved" || liveProfile?.verification_status === "full" || liveProfile?.access_level === "full";
 
       const computedSlug = slugifyProfileName(formData.full_name || user.email || "member", formData.graduation_year ? parseInt(formData.graduation_year) : null);
       
-      // 2. USE LIVE STATUS: If approved in DB, stay approved forever.
       const nextAdminStatus = currentlyApprovedInDb ? "approved" : "pending";
       const nextAccessLevel = currentlyApprovedInDb ? "full" : computedAccessLevel;
       const nextVerificationStatus = currentlyApprovedInDb ? "full" : getLegacyVerificationStatus(nextAccessLevel, nextAdminStatus);
@@ -301,8 +299,8 @@ export default function CompleteProfilePage() {
             <div className="rounded-2xl bg-white/10 px-4 py-3 text-sm">
               <div className="text-slate-300">Account Status</div>
               <div className="mt-1 font-semibold flex items-center gap-2 capitalize">
-                {isAlreadyApproved && <Lock className="w-4 h-4 text-emerald-400" />}
-                {isAlreadyApproved ? "Approved (Full Access)" : "Pending / Limited"}
+                {isAlreadyApproved ? <ShieldCheck className="w-4 h-4 text-emerald-400" /> : <Lock className="w-4 h-4 text-amber-400" />}
+                {isAlreadyApproved ? "Verified (Full Access)" : "Unverified"}
               </div>
             </div>
           </div>
@@ -327,7 +325,7 @@ export default function CompleteProfilePage() {
               <div className="md:col-span-2">
                 {isAlreadyApproved && (
                   <div className="bg-emerald-50 text-emerald-700 p-3 rounded-lg text-sm border border-emerald-200 flex items-center gap-2">
-                    <Lock className="w-4 h-4" /> Your account is approved. Core identity fields (Name and Years) are now locked.
+                    <Lock className="w-4 h-4" /> Your account is verified. Core identity fields (Name and Years) are now locked to ensure directory integrity.
                   </div>
                 )}
               </div>

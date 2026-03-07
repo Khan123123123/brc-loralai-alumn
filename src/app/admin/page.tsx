@@ -3,7 +3,7 @@ import { AdminApprovalActions } from "@/components/admin/AdminApprovalActions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { redirect } from "next/navigation";
-import { Users, ShieldAlert, CheckCircle, XCircle, Search, ExternalLink } from "lucide-react";
+import { Search, ExternalLink } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import Link from "next/link";
 
@@ -35,17 +35,15 @@ export default async function AdminPage({
 
   const stats = {
     total: allProfiles?.length || 0,
-    pending: allProfiles?.filter((p) => p.verification_status === "pending").length || 0,
-    full: allProfiles?.filter((p) => p.verification_status === "full").length || 0,
-    rejected: allProfiles?.filter((p) => p.verification_status === "rejected").length || 0,
+    unverified: allProfiles?.filter((p) => p.verification_status !== "full").length || 0,
+    verified: allProfiles?.filter((p) => p.verification_status === "full").length || 0,
   };
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'full': return <Badge className="bg-emerald-100 text-emerald-800 border-emerald-200">Full Access</Badge>;
-      case 'pending': return <Badge className="bg-yellow-100 text-yellow-800 border-yellow-200">Pending</Badge>;
+      case 'full': return <Badge className="bg-emerald-100 text-emerald-800 border-emerald-200">Verified</Badge>;
       case 'rejected': return <Badge className="bg-red-100 text-red-800 border-red-200">Rejected</Badge>;
-      default: return <Badge variant="outline" className="text-slate-600">Limited</Badge>;
+      default: return <Badge className="bg-amber-100 text-amber-800 border-amber-200">Unverified</Badge>;
     }
   };
 
@@ -54,11 +52,10 @@ export default async function AdminPage({
       <div className="max-w-7xl mx-auto">
         <h1 className="text-3xl font-bold text-slate-900 tracking-tight mb-8">Admin Control Center</h1>
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
           <Card className="border-0 shadow-sm"><CardContent className="p-4 flex justify-between items-center"><span className="text-slate-600 font-semibold">Total Users</span><span className="text-2xl font-bold text-primary">{stats.total}</span></CardContent></Card>
-          <Card className="border-0 shadow-sm border-b-4 border-yellow-400"><CardContent className="p-4 flex justify-between items-center"><span className="text-slate-600 font-semibold">Pending</span><span className="text-2xl font-bold text-yellow-600">{stats.pending}</span></CardContent></Card>
-          <Card className="border-0 shadow-sm border-b-4 border-emerald-500"><CardContent className="p-4 flex justify-between items-center"><span className="text-slate-600 font-semibold">Approved</span><span className="text-2xl font-bold text-emerald-600">{stats.full}</span></CardContent></Card>
-          <Card className="border-0 shadow-sm border-b-4 border-red-500"><CardContent className="p-4 flex justify-between items-center"><span className="text-slate-600 font-semibold">Rejected</span><span className="text-2xl font-bold text-red-600">{stats.rejected}</span></CardContent></Card>
+          <Card className="border-0 shadow-sm border-b-4 border-amber-400"><CardContent className="p-4 flex justify-between items-center"><span className="text-slate-600 font-semibold">Unverified</span><span className="text-2xl font-bold text-amber-600">{stats.unverified}</span></CardContent></Card>
+          <Card className="border-0 shadow-sm border-b-4 border-emerald-500"><CardContent className="p-4 flex justify-between items-center"><span className="text-slate-600 font-semibold">Verified</span><span className="text-2xl font-bold text-emerald-600">{stats.verified}</span></CardContent></Card>
         </div>
 
         <Card className="border-0 shadow-md">
@@ -113,7 +110,7 @@ export default async function AdminPage({
                         <td className="px-6 py-4 align-top text-right w-1/4">
                           <div className="flex flex-col items-end gap-3">
                             {getStatusBadge(profile.verification_status)}
-                            <AdminApprovalActions profileId={profile.id} currentStatus={profile.verification_status || 'limited'} />
+                            <AdminApprovalActions profileId={profile.id} currentStatus={profile.verification_status || 'pending'} />
                           </div>
                         </td>
                       </tr>

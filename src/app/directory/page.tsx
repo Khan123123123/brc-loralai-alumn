@@ -2,7 +2,6 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { canAppearInDirectory, hasFullAccess } from "@/lib/utils/access";
 import { getAvatarFallback } from "@/lib/utils/profile";
@@ -17,6 +16,7 @@ import {
   UserCircle2,
   Users,
   Lock,
+  AlertTriangle,
 } from "lucide-react";
 
 export default async function DirectoryPage({
@@ -37,7 +37,8 @@ export default async function DirectoryPage({
     .eq("id", user.id)
     .single();
 
-  const viewerHasFullAccess = hasFullAccess(viewerProfile);
+  const isVerified = hasFullAccess(viewerProfile);
+  const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL || "qaisrani12116@gmail.com";
 
   const search = (searchParams.search as string) || "";
   const yearFilter = (searchParams.year as string) || "all";
@@ -85,6 +86,23 @@ export default async function DirectoryPage({
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+      
+      {/* Directory Integrity Banner */}
+      <div className="mb-6 rounded-2xl bg-red-50 border border-red-200 p-4 flex flex-col sm:flex-row items-start sm:items-center gap-4 text-red-800 shadow-sm animate-in fade-in slide-in-from-top-4">
+        <div className="flex items-center gap-3">
+          <div className="bg-red-100 p-2 rounded-full"><AlertTriangle className="h-5 w-5 text-red-600" /></div>
+          <div className="text-sm">
+            <strong className="font-semibold text-red-900">Directory Integrity:</strong> If you find anyone in this directory who is not a true Koharian, please let us know immediately so we can remove them.
+          </div>
+        </div>
+        <a 
+          href={`mailto:${adminEmail}?subject=Non-Koharian%20Report&body=I%20would%20like%20to%20report%20a%20profile%20that%20does%20not%20belong%20to%20a%20Koharian.%0A%0AProfile%20Name:%20`} 
+          className="sm:ml-auto w-full sm:w-auto text-center shrink-0 bg-red-600 hover:bg-red-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl transition-all shadow-sm"
+        >
+          Report Profile
+        </a>
+      </div>
+
       <div className="mb-8 rounded-3xl bg-primary p-8 text-primary-foreground shadow-xl border-b-4 border-secondary relative overflow-hidden">
         <div className="absolute -top-24 -right-24 w-96 h-96 bg-secondary/10 rounded-full blur-3xl pointer-events-none"></div>
         <div className="relative flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
@@ -112,19 +130,19 @@ export default async function DirectoryPage({
         </div>
       </div>
 
-      {!viewerHasFullAccess && (
-        <Card className="mb-8 rounded-3xl border-secondary/40 bg-yellow-50/50 shadow-sm">
+      {!isVerified && (
+        <Card className="mb-8 rounded-3xl border-amber-200 bg-amber-50 shadow-sm">
           <CardContent className="flex flex-col gap-4 p-6 md:flex-row md:items-center md:justify-between">
             <div>
-              <div className="mb-2 flex items-center gap-2 font-bold text-yellow-800">
-                <Lock className="h-4 w-4" /> Limited Access Mode
+              <div className="mb-2 flex items-center gap-2 font-bold text-amber-900">
+                <Lock className="h-4 w-4" /> Unverified Access Mode
               </div>
-              <p className="text-sm text-yellow-700/80">
-                You are viewing restricted profiles. Complete your BRC verification to unlock full details and direct contact links.
+              <p className="text-sm text-amber-800/90">
+                Your account is currently <strong>Unverified</strong>. You can only view basic details (Names, Batches, and Districts). Complete your BRC verification to unlock professional data and contact links.
               </p>
             </div>
             <Link href="/profile/complete" className="inline-flex items-center justify-center rounded-xl bg-primary px-5 py-2 text-sm font-medium text-white hover:bg-slate-800 shadow-sm transition-all whitespace-nowrap">
-              Complete Verification
+              Get Verified
             </Link>
           </CardContent>
         </Card>
@@ -138,7 +156,7 @@ export default async function DirectoryPage({
           <form className="grid gap-4 md:grid-cols-3 lg:grid-cols-6">
             <div className="md:col-span-3 lg:col-span-6 relative">
               <Search className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
-              <Input name="search" defaultValue={search} placeholder="Global keyword search (names, companies, cities)..." className="pl-9 bg-slate-50 border-slate-200 focus:border-secondary focus:ring-secondary/20" />
+              <Input name="search" defaultValue={search} placeholder="Global keyword search..." className="pl-9 bg-slate-50 border-slate-200 focus:border-secondary focus:ring-secondary/20" />
             </div>
             <select name="location" defaultValue={locationFilter} className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm shadow-sm"><option value="all">All Locations</option>{locations.map((loc) => (<option key={loc} value={loc}>{loc}</option>))}</select>
             <select name="organization" defaultValue={orgFilter} className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm shadow-sm"><option value="all">All Organizations</option>{orgs.map((org) => (<option key={org} value={org}>{org}</option>))}</select>
@@ -192,21 +210,29 @@ export default async function DirectoryPage({
                           </div>
                         </div>
                       </div>
+                      
                       <div className="space-y-3 text-sm text-slate-600">
-                        {profile.current_position && (
-                          <div className="flex items-start gap-3"><Briefcase className="mt-0.5 h-4 w-4 text-slate-400 shrink-0" /><span className="font-medium text-slate-800">{profile.current_position}</span></div>
+                        {/* District is visible to everyone */}
+                        {profile.home_district && (
+                          <div className="flex items-start gap-3"><UserCircle2 className="mt-0.5 h-4 w-4 text-slate-400 shrink-0" /><span className="font-medium text-slate-800">District: {profile.home_district}</span></div>
                         )}
-                        {viewerHasFullAccess ? (
-                          profile.current_organization && <div className="flex items-start gap-3"><Building className="mt-0.5 h-4 w-4 text-slate-400 shrink-0" /><span className="truncate">{profile.current_organization}</span></div>
+
+                        {/* Professional Data - Hidden if Unverified */}
+                        {isVerified ? (
+                          <>
+                            {profile.current_position && <div className="flex items-start gap-3"><Briefcase className="mt-0.5 h-4 w-4 text-slate-400 shrink-0" /><span className="font-medium text-slate-800">{profile.current_position}</span></div>}
+                            {profile.current_organization && <div className="flex items-start gap-3"><Building className="mt-0.5 h-4 w-4 text-slate-400 shrink-0" /><span className="truncate">{profile.current_organization}</span></div>}
+                            {(profile.current_city || profile.current_country) && <div className="flex items-start gap-3"><MapPin className="mt-0.5 h-4 w-4 text-slate-400 shrink-0" /><span>{profile.current_city || "Unknown city"}{profile.current_country ? `, ${profile.current_country}` : ""}</span></div>}
+                          </>
                         ) : (
-                           <div className="flex items-start gap-3 text-slate-400 italic"><Lock className="mt-0.5 h-4 w-4 shrink-0" /><span className="text-xs">Org hidden (Requires Verification)</span></div>
-                        )}
-                        {(profile.current_city || profile.current_country) && (
-                          <div className="flex items-start gap-3"><MapPin className="mt-0.5 h-4 w-4 text-slate-400 shrink-0" /><span>{profile.current_city || "Unknown city"}{profile.current_country ? `, ${profile.current_country}` : ""}</span></div>
+                          <div className="flex items-start gap-3 text-amber-600/70 italic mt-4 p-2 bg-amber-50 rounded-lg border border-amber-100">
+                             <Lock className="mt-0.5 h-4 w-4 shrink-0" />
+                             <span className="text-xs font-medium">Professional & Location details hidden (Requires Verification)</span>
+                          </div>
                         )}
                       </div>
                       <div className="mt-6 pt-4 border-t flex items-center justify-between text-sm font-semibold text-slate-500 group-hover:text-primary transition-colors">
-                        <span className="flex items-center gap-2">{viewerHasFullAccess ? <><ShieldCheck className="h-4 w-4 text-emerald-500" /> Full Access</> : <><Lock className="h-4 w-4" /> Basic Preview</>}</span>
+                        <span className="flex items-center gap-2">{isVerified ? <><ShieldCheck className="h-4 w-4 text-emerald-500" /> Verified Access</> : <><Lock className="h-4 w-4 text-amber-500" /> Unverified</>}</span>
                         <span className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1 text-secondary">View Profile &rarr;</span>
                       </div>
                     </CardContent>

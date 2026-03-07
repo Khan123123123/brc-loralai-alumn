@@ -14,9 +14,10 @@ export function AdminApprovalActions({
   currentStatus: string;
 }) {
   const [loading, setLoading] = useState(false);
-  const [status, setStatus] = useState(currentStatus);
+  // Default to pending visually if they aren't fully verified yet
+  const [status, setStatus] = useState(currentStatus === 'full' ? 'full' : 'pending');
 
-  const handleStatusChange = async (newStatus: "full" | "pending" | "rejected" | "limited") => {
+  const handleStatusChange = async (newStatus: "full" | "pending" | "rejected") => {
     setLoading(true);
     setStatus(newStatus);
     try {
@@ -24,7 +25,7 @@ export function AdminApprovalActions({
       window.location.reload();
     } catch (error) {
       alert("Error updating status: " + (error as Error).message);
-      setStatus(currentStatus);
+      setStatus(currentStatus === 'full' ? 'full' : 'pending');
     } finally {
       setLoading(false);
     }
@@ -52,9 +53,8 @@ export function AdminApprovalActions({
             <SelectValue placeholder="Set Status" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="pending" className="text-yellow-700 font-medium">Pending Review</SelectItem>
-            <SelectItem value="full" className="text-emerald-700 font-medium">Approved (Full)</SelectItem>
-            <SelectItem value="limited" className="text-slate-700 font-medium">Limited Access</SelectItem>
+            <SelectItem value="pending" className="text-amber-700 font-medium">Unverified</SelectItem>
+            <SelectItem value="full" className="text-emerald-700 font-medium">Verified</SelectItem>
             <SelectItem value="rejected" className="text-red-700 font-medium">Rejected</SelectItem>
           </SelectContent>
         </Select>
