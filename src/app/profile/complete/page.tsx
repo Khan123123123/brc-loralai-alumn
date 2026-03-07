@@ -29,9 +29,45 @@ import {
   UserCircle2,
 } from "lucide-react";
 
+// Updated comprehensive list of all districts in Balochistan
 const districts = [
-  "Loralai", "Qila Saifullah", "Zhob", "Barkhan", "Musakhel", 
-  "Duki", "Quetta", "Pishin", "Other",
+  "Awaran",
+  "Barkhan",
+  "Chagai",
+  "Chaman",
+  "Dera Bugti",
+  "Duki",
+  "Gwadar",
+  "Harnai",
+  "Hub",
+  "Jafarabad",
+  "Jhal Magsi",
+  "Kachhi (Bolan)",
+  "Kalat",
+  "Kech (Turbat)",
+  "Kharan",
+  "Khuzdar",
+  "Killa Abdullah",
+  "Killa Saifullah",
+  "Kohlu",
+  "Lasbela",
+  "Loralai",
+  "Mastung",
+  "Musakhel",
+  "Naseerabad",
+  "Nushki",
+  "Panjgur",
+  "Pishin",
+  "Quetta",
+  "Sherani",
+  "Sibi",
+  "Sohbatpur",
+  "Surab",
+  "Usta Muhammad",
+  "Washuk",
+  "Zhob",
+  "Ziarat",
+  "Other",
 ];
 
 const studentTypes = ["Hostelite", "Day Scholar"];
@@ -507,7 +543,7 @@ export default function CompleteProfilePage() {
             {step < 4 ? (
               <Button type="button" onClick={() => setStep((v) => v + 1)}>Next <ArrowRight className="h-4 w-4 ml-2" /></Button>
             ) : (
-              <Button type="button" onClick={handleSubmit} disabled={saving} className="bg-primary hover:bg-primary/90"><Save className="h-4 w-4 mr-2" /> {saving ? "Saving..." : "Save Profile"}</Button>
+              <Button type="button" onClick={handleSubmit} disabled={saving} className="bg-primary hover:bg-primary/90 text-white"><Save className="h-4 w-4 mr-2" /> {saving ? "Saving..." : "Save Profile"}</Button>
             )}
           </div>
         </CardContent>
