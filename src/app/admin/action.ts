@@ -4,32 +4,40 @@ import { createClient } from "@/lib/supabase/server";
 import { createClient as createServiceClient } from "@supabase/supabase-js";
 import { revalidatePath } from "next/cache";
 
-// Service role client - bypasses ALL RLS
 const serviceClient = createServiceClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-export async function approveProfile(profileId: string, currentStatus: string) {
+export async function updateProfileStatus(profileId: string, newStatus: "full" | "pending" | "rejected" | "limited") {
   const supabase = createClient();
   
-  // Verify admin
   const { data: { user } } = await supabase.auth.getUser();
-  if (user?.email !== "qaisrani12116@gmail.com") {
-    throw new Error("Unauthorized - Admin only");
+  const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL?.toLowerCase();
+  
+  if (user?.email?.toLowerCase() !== adminEmail && user?.email !== "qaisrani12116@gmail.com") {
+    throw new Error("Unauthorized - Admin privileges required");
   }
 
-  // Approve to FULL only (no basic)
+  // Map the verification status to the corresponding admin_status
+  const adminStatusMap = {
+    full: "approved",
+    pending: "pending",
+    rejected: "rejected",
+    limited: "pending"
+  };
+
   const { error } = await serviceClient
     .from("profiles")
     .update({ 
-      verification_status: "full", 
-      approved_at: new Date().toISOString() 
+      verification_status: newStatus,
+      admin_status: adminStatusMap[newStatus],
+      approved_at: newStatus === "full" ? new Date().toISOString() : null 
     })
     .eq("id", profileId);
 
   if (error) {
-    console.error("Approval error:", error);
+    console.error("Status update error:", error);
     throw new Error(error.message);
   }
 
@@ -37,27 +45,3 @@ export async function approveProfile(profileId: string, currentStatus: string) {
   revalidatePath("/directory");
   return { success: true };
 }
-
-export async function rejectProfile(profileId: string, currentStatus: string) {
-  const supabase = createClient();
-  
-  const { data: { user } } = await supabase.auth.getUser();
-  if (user?.email !== "qaisrani12116@gmail.com") {
-    throw new Error("Unauthorized");
-  }
-
-  const { error } = await serviceClient
-    .from("profiles")
-    .update({ 
-      verification_status: "rejected",
-      approved_at: null
-    })
-    .eq("id", profileId);
-
-  if (error) throw new Error(error.message);
-
-  revalidatePath("/admin");
-  return { success: true };
-}
-
-// No fullVerifyProfile needed - only approve to full
