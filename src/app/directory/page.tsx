@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { canAppearInDirectory, hasFullAccess } from "@/lib/utils/access";
+import { hasFullAccess } from "@/lib/utils/access";
 import { getAvatarFallback } from "@/lib/utils/profile";
 import {
   Briefcase,
@@ -52,10 +52,11 @@ export default async function DirectoryPage({
   if (orgFilter !== "all") query = query.ilike("current_organization", `%${orgFilter}%`);
 
   const { data: rawProfiles } = await query;
-  const profiles = (rawProfiles || []).filter((profile) => canAppearInDirectory(profile));
+  // Removed canAppearInDirectory filter to fix the blank screen bug for unverified users
+  const profiles = rawProfiles || [];
 
   const { data: filterProfiles } = await supabase.from("profiles").select("graduation_year, home_district, industry, current_city, current_country, current_position, current_organization, show_in_directory").eq("show_in_directory", true);
-  const visibleFilterProfiles = (filterProfiles || []).filter((item) => canAppearInDirectory(item));
+  const visibleFilterProfiles = filterProfiles || [];
 
   const extractUnique = (field: keyof typeof visibleFilterProfiles[0]) => Array.from(new Set(visibleFilterProfiles.map((p) => p[field]).filter(Boolean))).sort();
 
@@ -69,7 +70,6 @@ export default async function DirectoryPage({
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
       
-      {/* VIBRANT UPENN COLOR DIRECTORY HEADER */}
       <div className="mb-8 rounded-[2.5rem] bg-gradient-to-br from-primary via-primary to-secondary p-10 text-white shadow-2xl relative overflow-hidden border border-white/10">
         <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-white/10 rounded-full blur-[100px] pointer-events-none translate-x-1/3 -translate-y-1/3"></div>
         <div className="absolute bottom-0 left-0 w-[300px] h-[300px] bg-black/20 rounded-full blur-[80px] pointer-events-none -translate-x-1/4 translate-y-1/4"></div>
@@ -105,7 +105,7 @@ export default async function DirectoryPage({
               <div className="mb-2 flex items-center gap-2 font-extrabold text-amber-900 dark:text-amber-500 text-lg">
                 <Lock className="h-5 w-5" /> Unverified View
               </div>
-              <p className="text-sm text-amber-800/80 dark:text-amber-400/80 max-w-3xl leading-relaxed">
+              <p className="text-sm text-amber-800/90 dark:text-amber-400/90 max-w-3xl leading-relaxed">
                 Your account is currently Unverified. You are viewing restricted profile data. Please wait for an administrator to verify your account to unlock full professional details and contact information. Verification may take upto 72 hours. If you have filled all your information, you do not need to take any action now.
               </p>
             </div>
@@ -116,7 +116,6 @@ export default async function DirectoryPage({
         </Card>
       )}
 
-      {/* SEARCH FILTERS */}
       <Card className="mb-8 rounded-3xl border border-slate-200/60 dark:border-slate-800 shadow-lg bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl overflow-hidden">
         <CardHeader className="bg-slate-50/50 dark:bg-slate-900/50 border-b border-slate-100 dark:border-slate-800 pb-4">
           <CardTitle className="text-lg text-slate-800 dark:text-slate-200 flex items-center gap-2">
@@ -179,7 +178,9 @@ export default async function DirectoryPage({
                         </div>
                         <div className="min-w-0 flex-1">
                           <h3 className="truncate text-xl font-extrabold text-slate-900 dark:text-white group-hover:text-primary transition-colors">{profile.full_name}</h3>
-                          <div className="mt-1.5 flex flex-wrap gap-2 text-xs font-bold uppercase tracking-wider">
+                          <div className="mt-1.5 flex flex-wrap gap-2 text-[11px] font-bold uppercase tracking-wider">
+                            {/* Added Entry Year for Unverified users to see */}
+                            {profile.entry_year && <span className="inline-flex items-center bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 px-2 py-1 rounded-md">Entry: {profile.entry_year}</span>}
                             {profile.graduation_year && <span className="inline-flex items-center bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 px-2 py-1 rounded-md"><GraduationCap className="h-3.5 w-3.5 text-secondary mr-1" /> Batch '{profile.graduation_year}</span>}
                           </div>
                         </div>
@@ -217,7 +218,6 @@ export default async function DirectoryPage({
         </div>
       )}
 
-      {/* Directory Integrity Banner */}
       <div className="mb-12 rounded-2xl bg-red-50/80 dark:bg-red-950/20 border border-red-200 dark:border-red-900/50 p-6 flex flex-col sm:flex-row items-center gap-5 text-red-800 dark:text-red-300 shadow-inner">
         <div className="flex items-center justify-center bg-red-100 dark:bg-red-900/50 p-3 rounded-full shrink-0">
           <AlertTriangle className="h-6 w-6 text-secondary dark:text-red-400" />

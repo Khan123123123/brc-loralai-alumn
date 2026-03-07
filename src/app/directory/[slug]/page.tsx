@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { canAppearInDirectory, hasFullAccess } from "@/lib/utils/access";
+import { hasFullAccess } from "@/lib/utils/access";
 import { getAvatarFallback, getVisibleContactFields } from "@/lib/utils/profile";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -42,7 +42,7 @@ export default async function DirectoryMemberPage({ params }: { params: { slug: 
 
   const { data: member, error } = await query.single();
   if (error || !member) { notFound(); }
-  if (!canAppearInDirectory(member)) { notFound(); }
+  if (member.show_in_directory === false) { notFound(); }
 
   const visibleContacts = getVisibleContactFields(member, viewerProfile);
   const answers = member.verification_answers as VerificationAnswers | undefined;
@@ -63,6 +63,7 @@ export default async function DirectoryMemberPage({ params }: { params: { slug: 
             <div>
               <h1 className="text-3xl font-bold tracking-tight">{member.full_name}</h1>
               <div className="mt-3 flex flex-wrap gap-2">
+                {member.entry_year && <Badge variant="outline" className="border-white/20 text-white">Entry {member.entry_year}</Badge>}
                 {member.graduation_year && <Badge variant="outline" className="border-white/20 text-white">Class of {member.graduation_year}</Badge>}
                 {isVerified ? (
                   <Badge className="bg-emerald-500 text-white hover:bg-emerald-600 border-0"><ShieldCheck className="w-3 h-3 mr-1"/> Verified View</Badge>

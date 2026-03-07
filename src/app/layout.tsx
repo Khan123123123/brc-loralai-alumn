@@ -13,6 +13,7 @@ import {
   Settings,
   ShieldCheck,
   LogOut,
+  Lock,
 } from "lucide-react";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
@@ -31,9 +32,14 @@ export default async function RootLayout({
   const { data: { user } } = await supabase.auth.getUser();
 
   let profile = null;
+  let isVerified = false;
+
   if (user) {
-    const { data } = await supabase.from("profiles").select("full_name, verification_status").eq("id", user.id).single();
+    const { data } = await supabase.from("profiles").select("full_name, verification_status, admin_status, access_level").eq("id", user.id).single();
     profile = data;
+    if (profile) {
+      isVerified = profile.admin_status === "approved" || profile.verification_status === "full" || profile.access_level === "full";
+    }
   }
 
   const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL?.toLowerCase() || "";
@@ -52,8 +58,24 @@ export default async function RootLayout({
                   <Users className="h-5 w-5" />
                 </div>
                 <div>
-                  <div className="text-lg font-bold leading-none text-primary dark:text-white">BRC Loralai</div>
-                  <div className="mt-1 text-[10px] font-bold text-secondary uppercase tracking-widest">Alumni Network</div>
+                  {user && profile ? (
+                    <>
+                      <div className="text-[15px] font-extrabold leading-none text-primary dark:text-white flex items-center gap-1.5">
+                        <span className="truncate max-w-[130px] sm:max-w-[200px]">{profile.full_name || "My Account"}</span>
+                        {isVerified ? (
+                          <ShieldCheck className="w-4 h-4 text-emerald-500" title="Verified" />
+                        ) : (
+                          <Lock className="w-3.5 h-3.5 text-amber-500" title="Unverified" />
+                        )}
+                      </div>
+                      <div className="mt-1 text-[10px] font-bold text-secondary uppercase tracking-widest">BRC Loralai Alumni</div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="text-lg font-bold leading-none text-primary dark:text-white">BRC Loralai</div>
+                      <div className="mt-1 text-[10px] font-bold text-secondary uppercase tracking-widest">Alumni Network</div>
+                    </>
+                  )}
                 </div>
               </Link>
               
@@ -99,13 +121,19 @@ export default async function RootLayout({
         </main>
 
         <footer className="border-t border-border bg-white dark:bg-slate-950">
-          <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-8 text-sm text-slate-500 dark:text-slate-400 sm:px-6 lg:px-8 md:flex-row md:items-center md:justify-between">
-            <div className="flex items-center">
-              <div className="rounded-xl bg-gradient-to-r from-primary to-secondary px-5 py-2.5 text-white shadow-md border border-white/20">
-                <span className="font-bold tracking-wide">Developed & Managed by Dr Arif Qaisrani (1998-2005 Batch)</span>
+          <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-8 sm:px-6 lg:px-8 md:flex-row md:items-center md:justify-between">
+            <div className="flex flex-col items-center md:items-start gap-1">
+              <div className="flex items-center gap-2">
+                <Users className="w-5 h-5 text-primary dark:text-primary" />
+                <p className="font-semibold text-slate-800 dark:text-slate-200">© 2026 BRC Loralai Alumni</p>
               </div>
+              <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Connecting Koharians worldwide.</p>
             </div>
-            <p className="font-medium text-slate-600 dark:text-slate-400">Connecting Koharians worldwide.</p>
+
+            {/* Subtle, Professional Developer Badge */}
+            <div className="inline-flex items-center justify-center rounded-full bg-slate-50 dark:bg-slate-900 px-4 py-2 text-[11px] sm:text-xs font-medium text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-800 shadow-sm">
+              Developed & Managed by <span className="text-primary dark:text-blue-400 font-bold ml-1">Dr Arif Qaisrani (1998-2005 Batch)</span>
+            </div>
           </div>
         </footer>
       </body>
