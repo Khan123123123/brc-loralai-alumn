@@ -1,8 +1,13 @@
 import { createClient } from "@/lib/supabase/server";
+import { redirect } from "next/navigation";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Search, Filter, GraduationCap, MapPin, Briefcase } from "lucide-react";
+import { 
+  Search, GraduationCap, MapPin, Briefcase, 
+  Phone, Linkedin, Award, BookOpen, User, 
+  Building, Globe, CheckCircle 
+} from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -18,20 +23,39 @@ export default async function DirectoryPage({
 }) {
   const supabase = createClient();
   
+  // Check if user is logged in and verified
+  const { data: { user } } = await supabase.auth.getUser();
+  
+  if (!user) {
+    redirect("/auth/login");
+  }
+  
+  // Check if user has full access
+  const { data: currentUserProfile } = await supabase
+    .from("profiles")
+    .select("verification_status")
+    .eq("id", user.id)
+    .single();
+    
+  if (currentUserProfile?.verification_status !== 'full') {
+    redirect("/profile/complete");
+  }
+
+  // Build query - ONLY show full verified users
   let query = supabase
     .from("profiles")
     .select("*")
-    .in("verification_status", ["basic", "full"])
+    .eq("verification_status", "full")  // Only full, no basic
     .order("graduation_year", { ascending: false });
 
   const search = searchParams.search as string;
   const yearFilter = searchParams.year as string;
-  const programFilter = searchParams.program as string;
+  const districtFilter = searchParams.district as string;
   const industryFilter = searchParams.industry as string;
 
   if (search) {
     query = query.or(
-      `full_name.ilike.%${search}%,profession.ilike.%${search}%,current_city.ilike.%${search}%,current_position.ilike.%${search}%`
+      `full_name.ilike.%${search}%,profession.ilike.%${search}%,current_city.ilike.%${search}%,current_position.ilike.%${search}%,current_organization.ilike.%${search}%`
     );
   }
 
@@ -39,8 +63,8 @@ export default async function DirectoryPage({
     query = query.eq("graduation_year", parseInt(yearFilter));
   }
 
-  if (programFilter && programFilter !== "all") {
-    query = query.eq("program", programFilter);
+  if (districtFilter && districtFilter !== "all") {
+    query = query.eq("home_district", districtFilter);
   }
 
   if (industryFilter && industryFilter !== "all") {
@@ -49,193 +73,189 @@ export default async function DirectoryPage({
 
   const { data: profiles } = await query;
 
-  // Get unique values using filter instead of Set
+  // Get filter options
   const { data: allProfiles } = await supabase
     .from("profiles")
-    .select("graduation_year, program, industry")
-    .in("verification_status", ["basic", "full"]);
+    .select("graduation_year, home_district, industry")
+    .eq("verification_status", "full");
 
-  // Get unique values manually
-  const years: number[] = [];
-  const programs: string[] = [];
-  const industries: string[] = [];
-
-  allProfiles?.forEach((p) => {
-    if (p.graduation_year && !years.includes(p.graduation_year)) {
-      years.push(p.graduation_year);
-    }
-    if (p.program && !programs.includes(p.program)) {
-      programs.push(p.program);
-    }
-    if (p.industry && !industries.includes(p.industry)) {
-      industries.push(p.industry);
-    }
-  });
-
-  years.sort((a, b) => b - a);
-  programs.sort();
-  industries.sort();
+  const years = Array.from(new Set((allProfiles || []).map((p) => p.graduation_year).filter(Boolean)))
+    .sort((a: any, b: any) => b - a);
+  const districts = Array.from(new Set((allProfiles || []).map((p) => p.home_district).filter(Boolean))).sort();
+  const industries = Array.from(new Set((allProfiles || []).map((p) => p.industry).filter(Boolean))).sort();
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Alumni Directory</h1>
-          <p className="text-gray-600">
-            Connect with {profiles?.length || 0}+ verified Koharians
+        {/* Header */}
+        <div className="text-center mb-10">
+          <h1 className="text-4xl font-bold text-gray-900 mb-3">BRC Loralai Alumni Directory</h1>
+          <p className="text-gray-600 text-lg">
+            {profiles?.length || 0}+ Verified Koharians
           </p>
+          <Badge className="mt-2 bg-green-100 text-green-800 border-green-300">
+            <CheckCircle className="w-3 h-3 mr-1" /> Full Access
+          </Badge>
         </div>
 
-        <div className="bg-white p-6 rounded-lg shadow-sm border mb-8">
+        {/* Filters */}
+        <div className="bg-white p-6 rounded-xl shadow-lg border mb-8">
           <form className="space-y-4">
-            <div className="flex flex-col md:flex-row gap-4">
-              <div className="flex-1 relative">
-                <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div className="relative">
+                <Search className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
                 <Input
                   name="search"
-                  placeholder="Search by name, profession, city..."
+                  placeholder="Search alumni..."
                   defaultValue={search}
-                  className="pl-10"
+                  className="pl-10 h-12"
                 />
               </div>
 
               <Select name="year" defaultValue={yearFilter || "all"}>
-                <SelectTrigger className="w-[180px]">
-                  <GraduationCap className="w-4 h-4 mr-2" />
+                <SelectTrigger className="h-12">
+                  <GraduationCap className="w-5 h-5 mr-2 text-blue-600" />
                   <SelectValue placeholder="Class Year" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Years</SelectItem>
                   {years.map((year) => (
-                    <SelectItem key={year} value={year.toString()}>
-                      Class of {year}
-                    </SelectItem>
+                    <SelectItem key={year} value={year.toString()}>Class of {year}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
 
-              <Select name="program" defaultValue={programFilter || "all"}>
-                <SelectTrigger className="w-[180px]">
-                  <Filter className="w-4 h-4 mr-2" />
-                  <SelectValue placeholder="Program" />
+              <Select name="district" defaultValue={districtFilter || "all"}>
+                <SelectTrigger className="h-12">
+                  <MapPin className="w-5 h-5 mr-2 text-green-600" />
+                  <SelectValue placeholder="Home District" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Programs</SelectItem>
-                  {programs.map((program) => (
-                    <SelectItem key={program} value={program}>
-                      {program}
-                    </SelectItem>
-                  ))}
+                  <SelectItem value="all">All Districts</SelectItem>
+                  {districts.map((d) => <SelectItem key={d} value={d}>{d}</SelectItem>)}
                 </SelectContent>
               </Select>
 
               <Select name="industry" defaultValue={industryFilter || "all"}>
-                <SelectTrigger className="w-[180px]">
-                  <Briefcase className="w-4 h-4 mr-2" />
+                <SelectTrigger className="h-12">
+                  <Briefcase className="w-5 h-5 mr-2 text-purple-600" />
                   <SelectValue placeholder="Industry" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Industries</SelectItem>
-                  {industries.map((industry) => (
-                    <SelectItem key={industry} value={industry}>
-                      {industry}
-                    </SelectItem>
-                  ))}
+                  {industries.map((i) => <SelectItem key={i} value={i}>{i}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
 
-            <div className="flex justify-end">
-              <button
-                type="submit"
-                className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition"
-              >
+            <div className="flex justify-end gap-2">
+              <button type="submit" className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 font-medium">
                 Apply Filters
               </button>
-              {(search || yearFilter || programFilter || industryFilter) && (
-                <a
-                  href="/directory"
-                  className="ml-2 text-gray-600 hover:text-gray-900 px-4 py-2"
-                >
-                  Clear All
+              {(search || yearFilter || districtFilter || industryFilter) && (
+                <a href="/directory" className="text-gray-600 hover:text-gray-900 px-4 py-2 border rounded-lg">
+                  Clear
                 </a>
               )}
             </div>
           </form>
         </div>
 
+        {/* Results */}
         {!profiles || profiles.length === 0 ? (
-          <div className="text-center py-12">
-            <p className="text-gray-500 text-lg">No alumni found matching your criteria.</p>
-            <a href="/directory" className="text-blue-600 hover:underline mt-2 inline-block">
-              View all alumni
-            </a>
+          <div className="text-center py-16 bg-white rounded-xl shadow">
+            <User className="w-16 h-16 mx-auto text-gray-300 mb-4" />
+            <p className="text-gray-500 text-xl">No verified alumni found.</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {profiles.map((profile) => (
-              <Card key={profile.id} className="hover:shadow-md transition-shadow">
-                <CardHeader className="pb-4">
+              <Card key={profile.id} className="hover:shadow-2xl transition-all border-2 hover:border-blue-200">
+                <CardHeader className="pb-4 bg-gradient-to-r from-blue-50 to-indigo-50">
                   <div className="flex items-start justify-between">
-                    <div className="flex items-center space-x-3">
-                      <div className="h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-lg">
+                    <div className="flex items-center space-x-4">
+                      <div className="h-16 w-16 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold text-2xl shadow-lg">
                         {profile.full_name?.charAt(0).toUpperCase()}
                       </div>
                       <div>
-                        <h3 className="font-semibold text-lg text-gray-900">
-                          {profile.full_name}
-                        </h3>
-                        <p className="text-sm text-gray-500">
-                          Class of {profile.graduation_year}
-                        </p>
+                        <h3 className="font-bold text-xl text-gray-900">{profile.full_name}</h3>
+                        <div className="flex items-center gap-2 text-gray-600 mt-1">
+                          <GraduationCap className="w-4 h-4" />
+                          <span>Class of {profile.graduation_year}</span>
+                        </div>
                       </div>
                     </div>
-                    {profile.verification_status === "full" && (
-                      <Badge className="bg-blue-100 text-blue-800 border-blue-200">
-                        Verified
-                      </Badge>
-                    )}
+                    <Badge className="bg-blue-100 text-blue-800 border-blue-300">
+                      <CheckCircle className="w-3 h-3 mr-1" /> Verified
+                    </Badge>
                   </div>
                 </CardHeader>
-                <CardContent className="space-y-3">
+                
+                <CardContent className="space-y-4 pt-4">
+                  {/* Professional Info */}
                   <div className="space-y-2">
-                    <p className="text-sm text-gray-600">
-                      <span className="font-medium">Program:</span> {profile.program}
-                    </p>
-                    {profile.profession && (
-                      <p className="text-sm text-gray-600">
-                        <span className="font-medium">Profession:</span> {profile.profession}
-                      </p>
-                    )}
                     {profile.current_position && (
-                      <p className="text-sm text-gray-600">
-                        <span className="font-medium">Position:</span> {profile.current_position}
-                      </p>
+                      <div className="flex items-center gap-2 text-gray-800 font-medium">
+                        {profile.current_position}
+                      </div>
                     )}
-                    {profile.current_city && (
-                      <p className="text-sm text-gray-600 flex items-center">
-                        <MapPin className="w-3 h-3 mr-1" />
-                        {profile.current_city}
-                      </p>
+                    
+                    {profile.current_organization && (
+                      <div className="flex items-center gap-2 text-gray-600">
+                        <Building className="w-4 h-4 text-blue-500" />
+                        <span>{profile.current_organization}</span>
+                      </div>
                     )}
-                  </div>
-
-                  <div className="flex flex-wrap gap-2 pt-2">
+                    
                     {profile.industry && (
-                      <Badge variant="secondary">{profile.industry}</Badge>
+                      <Badge variant="secondary" className="text-xs">{profile.industry}</Badge>
                     )}
-                    {profile.available_for_mentoring && (
-                      <Badge className="bg-green-100 text-green-800 border-green-200">
-                        Mentor
-                      </Badge>
+                    
+                    <div className="flex items-center gap-2 text-gray-600">
+                      <MapPin className="w-4 h-4 text-green-500" />
+                      <span>{profile.current_city}{profile.current_country && `, ${profile.current_country}`}</span>
+                    </div>
+                  </div>
+
+                  {/* BRC Background */}
+                  <div className="bg-gray-50 p-3 rounded-lg space-y-1 text-sm">
+                    <div className="text-gray-700"><strong>Home District:</strong> {profile.home_district || 'N/A'}</div>
+                    <div className="text-gray-700"><strong>Student Type:</strong> {profile.student_type || 'N/A'}</div>
+                  </div>
+
+                  {/* Bio */}
+                  {profile.bio && (
+                    <div className="text-sm text-gray-600 italic border-l-4 border-blue-300 pl-3">
+                      "{profile.bio}"
+                    </div>
+                  )}
+
+                  {/* Contact */}
+                  <div className="pt-3 border-t space-y-2">
+                    {profile.phone && (
+                      <div className="flex items-center gap-2 text-sm">
+                        <Phone className="w-4 h-4 text-green-500" />
+                        <span>{profile.phone}</span>
+                      </div>
+                    )}
+                    
+                    {profile.linkedin_url && (
+                      <a href={profile.linkedin_url} target="_blank" rel="noopener noreferrer"
+                        className="flex items-center gap-2 text-sm text-blue-600 hover:underline">
+                        <Linkedin className="w-4 h-4" /> LinkedIn →
+                      </a>
                     )}
                   </div>
 
-                  {profile.bio && (
-                    <p className="text-sm text-gray-600 line-clamp-2 mt-2">
-                      {profile.bio}
-                    </p>
-                  )}
+                  {/* Tags */}
+                  <div className="flex flex-wrap gap-2 pt-2">
+                    {profile.available_for_mentoring && (
+                      <Badge className="bg-green-100 text-green-800 border-green-200 text-xs">Mentor ✓</Badge>
+                    )}
+                    {profile.featured_in_presentation && (
+                      <Badge className="bg-purple-100 text-purple-800 border-purple-200 text-xs">Featured</Badge>
+                    )}
+                  </div>
                 </CardContent>
               </Card>
             ))}
