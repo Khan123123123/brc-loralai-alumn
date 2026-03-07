@@ -5,32 +5,32 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import {
   calculateProfileScore,
-  getVerificationStatus,
+  getAccessLevelFromProfile,
+  getLegacyVerificationStatus,
+  isProfileComplete,
 } from "@/lib/utils/verification";
+import { slugifyProfileName } from "@/lib/utils/profile";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import {
-  MapPin,
-  Phone,
-  Linkedin,
-  Award,
-  Building,
-  GraduationCap,
-  CheckCircle,
   AlertCircle,
   ArrowLeft,
   ArrowRight,
+  BadgeCheck,
+  Eye,
+  Globe,
+  Linkedin,
+  Lock,
+  Mail,
+  MapPin,
+  Phone,
   Save,
+  ShieldCheck,
+  UserCircle2,
 } from "lucide-react";
 
 const districts = [
@@ -104,13 +104,20 @@ type FormDataType = {
   industry: string;
   experience_years: string;
   employment_status: string;
+
   phone: string;
   linkedin_url: string;
   languages: string[];
   bio: string;
   achievements: string;
+
   featured_in_presentation: boolean;
   available_for_mentoring: boolean;
+
+  show_phone_publicly: boolean;
+  show_email_publicly: boolean;
+  show_linkedin_publicly: boolean;
+  show_in_directory: boolean;
 
   verification_answers: {
     houses: string;
@@ -138,13 +145,20 @@ const emptyForm: FormDataType = {
   industry: "",
   experience_years: "",
   employment_status: "",
+
   phone: "",
   linkedin_url: "",
   languages: [],
   bio: "",
   achievements: "",
+
   featured_in_presentation: false,
   available_for_mentoring: false,
+
+  show_phone_publicly: false,
+  show_email_publicly: false,
+  show_linkedin_publicly: true,
+  show_in_directory: true,
 
   verification_answers: {
     houses: "",
@@ -156,15 +170,19 @@ const emptyForm: FormDataType = {
 };
 
 export default function CompleteProfilePage() {
-  const [step, setStep] = useState(1);
-  const [loading, setLoading] = useState(false);
-  const [bootLoading, setBootLoading] = useState(true);
-  const [user, setUser] = useState<any>(null);
-  const [existingStatus, setExistingStatus] = useState<string | null>(null);
-  const [formData, setFormData] = useState<FormDataType>(emptyForm);
-
-  const router = useRouter();
   const supabase = createClient();
+  const router = useRouter();
+
+  const [step, setStep] = useState(1);
+  const [bootLoading, setBootLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+
+  const [user, setUser] = useState<any>(null);
+  const [existingAdminStatus, setExistingAdminStatus] = useState<"pending" | "approved" | "rejected">("pending");
+  const [existingAccessLevel, setExistingAccessLevel] = useState<"limited" | "full">("limited");
+
+  const [formData, setFormData] = useState<FormDataType>(emptyForm);
+  const [banner, setBanner] = useState<{ type: "success" | "error" | "info"; text: string } | null>(null);
 
   useEffect(() => {
     const load = async () => {
@@ -186,7 +204,8 @@ export default function CompleteProfilePage() {
         .single();
 
       if (profile) {
-        setExistingStatus(profile.verification_status || null);
+        setExistingAdminStatus(profile.admin_status || "pending");
+        setExistingAccessLevel(profile.access_level || "limited");
 
         setFormData({
           full_name: profile.full_name || "",
@@ -205,13 +224,26 @@ export default function CompleteProfilePage() {
           industry: profile.industry || "",
           experience_years: profile.experience_years?.toString() || "",
           employment_status: profile.employment_status || "",
+
           phone: profile.phone || "",
           linkedin_url: profile.linkedin_url || "",
           languages: profile.languages || [],
           bio: profile.bio || "",
           achievements: profile.achievements || "",
-          featured_in_presentation: profile.featured_in_presentation || false,
-          available_for_mentoring: profile.available_for_mentoring || false,
+
+          featured_in_presentation: Boolean(profile.featured_in_presentation),
+          available_for_mentoring: Boolean(profile.available_for_mentoring),
+
+          show_phone_publicly: Boolean(profile.show_phone_publicly),
+          show_email_publicly: Boolean(profile.show_email_publicly),
+          show_linkedin_publicly:
+            profile.show_linkedin_publicly === null || profile.show_linkedin_publicly === undefined
+              ? true
+              : Boolean(profile.show_linkedin_publicly),
+          show_in_directory:
+            profile.show_in_directory === null || profile.show_in_directory === undefined
+              ? true
+              : Boolean(profile.show_in_directory),
 
           verification_answers: {
             houses: profile.verification_answers?.houses || "",
@@ -228,10 +260,6 @@ export default function CompleteProfilePage() {
 
     load();
   }, [router, supabase]);
-
-  const currentScore = useMemo(() => calculateProfileScore(formData), [formData]);
-  const status = useMemo(() => getVerificationStatus(currentScore), [currentScore]);
-  const isFullyVerified = status === "full";
 
   const setField = (field: keyof FormDataType, value: any) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -254,28 +282,50 @@ export default function CompleteProfilePage() {
     setFormData((prev) => ({
       ...prev,
       languages: prev.languages.includes(language)
-        ? prev.languages.filter((l) => l !== language)
+        ? prev.languages.filter((item) => item !== language)
         : [...prev.languages, language],
     }));
   };
 
+  const score = useMemo(() => calculateProfileScore(formData), [formData]);
+  const computedAccessLevel = useMemo(() => getAccessLevelFromProfile(formData), [formData]);
+  const profileComplete = useMemo(() => isProfileComplete(formData), [formData]);
+
+  const effectiveAdminStatusText =
+    existingAdminStatus === "approved"
+      ? "Approved"
+      : existingAdminStatus === "rejected"
+      ? "Rejected"
+      : "Pending review";
+
+  const accessText = computedAccessLevel === "full" ? "Ready for full access" : "Limited access";
+
   const handleSubmit = async () => {
     if (!user) return;
 
-    setLoading(true);
+    setSaving(true);
+    setBanner(null);
 
     try {
-      const score = currentScore;
-      const finalStatus = getVerificationStatus(score);
+      const computedSlug = slugifyProfileName(
+        formData.full_name || user.email || "member",
+        formData.graduation_year ? parseInt(formData.graduation_year) : null
+      );
+
+      const nextAdminStatus =
+        existingAdminStatus === "approved" ? "approved" : "pending";
+
+      const nextAccessLevel = computedAccessLevel;
 
       const payload = {
         id: user.id,
         email: user.email,
+
         full_name: formData.full_name || null,
+        slug: computedSlug,
+
         entry_year: formData.entry_year ? parseInt(formData.entry_year) : null,
-        graduation_year: formData.graduation_year
-          ? parseInt(formData.graduation_year)
-          : null,
+        graduation_year: formData.graduation_year ? parseInt(formData.graduation_year) : null,
         home_district: formData.home_district || null,
         student_type: formData.student_type || null,
         regular_self_finance: formData.regular_self_finance || null,
@@ -287,21 +337,30 @@ export default function CompleteProfilePage() {
         profession: formData.profession || null,
         current_organization: formData.current_organization || null,
         industry: formData.industry || null,
-        experience_years: formData.experience_years
-          ? parseInt(formData.experience_years)
-          : null,
+        experience_years: formData.experience_years ? parseInt(formData.experience_years) : null,
         employment_status: formData.employment_status || null,
+
         phone: formData.phone || null,
         linkedin_url: formData.linkedin_url || null,
         languages: formData.languages,
         bio: formData.bio || null,
         achievements: formData.achievements || null,
+
         featured_in_presentation: formData.featured_in_presentation,
         available_for_mentoring: formData.available_for_mentoring,
 
+        show_phone_publicly: formData.show_phone_publicly,
+        show_email_publicly: formData.show_email_publicly,
+        show_linkedin_publicly: formData.show_linkedin_publicly,
+        show_in_directory: formData.show_in_directory,
+
         verification_answers: formData.verification_answers,
         verification_score: score,
-        verification_status: finalStatus,
+        verification_status: getLegacyVerificationStatus(nextAccessLevel, nextAdminStatus),
+        access_level: nextAccessLevel,
+        admin_status: nextAdminStatus,
+        is_profile_complete: profileComplete,
+        submitted_for_review: nextAdminStatus !== "approved",
         updated_at: new Date().toISOString(),
       };
 
@@ -309,60 +368,76 @@ export default function CompleteProfilePage() {
 
       if (error) throw error;
 
-      if (finalStatus === "full") {
-        alert("Profile saved successfully. You now have full access.");
-        router.push("/profile/me");
-      } else {
-        alert(
-          `Profile saved successfully. Your verification score is ${score}/100. Add more details to reach full access.`
-        );
-        router.push("/profile/me");
-      }
+      setExistingAdminStatus(nextAdminStatus);
+      setExistingAccessLevel(nextAccessLevel);
+
+      setBanner({
+        type: "success",
+        text:
+          nextAdminStatus === "approved"
+            ? "Profile saved successfully. Your approval remains active."
+            : "Profile saved successfully. Your profile is ready for admin review.",
+      });
 
       router.refresh();
-    } catch (error: any) {
-      alert(`Error: ${error.message}`);
+      setTimeout(() => {
+        router.push("/profile/me");
+      }, 900);
+    } catch (err: any) {
+      setBanner({
+        type: "error",
+        text: err.message || "Unable to save your profile.",
+      });
     } finally {
-      setLoading(false);
+      setSaving(false);
     }
   };
 
   if (bootLoading) {
     return (
-      <div className="mx-auto max-w-4xl px-4 py-10">
-        <Card className="rounded-3xl shadow-sm">
+      <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
+        <Card className="rounded-3xl border-0 shadow-md">
           <CardContent className="p-10 text-center text-slate-500">
-            Loading profile...
+            Loading your profile...
           </CardContent>
         </Card>
       </div>
     );
   }
 
-  const progressWidth = `${Math.min(currentScore, 100)}%`;
+  const progressWidth = `${Math.min(score, 100)}%`;
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
-      <div className="mb-8 rounded-3xl bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 p-8 text-white shadow-lg">
-        <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+      <div className="mb-8 rounded-3xl bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 p-8 text-white shadow-xl">
+        <div className="flex flex-col gap-5 md:flex-row md:items-start md:justify-between">
           <div>
-            <h1 className="text-3xl font-bold">Complete or Edit Your Profile</h1>
-            <p className="mt-2 text-slate-300">
-              Build a strong alumni profile and unlock full access to the network.
+            <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-sm text-slate-200">
+              <ShieldCheck className="h-4 w-4" />
+              Member profile and privacy settings
+            </div>
+            <h1 className="text-3xl font-bold">Complete or edit your profile</h1>
+            <p className="mt-2 max-w-2xl text-slate-300">
+              Add your BRC background, professional details, and choose what contact information other alumni can see.
             </p>
           </div>
-          <div className="rounded-2xl bg-white/10 px-4 py-3 text-sm">
-            <div className="text-slate-300">Current status</div>
-            <div className="mt-1 font-semibold capitalize">
-              {existingStatus || "new profile"}
+
+          <div className="grid gap-3 md:min-w-[240px]">
+            <div className="rounded-2xl bg-white/10 px-4 py-3 text-sm">
+              <div className="text-slate-300">Admin status</div>
+              <div className="mt-1 font-semibold">{effectiveAdminStatusText}</div>
+            </div>
+            <div className="rounded-2xl bg-white/10 px-4 py-3 text-sm">
+              <div className="text-slate-300">Access preview</div>
+              <div className="mt-1 font-semibold">{accessText}</div>
             </div>
           </div>
         </div>
 
         <div className="mt-6">
           <div className="mb-2 flex items-center justify-between text-sm">
-            <span>Verification Score</span>
-            <span className="font-semibold">{currentScore}/100</span>
+            <span>Profile strength</span>
+            <span className="font-semibold">{score}/100</span>
           </div>
           <div className="h-3 overflow-hidden rounded-full bg-white/10">
             <div
@@ -370,31 +445,44 @@ export default function CompleteProfilePage() {
               style={{ width: progressWidth }}
             />
           </div>
-          <div className="mt-3 flex items-center gap-2 text-sm">
-            {isFullyVerified ? (
+          <div className="mt-3 flex items-center gap-2 text-sm text-slate-200">
+            {profileComplete ? (
               <>
-                <CheckCircle className="h-4 w-4 text-emerald-300" />
-                <span>Full access unlocked</span>
+                <BadgeCheck className="h-4 w-4 text-emerald-300" />
+                <span>Your profile has enough detail to be review-ready.</span>
               </>
             ) : (
               <>
                 <AlertCircle className="h-4 w-4 text-amber-300" />
-                <span>{70 - currentScore} more points needed for full access</span>
+                <span>Complete the important fields to move beyond limited access.</span>
               </>
             )}
           </div>
         </div>
       </div>
 
+      {banner && (
+        <div
+          className={`mb-6 rounded-2xl border px-4 py-3 text-sm ${
+            banner.type === "success"
+              ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+              : banner.type === "error"
+              ? "border-red-200 bg-red-50 text-red-700"
+              : "border-slate-200 bg-slate-50 text-slate-700"
+          }`}
+        >
+          {banner.text}
+        </div>
+      )}
+
       <Card className="rounded-3xl border-0 shadow-md">
         <CardHeader>
-          <CardTitle>
-            Step {step} of 3
-          </CardTitle>
+          <CardTitle>Step {step} of 4</CardTitle>
           <CardDescription>
-            {step === 1 && "BRC details"}
-            {step === 2 && "Professional details"}
-            {step === 3 && "Verification and extras"}
+            {step === 1 && "BRC and batch details"}
+            {step === 2 && "Professional and personal details"}
+            {step === 3 && "Privacy and visibility controls"}
+            {step === 4 && "Verification and community extras"}
           </CardDescription>
         </CardHeader>
 
@@ -402,7 +490,7 @@ export default function CompleteProfilePage() {
           {step === 1 && (
             <div className="grid gap-6 md:grid-cols-2">
               <div>
-                <Label>Full Name *</Label>
+                <Label>Full name *</Label>
                 <Input
                   value={formData.full_name}
                   onChange={(e) => setField("full_name", e.target.value)}
@@ -411,7 +499,7 @@ export default function CompleteProfilePage() {
               </div>
 
               <div>
-                <Label>Roll Number</Label>
+                <Label>Roll number</Label>
                 <Input
                   value={formData.roll_number}
                   onChange={(e) => setField("roll_number", e.target.value)}
@@ -420,45 +508,45 @@ export default function CompleteProfilePage() {
               </div>
 
               <div>
-                <Label>Entry Year *</Label>
+                <Label>Entry year *</Label>
                 <select
                   className="mt-2 h-10 w-full rounded-md border bg-background px-3 text-sm"
                   value={formData.entry_year}
                   onChange={(e) => setField("entry_year", e.target.value)}
                 >
                   <option value="">Select year</option>
-                  {Array.from({ length: 45 }, (_, i) => 1980 + i).map((y) => (
-                    <option key={y} value={String(y)}>
-                      {y}
+                  {Array.from({ length: 50 }, (_, i) => 1980 + i).map((year) => (
+                    <option key={year} value={String(year)}>
+                      {year}
                     </option>
                   ))}
                 </select>
               </div>
 
               <div>
-                <Label>Graduation Year *</Label>
+                <Label>Graduation year *</Label>
                 <select
                   className="mt-2 h-10 w-full rounded-md border bg-background px-3 text-sm"
                   value={formData.graduation_year}
                   onChange={(e) => setField("graduation_year", e.target.value)}
                 >
                   <option value="">Select year</option>
-                  {Array.from({ length: 45 }, (_, i) => 1984 + i).map((y) => (
-                    <option key={y} value={String(y)}>
-                      {y}
+                  {Array.from({ length: 50 }, (_, i) => 1984 + i).map((year) => (
+                    <option key={year} value={String(year)}>
+                      {year}
                     </option>
                   ))}
                 </select>
               </div>
 
               <div>
-                <Label>Student Type *</Label>
+                <Label>Student type *</Label>
                 <select
                   className="mt-2 h-10 w-full rounded-md border bg-background px-3 text-sm"
                   value={formData.student_type}
                   onChange={(e) => setField("student_type", e.target.value)}
                 >
-                  <option value="">Select type</option>
+                  <option value="">Select student type</option>
                   {studentTypes.map((item) => (
                     <option key={item} value={item}>
                       {item}
@@ -468,15 +556,13 @@ export default function CompleteProfilePage() {
               </div>
 
               <div>
-                <Label>Finance Type</Label>
+                <Label>Finance type</Label>
                 <select
                   className="mt-2 h-10 w-full rounded-md border bg-background px-3 text-sm"
                   value={formData.regular_self_finance}
-                  onChange={(e) =>
-                    setField("regular_self_finance", e.target.value)
-                  }
+                  onChange={(e) => setField("regular_self_finance", e.target.value)}
                 >
-                  <option value="">Select type</option>
+                  <option value="">Select finance type</option>
                   {financeTypes.map((item) => (
                     <option key={item} value={item}>
                       {item}
@@ -486,16 +572,16 @@ export default function CompleteProfilePage() {
               </div>
 
               <div className="md:col-span-2">
-                <Label>Home District *</Label>
+                <Label>Home district *</Label>
                 <select
                   className="mt-2 h-10 w-full rounded-md border bg-background px-3 text-sm"
                   value={formData.home_district}
                   onChange={(e) => setField("home_district", e.target.value)}
                 >
                   <option value="">Select district</option>
-                  {districts.map((item) => (
-                    <option key={item} value={item}>
-                      {item}
+                  {districts.map((district) => (
+                    <option key={district} value={district}>
+                      {district}
                     </option>
                   ))}
                 </select>
@@ -506,7 +592,7 @@ export default function CompleteProfilePage() {
           {step === 2 && (
             <div className="grid gap-6 md:grid-cols-2">
               <div>
-                <Label>Current City *</Label>
+                <Label>Current city *</Label>
                 <Input
                   value={formData.current_city}
                   onChange={(e) => setField("current_city", e.target.value)}
@@ -515,7 +601,7 @@ export default function CompleteProfilePage() {
               </div>
 
               <div>
-                <Label>Current Country</Label>
+                <Label>Current country</Label>
                 <Input
                   value={formData.current_country}
                   onChange={(e) => setField("current_country", e.target.value)}
@@ -523,11 +609,11 @@ export default function CompleteProfilePage() {
               </div>
 
               <div>
-                <Label>Current Position / Job Title *</Label>
+                <Label>Current position / title *</Label>
                 <Input
                   value={formData.current_position}
                   onChange={(e) => setField("current_position", e.target.value)}
-                  placeholder="Doctor, Engineer, Entrepreneur..."
+                  placeholder="Doctor, engineer, entrepreneur..."
                 />
               </div>
 
@@ -540,12 +626,10 @@ export default function CompleteProfilePage() {
               </div>
 
               <div>
-                <Label>Current Organization</Label>
+                <Label>Current organization</Label>
                 <Input
                   value={formData.current_organization}
-                  onChange={(e) =>
-                    setField("current_organization", e.target.value)
-                  }
+                  onChange={(e) => setField("current_organization", e.target.value)}
                 />
               </div>
 
@@ -566,13 +650,13 @@ export default function CompleteProfilePage() {
               </div>
 
               <div>
-                <Label>Employment Status</Label>
+                <Label>Employment status</Label>
                 <select
                   className="mt-2 h-10 w-full rounded-md border bg-background px-3 text-sm"
                   value={formData.employment_status}
                   onChange={(e) => setField("employment_status", e.target.value)}
                 >
-                  <option value="">Select status</option>
+                  <option value="">Select employment status</option>
                   {employmentStatuses.map((item) => (
                     <option key={item} value={item}>
                       {item}
@@ -586,14 +670,12 @@ export default function CompleteProfilePage() {
                 <Input
                   value={formData.experience_years}
                   onChange={(e) => setField("experience_years", e.target.value)}
+                  placeholder="e.g. 7"
                 />
               </div>
 
               <div>
-                <Label>
-                  <Phone className="mr-2 inline h-4 w-4" />
-                  Phone Number
-                </Label>
+                <Label>Phone number</Label>
                 <Input
                   value={formData.phone}
                   onChange={(e) => setField("phone", e.target.value)}
@@ -602,10 +684,7 @@ export default function CompleteProfilePage() {
               </div>
 
               <div>
-                <Label>
-                  <Linkedin className="mr-2 inline h-4 w-4" />
-                  LinkedIn URL
-                </Label>
+                <Label>LinkedIn URL</Label>
                 <Input
                   value={formData.linkedin_url}
                   onChange={(e) => setField("linkedin_url", e.target.value)}
@@ -614,27 +693,21 @@ export default function CompleteProfilePage() {
               </div>
 
               <div className="md:col-span-2">
-                <Label>
-                  <MapPin className="mr-2 inline h-4 w-4" />
-                  Bio
-                </Label>
+                <Label>Bio</Label>
                 <Textarea
                   value={formData.bio}
                   onChange={(e) => setField("bio", e.target.value)}
-                  placeholder="Tell fellow Koharians about yourself"
+                  placeholder="Tell other alumni about yourself"
                   rows={4}
                 />
               </div>
 
               <div className="md:col-span-2">
-                <Label>
-                  <Award className="mr-2 inline h-4 w-4" />
-                  Achievements
-                </Label>
+                <Label>Achievements</Label>
                 <Textarea
                   value={formData.achievements}
                   onChange={(e) => setField("achievements", e.target.value)}
-                  placeholder="Awards, milestones, publications, achievements..."
+                  placeholder="Awards, publications, major milestones..."
                   rows={4}
                 />
               </div>
@@ -645,7 +718,7 @@ export default function CompleteProfilePage() {
                   {languagesList.map((language) => (
                     <label
                       key={language}
-                      className="flex items-center gap-3 rounded-xl border p-3 text-sm"
+                      className="flex items-center gap-3 rounded-2xl border p-3 text-sm"
                     >
                       <Checkbox
                         checked={formData.languages.includes(language)}
@@ -660,14 +733,108 @@ export default function CompleteProfilePage() {
           )}
 
           {step === 3 && (
+            <div className="space-y-6">
+              <div className="rounded-2xl bg-slate-50 p-5 text-sm text-slate-600">
+                Choose how much contact information other verified alumni can see. Sensitive fields stay hidden unless you explicitly allow them.
+              </div>
+
+              <div className="grid gap-4">
+                <label className="flex items-start gap-4 rounded-2xl border p-4">
+                  <Checkbox
+                    checked={formData.show_phone_publicly}
+                    onCheckedChange={(checked) => setField("show_phone_publicly", Boolean(checked))}
+                  />
+                  <div>
+                    <div className="flex items-center gap-2 font-medium text-slate-900">
+                      <Phone className="h-4 w-4" />
+                      Show phone publicly to verified alumni
+                    </div>
+                    <p className="mt-1 text-sm text-slate-500">
+                      If enabled, full-access verified alumni can see your phone number.
+                    </p>
+                  </div>
+                </label>
+
+                <label className="flex items-start gap-4 rounded-2xl border p-4">
+                  <Checkbox
+                    checked={formData.show_email_publicly}
+                    onCheckedChange={(checked) => setField("show_email_publicly", Boolean(checked))}
+                  />
+                  <div>
+                    <div className="flex items-center gap-2 font-medium text-slate-900">
+                      <Mail className="h-4 w-4" />
+                      Show email publicly to verified alumni
+                    </div>
+                    <p className="mt-1 text-sm text-slate-500">
+                      If disabled, your email stays private except for your own account and admin workflows.
+                    </p>
+                  </div>
+                </label>
+
+                <label className="flex items-start gap-4 rounded-2xl border p-4">
+                  <Checkbox
+                    checked={formData.show_linkedin_publicly}
+                    onCheckedChange={(checked) => setField("show_linkedin_publicly", Boolean(checked))}
+                  />
+                  <div>
+                    <div className="flex items-center gap-2 font-medium text-slate-900">
+                      <Linkedin className="h-4 w-4" />
+                      Show LinkedIn publicly to verified alumni
+                    </div>
+                    <p className="mt-1 text-sm text-slate-500">
+                      Good for networking, mentorship, and professional connections.
+                    </p>
+                  </div>
+                </label>
+
+                <label className="flex items-start gap-4 rounded-2xl border p-4">
+                  <Checkbox
+                    checked={formData.show_in_directory}
+                    onCheckedChange={(checked) => setField("show_in_directory", Boolean(checked))}
+                  />
+                  <div>
+                    <div className="flex items-center gap-2 font-medium text-slate-900">
+                      <Eye className="h-4 w-4" />
+                      Show my profile in directory
+                    </div>
+                    <p className="mt-1 text-sm text-slate-500">
+                      Turn this off if you want an account but prefer not to appear in the alumni directory.
+                    </p>
+                  </div>
+                </label>
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="rounded-2xl border p-4">
+                  <div className="mb-2 flex items-center gap-2 font-medium text-slate-900">
+                    <Lock className="h-4 w-4" />
+                    Always hidden
+                  </div>
+                  <p className="text-sm text-slate-500">
+                    Verification answers, admin review details, and internal profile metadata are never shown publicly.
+                  </p>
+                </div>
+
+                <div className="rounded-2xl border p-4">
+                  <div className="mb-2 flex items-center gap-2 font-medium text-slate-900">
+                    <Globe className="h-4 w-4" />
+                    Directory visibility
+                  </div>
+                  <p className="text-sm text-slate-500">
+                    Limited users will still only see safe teaser information. Private contact data remains protected.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {step === 4 && (
             <div className="grid gap-6 md:grid-cols-2">
               <div>
                 <Label>House names or hostel references</Label>
                 <Input
                   value={formData.verification_answers.houses}
-                  onChange={(e) =>
-                    setVerificationField("houses", e.target.value)
-                  }
+                  onChange={(e) => setVerificationField("houses", e.target.value)}
                 />
               </div>
 
@@ -675,9 +842,7 @@ export default function CompleteProfilePage() {
                 <Label>Teachers you remember</Label>
                 <Input
                   value={formData.verification_answers.teachers}
-                  onChange={(e) =>
-                    setVerificationField("teachers", e.target.value)
-                  }
+                  onChange={(e) => setVerificationField("teachers", e.target.value)}
                 />
               </div>
 
@@ -693,9 +858,7 @@ export default function CompleteProfilePage() {
                 <Label>Principal name you remember</Label>
                 <Input
                   value={formData.verification_answers.principal}
-                  onChange={(e) =>
-                    setVerificationField("principal", e.target.value)
-                  }
+                  onChange={(e) => setVerificationField("principal", e.target.value)}
                 />
               </div>
 
@@ -703,14 +866,12 @@ export default function CompleteProfilePage() {
                 <Label>College established year</Label>
                 <Input
                   value={formData.verification_answers.established_year}
-                  onChange={(e) =>
-                    setVerificationField("established_year", e.target.value)
-                  }
+                  onChange={(e) => setVerificationField("established_year", e.target.value)}
                 />
               </div>
 
               <div className="flex flex-col justify-end gap-3">
-                <label className="flex items-center gap-3 rounded-xl border p-4 text-sm">
+                <label className="flex items-center gap-3 rounded-2xl border p-4 text-sm">
                   <Checkbox
                     checked={formData.available_for_mentoring}
                     onCheckedChange={(checked) =>
@@ -720,7 +881,7 @@ export default function CompleteProfilePage() {
                   <span>Available for mentoring</span>
                 </label>
 
-                <label className="flex items-center gap-3 rounded-xl border p-4 text-sm">
+                <label className="flex items-center gap-3 rounded-2xl border p-4 text-sm">
                   <Checkbox
                     checked={formData.featured_in_presentation}
                     onCheckedChange={(checked) =>
@@ -733,11 +894,11 @@ export default function CompleteProfilePage() {
 
               <div className="md:col-span-2 rounded-2xl bg-slate-50 p-5 text-sm text-slate-600">
                 <div className="mb-2 flex items-center gap-2 font-medium text-slate-900">
-                  <Building className="h-4 w-4" />
-                  Verification Summary
+                  <UserCircle2 className="h-4 w-4" />
+                  Review note
                 </div>
                 <p>
-                  Richer profile details and stronger BRC verification answers improve your score and access level.
+                  A strong profile plus alumni verification details helps move you from limited access to admin-approved full access.
                 </p>
               </div>
             </div>
@@ -745,9 +906,9 @@ export default function CompleteProfilePage() {
 
           <div className="flex flex-col gap-3 border-t pt-6 sm:flex-row sm:items-center sm:justify-between">
             <div className="text-sm text-slate-500">
-              Status after save:{" "}
-              <span className="font-semibold capitalize text-slate-700">
-                {status}
+              Current saved level:{" "}
+              <span className="font-semibold text-slate-700 capitalize">
+                {existingAccessLevel}
               </span>
             </div>
 
@@ -756,7 +917,7 @@ export default function CompleteProfilePage() {
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => setStep((s) => s - 1)}
+                  onClick={() => setStep((value) => value - 1)}
                   className="gap-2"
                 >
                   <ArrowLeft className="h-4 w-4" />
@@ -764,10 +925,10 @@ export default function CompleteProfilePage() {
                 </Button>
               )}
 
-              {step < 3 ? (
+              {step < 4 ? (
                 <Button
                   type="button"
-                  onClick={() => setStep((s) => s + 1)}
+                  onClick={() => setStep((value) => value + 1)}
                   className="gap-2"
                 >
                   Next
@@ -777,11 +938,11 @@ export default function CompleteProfilePage() {
                 <Button
                   type="button"
                   onClick={handleSubmit}
-                  disabled={loading}
+                  disabled={saving}
                   className="gap-2"
                 >
                   <Save className="h-4 w-4" />
-                  {loading ? "Saving..." : "Save Profile"}
+                  {saving ? "Saving profile..." : "Save profile"}
                 </Button>
               )}
             </div>

@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { hasFullAccess } from "@/lib/utils/access";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
@@ -9,19 +10,43 @@ const PUBLIC_ROUTES = [
   "/auth/forgot-password",
   "/auth/callback",
   "/auth/signout",
+  "/auth/auth-code-error",
 ];
 
+const ALWAYS_ALLOWED_FOR_LOGGED_IN_USERS = [
+  "/profile/complete",
+  "/profile/me",
+  "/directory",
+];
+
+function isPublicRoute(pathname: string) {
+  return PUBLIC_ROUTES.includes(pathname) || pathname.startsWith("/auth/");
+}
+
+function isAlwaysAllowedForLoggedInUsers(pathname: string) {
+  return (
+    ALWAYS_ALLOWED_FOR_LOGGED_IN_USERS.includes(pathname) ||
+    pathname.startsWith("/directory/")
+  );
+}
+
 export async function middleware(request: NextRequest) {
+  const pathname = request.nextUrl.pathname;
+
+  if (
+    pathname.startsWith("/_next") ||
+    pathname.startsWith("/api") ||
+    pathname === "/favicon.ico"
+  ) {
+    return NextResponse.next();
+  }
+
   const supabase = createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const path = request.nextUrl.pathname;
-  const isPublicRoute =
-    PUBLIC_ROUTES.includes(path) || path.startsWith("/auth/");
-
-  if (!user && !isPublicRoute) {
+  if (!user && !isPublicRoute(pathname)) {
     return NextResponse.redirect(new URL("/auth/login", request.url));
   }
 
@@ -32,32 +57,27 @@ export async function middleware(request: NextRequest) {
   const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL?.toLowerCase() || "";
   const isAdmin = user.email?.toLowerCase() === adminEmail;
 
-  if (path.startsWith("/admin") && !isAdmin) {
+  if (pathname.startsWith("/admin") && !isAdmin) {
     return NextResponse.redirect(new URL("/directory", request.url));
   }
 
-  if (path === "/profile/complete" || path === "/profile/me") {
+  if (isAlwaysAllowedForLoggedInUsers(pathname)) {
     return NextResponse.next();
   }
 
-  if (!isPublicRoute) {
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("verification_status, full_name")
-      .eq("id", user.id)
-      .single();
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("access_level, admin_status, verification_status")
+    .eq("id", user.id)
+    .single();
 
-    const hasFullAccess =
-      Boolean(profile?.full_name) && profile?.verification_status === "full";
-
-    if (!hasFullAccess) {
-      return NextResponse.redirect(new URL("/profile/complete", request.url));
-    }
+  if (!hasFullAccess(profile)) {
+    return NextResponse.redirect(new URL("/directory", request.url));
   }
 
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: ["/((?!api|_next/static|_next/image|favicon.ico).*)"],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
 };

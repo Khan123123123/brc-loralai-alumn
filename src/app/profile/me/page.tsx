@@ -3,18 +3,24 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { getAccessLabel } from "@/lib/utils/access";
 import {
-  Mail,
-  Phone,
-  MapPin,
+  Award,
   Briefcase,
   Building,
-  GraduationCap,
-  User,
-  Linkedin,
-  Award,
-  Languages,
   Edit,
+  Eye,
+  EyeOff,
+  Globe,
+  GraduationCap,
+  Linkedin,
+  Lock,
+  Mail,
+  MapPin,
+  Phone,
+  ShieldCheck,
+  UserCircle2,
+  Users,
 } from "lucide-react";
 
 export default async function MyProfilePage() {
@@ -38,39 +44,53 @@ export default async function MyProfilePage() {
     redirect("/profile/complete");
   }
 
-  return (
-    <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
-      <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-        <div className="flex items-start gap-4">
-          <div className="flex h-20 w-20 items-center justify-center rounded-3xl bg-slate-900 text-2xl font-bold text-white">
-            {profile.full_name?.charAt(0)?.toUpperCase() || "A"}
-          </div>
+  const accessLabel = getAccessLabel(profile);
+  const adminStatus =
+    profile.admin_status === "approved"
+      ? "Approved"
+      : profile.admin_status === "rejected"
+      ? "Rejected"
+      : "Pending review";
 
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight text-slate-900">
-              {profile.full_name || "My Profile"}
-            </h1>
-            <div className="mt-3 flex flex-wrap gap-2">
-              <Badge className="capitalize">
-                {profile.verification_status || "incomplete"}
-              </Badge>
-              {profile.graduation_year && (
-                <Badge variant="secondary">Class of {profile.graduation_year}</Badge>
-              )}
-              {profile.student_type && (
-                <Badge variant="outline">{profile.student_type}</Badge>
-              )}
+  return (
+    <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
+      <div className="mb-8 rounded-3xl bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 p-8 text-white shadow-xl">
+        <div className="flex flex-col gap-5 md:flex-row md:items-start md:justify-between">
+          <div className="flex items-start gap-4">
+            <div className="flex h-20 w-20 items-center justify-center rounded-3xl bg-white/10 text-2xl font-bold text-white">
+              {profile.full_name?.charAt(0)?.toUpperCase() || "A"}
+            </div>
+
+            <div>
+              <h1 className="text-3xl font-bold tracking-tight">
+                {profile.full_name || "My Profile"}
+              </h1>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <Badge className="bg-white text-slate-900 hover:bg-white">
+                  {accessLabel}
+                </Badge>
+                <Badge variant="secondary">{adminStatus}</Badge>
+                {profile.graduation_year && (
+                  <Badge variant="outline" className="border-white/20 text-white">
+                    Class of {profile.graduation_year}
+                  </Badge>
+                )}
+              </div>
             </div>
           </div>
+
+          <Link
+            href="/profile/complete"
+            className="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2 text-sm font-medium text-slate-900 hover:bg-slate-100"
+          >
+            <Edit className="h-4 w-4" />
+            Edit profile
+          </Link>
         </div>
 
-        <Link
-          href="/profile/complete"
-          className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800"
-        >
-          <Edit className="h-4 w-4" />
-          Edit Profile
-        </Link>
+        <p className="mt-5 max-w-2xl text-slate-300">
+          This is your personal member view. You can see all your profile fields, including private contact settings and visibility choices.
+        </p>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
@@ -100,7 +120,7 @@ export default async function MyProfilePage() {
 
           <Card className="rounded-3xl shadow-sm">
             <CardHeader>
-              <CardTitle>Professional Details</CardTitle>
+              <CardTitle>Professional details</CardTitle>
             </CardHeader>
             <CardContent className="grid gap-4 text-sm sm:grid-cols-2">
               <div className="rounded-2xl border p-4">
@@ -123,8 +143,8 @@ export default async function MyProfilePage() {
 
               <div className="rounded-2xl border p-4">
                 <div className="mb-2 flex items-center gap-2 font-medium text-slate-900">
-                  <User className="h-4 w-4" />
-                  Position
+                  <UserCircle2 className="h-4 w-4" />
+                  Current position
                 </div>
                 <div className="text-slate-600">
                   {profile.current_position || "Not added"}
@@ -133,10 +153,69 @@ export default async function MyProfilePage() {
 
               <div className="rounded-2xl border p-4">
                 <div className="mb-2 flex items-center gap-2 font-medium text-slate-900">
-                  <GraduationCap className="h-4 w-4" />
+                  <Globe className="h-4 w-4" />
                   Industry
                 </div>
                 <div className="text-slate-600">{profile.industry || "Not added"}</div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="rounded-3xl shadow-sm">
+            <CardHeader>
+              <CardTitle>Directory and privacy settings</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4 text-sm text-slate-700">
+              <div className="rounded-2xl border p-4">
+                <div className="mb-2 flex items-center gap-2 font-medium text-slate-900">
+                  {profile.show_in_directory ? (
+                    <Eye className="h-4 w-4" />
+                  ) : (
+                    <EyeOff className="h-4 w-4" />
+                  )}
+                  Directory visibility
+                </div>
+                <div className="text-slate-600">
+                  {profile.show_in_directory
+                    ? "Your profile is visible in the alumni directory."
+                    : "Your profile is hidden from the alumni directory."}
+                </div>
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-3">
+                <div className="rounded-2xl border p-4">
+                  <div className="mb-2 flex items-center gap-2 font-medium text-slate-900">
+                    <Phone className="h-4 w-4" />
+                    Phone
+                  </div>
+                  <div className="text-slate-600">
+                    {profile.show_phone_publicly ? "Public to verified members" : "Hidden"}
+                  </div>
+                </div>
+
+                <div className="rounded-2xl border p-4">
+                  <div className="mb-2 flex items-center gap-2 font-medium text-slate-900">
+                    <Mail className="h-4 w-4" />
+                    Email
+                  </div>
+                  <div className="text-slate-600">
+                    {profile.show_email_publicly ? "Public to verified members" : "Hidden"}
+                  </div>
+                </div>
+
+                <div className="rounded-2xl border p-4">
+                  <div className="mb-2 flex items-center gap-2 font-medium text-slate-900">
+                    <Linkedin className="h-4 w-4" />
+                    LinkedIn
+                  </div>
+                  <div className="text-slate-600">
+                    {profile.show_linkedin_publicly ? "Public to verified members" : "Hidden"}
+                  </div>
+                </div>
+              </div>
+
+              <div className="rounded-2xl bg-slate-50 p-4 text-slate-600">
+                Contact fields only appear to others when you explicitly allow them. Verification answers and admin data always stay private.
               </div>
             </CardContent>
           </Card>
@@ -145,7 +224,7 @@ export default async function MyProfilePage() {
         <div className="space-y-6">
           <Card className="rounded-3xl shadow-sm">
             <CardHeader>
-              <CardTitle>Contact and Location</CardTitle>
+              <CardTitle>Contact and location</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4 text-sm text-slate-700">
               <div className="flex items-start gap-3">
@@ -166,7 +245,7 @@ export default async function MyProfilePage() {
                 </span>
               </div>
 
-              {profile.linkedin_url && (
+              {profile.linkedin_url ? (
                 <a
                   href={profile.linkedin_url}
                   target="_blank"
@@ -176,54 +255,61 @@ export default async function MyProfilePage() {
                   <Linkedin className="h-4 w-4" />
                   Open LinkedIn
                 </a>
+              ) : (
+                <div className="flex items-start gap-3 text-slate-500">
+                  <Linkedin className="mt-0.5 h-4 w-4" />
+                  <span>No LinkedIn added</span>
+                </div>
               )}
             </CardContent>
           </Card>
 
           <Card className="rounded-3xl shadow-sm">
             <CardHeader>
-              <CardTitle>BRC Details</CardTitle>
+              <CardTitle>BRC details</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4 text-sm text-slate-700">
               <div>
-                <div className="font-medium text-slate-900">Entry Year</div>
+                <div className="font-medium text-slate-900">Entry year</div>
                 <div className="text-slate-600">{profile.entry_year || "Not added"}</div>
               </div>
 
               <div>
-                <div className="font-medium text-slate-900">Graduation Year</div>
-                <div className="text-slate-600">
-                  {profile.graduation_year || "Not added"}
-                </div>
+                <div className="font-medium text-slate-900">Graduation year</div>
+                <div className="text-slate-600">{profile.graduation_year || "Not added"}</div>
               </div>
 
               <div>
-                <div className="font-medium text-slate-900">Home District</div>
-                <div className="text-slate-600">
-                  {profile.home_district || "Not added"}
-                </div>
+                <div className="font-medium text-slate-900">Home district</div>
+                <div className="text-slate-600">{profile.home_district || "Not added"}</div>
               </div>
 
               <div>
-                <div className="font-medium text-slate-900">Student Type</div>
-                <div className="text-slate-600">
-                  {profile.student_type || "Not added"}
-                </div>
+                <div className="font-medium text-slate-900">Student type</div>
+                <div className="text-slate-600">{profile.student_type || "Not added"}</div>
               </div>
             </CardContent>
           </Card>
 
           <Card className="rounded-3xl shadow-sm">
             <CardHeader>
-              <CardTitle>Extras</CardTitle>
+              <CardTitle>Status and extras</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4 text-sm text-slate-700">
               <div className="flex items-start gap-3">
-                <Languages className="mt-0.5 h-4 w-4 text-slate-400" />
+                <ShieldCheck className="mt-0.5 h-4 w-4 text-slate-400" />
+                <span>Access level: {accessLabel}</span>
+              </div>
+
+              <div className="flex items-start gap-3">
+                <Users className="mt-0.5 h-4 w-4 text-slate-400" />
+                <span>Admin review: {adminStatus}</span>
+              </div>
+
+              <div className="flex items-start gap-3">
+                <Lock className="mt-0.5 h-4 w-4 text-slate-400" />
                 <span>
-                  {Array.isArray(profile.languages) && profile.languages.length > 0
-                    ? profile.languages.join(", ")
-                    : "No languages added"}
+                  Profile completion: {profile.is_profile_complete ? "Complete" : "Incomplete"}
                 </span>
               </div>
 
@@ -232,9 +318,31 @@ export default async function MyProfilePage() {
                   <Badge variant="secondary">Available for mentoring</Badge>
                 )}
                 {profile.featured_in_presentation && (
-                  <Badge variant="secondary">Featured in presentation</Badge>
+                  <Badge variant="secondary">Featured in presentations</Badge>
                 )}
               </div>
+
+              {Array.isArray(profile.languages) && profile.languages.length > 0 && (
+                <div>
+                  <div className="mb-2 font-medium text-slate-900">Languages</div>
+                  <div className="flex flex-wrap gap-2">
+                    {profile.languages.map((language: string) => (
+                      <Badge key={language} variant="outline">
+                        {language}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card className="rounded-3xl shadow-sm">
+            <CardHeader>
+              <CardTitle>Private internal note</CardTitle>
+            </CardHeader>
+            <CardContent className="text-sm text-slate-600">
+              Your verification answers and internal review details are intentionally hidden from public profile views.
             </CardContent>
           </Card>
         </div>
