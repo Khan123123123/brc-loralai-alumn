@@ -75,7 +75,40 @@ export async function updateProfileStatus(profileId: string, uiStatus: "full" | 
   return { success: true };
 }
 
-// Keep these exports as pass-throughs just in case any old components are still looking for them
+// Securely delete an entire user account (Auth + Profile)
+export async function deleteUserAccount(userId: string) {
+  const supabase = createClient();
+  
+  // Verify admin
+  const { data: { user } } = await supabase.auth.getUser();
+  const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL?.toLowerCase();
+  
+  if (user?.email?.toLowerCase() !== adminEmail && user?.email !== "qaisrani12116@gmail.com") {
+    throw new Error("Unauthorized - Admin privileges required");
+  }
+
+  // 1. Delete the profile record from the public database
+  const { error: profileError } = await serviceClient
+    .from("profiles")
+    .delete()
+    .eq("id", userId);
+
+  if (profileError) {
+    throw new Error("Failed to delete profile record: " + profileError.message);
+  }
+
+  // 2. Delete the user entirely from the Supabase Authentication system
+  const { error: authError } = await serviceClient.auth.admin.deleteUser(userId);
+
+  if (authError) {
+    throw new Error("Failed to delete auth user: " + authError.message);
+  }
+
+  revalidatePath("/admin");
+  revalidatePath("/directory");
+  return { success: true };
+}
+
 export async function approveProfile(profileId: string) {
   return updateProfileStatus(profileId, "full");
 }

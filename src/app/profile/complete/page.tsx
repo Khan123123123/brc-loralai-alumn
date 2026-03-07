@@ -33,7 +33,6 @@ import {
   AlertTriangle
 } from "lucide-react";
 
-// Comprehensive list of all districts in Balochistan
 const districts = [
   "Awaran", "Barkhan", "Chagai", "Chaman", "Dera Bugti", "Duki", 
   "Gwadar", "Harnai", "Hub", "Jafarabad", "Jhal Magsi", "Kachhi (Bolan)", 
@@ -117,7 +116,6 @@ const emptyForm: FormDataType = {
   phone: "", linkedin_url: "", languages: [], bio: "", achievements: "",
   featured_in_presentation: false, available_for_mentoring: false,
   
-  // All visible by default
   show_phone_publicly: true, 
   show_email_publicly: true, 
   show_linkedin_publicly: true, 
@@ -135,9 +133,10 @@ export default function CompleteProfilePage() {
   const [saving, setSaving] = useState(false);
 
   const [user, setUser] = useState<any>(null);
-  const [existingAdminStatus, setExistingAdminStatus] = useState<"pending" | "approved" | "rejected">("pending");
-  const [existingAccessLevel, setExistingAccessLevel] = useState<"limited" | "full">("limited");
-
+  
+  // Track if they have ever been fully approved, handling both old and new database states
+  const [isAlreadyApproved, setIsAlreadyApproved] = useState(false);
+  
   const [formData, setFormData] = useState<FormDataType>(emptyForm);
   const [banner, setBanner] = useState<{ type: "success" | "error" | "info"; text: string } | null>(null);
 
@@ -155,8 +154,9 @@ export default function CompleteProfilePage() {
       const { data: profile } = await supabase.from("profiles").select("*").eq("id", user.id).single();
 
       if (profile) {
-        setExistingAdminStatus(profile.admin_status || "pending");
-        setExistingAccessLevel(profile.access_level || "limited");
+        // Robust check: Look at ALL indicators of approval to catch legacy accounts
+        const approved = profile.admin_status === "approved" || profile.verification_status === "full" || profile.access_level === "full";
+        setIsAlreadyApproved(approved);
 
         setFormData({
           full_name: profile.full_name || "",
@@ -188,7 +188,6 @@ export default function CompleteProfilePage() {
           featured_in_presentation: Boolean(profile.featured_in_presentation),
           available_for_mentoring: Boolean(profile.available_for_mentoring),
 
-          // Enforce hardcoded true for fields that should no longer be hidden
           show_phone_publicly: profile.show_phone_publicly === null ? true : Boolean(profile.show_phone_publicly),
           show_email_publicly: true,
           show_linkedin_publicly: true,
@@ -258,8 +257,6 @@ export default function CompleteProfilePage() {
   const computedAccessLevel = useMemo(() => getAccessLevelFromProfile(formData), [formData]);
   const profileComplete = useMemo(() => isProfileComplete(formData), [formData]);
 
-  const effectiveAdminStatusText = existingAdminStatus === "approved" ? "Approved" : existingAdminStatus === "rejected" ? "Rejected" : "Pending review";
-
   const handleSubmit = async () => {
     if (!user) return;
     setSaving(true);
@@ -268,10 +265,10 @@ export default function CompleteProfilePage() {
     try {
       const computedSlug = slugifyProfileName(formData.full_name || user.email || "member", formData.graduation_year ? parseInt(formData.graduation_year) : null);
       
-      // CRITICAL LOGIC: Never revert an approved user to pending.
-      const nextAdminStatus = existingAdminStatus === "approved" ? "approved" : "pending";
-      const nextAccessLevel = existingAdminStatus === "approved" ? "full" : computedAccessLevel;
-      const nextVerificationStatus = existingAdminStatus === "approved" ? "full" : getLegacyVerificationStatus(nextAccessLevel, nextAdminStatus);
+      // EXPLICIT LOCK: If they are already approved, force all status markers to stay approved.
+      const nextAdminStatus = isAlreadyApproved ? "approved" : "pending";
+      const nextAccessLevel = isAlreadyApproved ? "full" : computedAccessLevel;
+      const nextVerificationStatus = isAlreadyApproved ? "full" : getLegacyVerificationStatus(nextAccessLevel, nextAdminStatus);
 
       const payload = {
         id: user.id, email: user.email, full_name: formData.full_name || null, slug: computedSlug,
@@ -289,7 +286,6 @@ export default function CompleteProfilePage() {
         languages: formData.languages, bio: formData.bio || null, achievements: formData.achievements || null,
         featured_in_presentation: formData.featured_in_presentation, available_for_mentoring: formData.available_for_mentoring,
         
-        // Only Phone has a toggle now. Rest are forced to true.
         show_phone_publicly: formData.show_phone_publicly, 
         show_email_publicly: true,
         show_linkedin_publicly: true, 
@@ -299,7 +295,7 @@ export default function CompleteProfilePage() {
         verification_status: nextVerificationStatus,
         access_level: nextAccessLevel, admin_status: nextAdminStatus,
         is_profile_complete: profileComplete, 
-        submitted_for_review: nextAdminStatus !== "approved", // Only flag for review if not already approved
+        submitted_for_review: !isAlreadyApproved, // Only mark for review if NOT approved yet
         updated_at: new Date().toISOString(),
       };
 
@@ -344,7 +340,6 @@ export default function CompleteProfilePage() {
     setAuthLoading(true);
     try {
       await deleteMyAccount();
-      // Redirect to login after successful deletion
       window.location.href = "/auth/login";
     } catch (e: any) {
       alert("Error deleting account: " + e.message);
@@ -355,9 +350,6 @@ export default function CompleteProfilePage() {
   if (bootLoading) {
     return <div className="text-center p-10 mt-20 text-slate-500">Loading your profile...</div>;
   }
-
-  // Determine if specific fields should be locked
-  const isApprovedAndLocked = existingAdminStatus === "approved";
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
@@ -372,9 +364,9 @@ export default function CompleteProfilePage() {
           <div className="grid gap-3 min-w-[200px]">
             <div className="rounded-2xl bg-white/10 px-4 py-3 text-sm">
               <div className="text-slate-300">Account Status</div>
-              <div className="mt-1 font-semibold flex items-center gap-2">
-                {isApprovedAndLocked && <Lock className="w-4 h-4 text-emerald-400" />}
-                {effectiveAdminStatusText}
+              <div className="mt-1 font-semibold flex items-center gap-2 capitalize">
+                {isAlreadyApproved && <Lock className="w-4 h-4 text-emerald-400" />}
+                {isAlreadyApproved ? "Approved (Full Access)" : "Pending / Limited"}
               </div>
             </div>
           </div>
@@ -402,10 +394,10 @@ export default function CompleteProfilePage() {
           {step === 1 && (
             <div className="grid gap-6 md:grid-cols-2">
               <div className="md:col-span-2">
-                {isApprovedAndLocked && (
+                {isAlreadyApproved && (
                   <div className="bg-emerald-50 text-emerald-700 p-3 rounded-lg text-sm border border-emerald-200 flex items-center gap-2">
                     <Lock className="w-4 h-4" /> 
-                    Your account is approved. Core identity fields (Name and Years) are now locked to maintain integrity. Contact an admin if you need to change them.
+                    Your account is approved. Core identity fields (Name and Years) are now locked to maintain integrity.
                   </div>
                 )}
               </div>
@@ -414,8 +406,8 @@ export default function CompleteProfilePage() {
                 <Input 
                   value={formData.full_name} 
                   onChange={(e) => setField("full_name", e.target.value)} 
-                  disabled={isApprovedAndLocked}
-                  className={isApprovedAndLocked ? "bg-slate-100" : ""}
+                  disabled={isAlreadyApproved}
+                  className={isAlreadyApproved ? "bg-slate-100" : ""}
                 />
               </div>
               <div>
@@ -425,10 +417,10 @@ export default function CompleteProfilePage() {
               <div>
                 <Label>Entry year *</Label>
                 <select 
-                  className={`mt-2 h-10 w-full rounded-md border px-3 text-sm ${isApprovedAndLocked ? "bg-slate-100 opacity-70 pointer-events-none" : ""}`} 
+                  className={`mt-2 h-10 w-full rounded-md border px-3 text-sm ${isAlreadyApproved ? "bg-slate-100 opacity-70 pointer-events-none" : ""}`} 
                   value={formData.entry_year} 
                   onChange={(e) => setField("entry_year", e.target.value)}
-                  disabled={isApprovedAndLocked}
+                  disabled={isAlreadyApproved}
                 >
                   <option value="">Select year</option>
                   {Array.from({ length: 50 }, (_, i) => 1980 + i).map(y => <option key={y} value={y}>{y}</option>)}
@@ -437,10 +429,10 @@ export default function CompleteProfilePage() {
               <div>
                 <Label>Graduation year *</Label>
                 <select 
-                  className={`mt-2 h-10 w-full rounded-md border px-3 text-sm ${isApprovedAndLocked ? "bg-slate-100 opacity-70 pointer-events-none" : ""}`} 
+                  className={`mt-2 h-10 w-full rounded-md border px-3 text-sm ${isAlreadyApproved ? "bg-slate-100 opacity-70 pointer-events-none" : ""}`} 
                   value={formData.graduation_year} 
                   onChange={(e) => setField("graduation_year", e.target.value)}
-                  disabled={isApprovedAndLocked}
+                  disabled={isAlreadyApproved}
                 >
                   <option value="">Select year</option>
                   {Array.from({ length: 50 }, (_, i) => 1984 + i).map(y => <option key={y} value={y}>{y}</option>)}
@@ -539,7 +531,7 @@ export default function CompleteProfilePage() {
               <div><Label>Current City *</Label><Input value={formData.current_city} onChange={(e) => setField("current_city", e.target.value)} /></div>
               <div><Label>Current Country</Label><Input value={formData.current_country} onChange={(e) => setField("current_country", e.target.value)} /></div>
 
-              {/* Single Privacy Toggle for Phone */}
+              {/* Only Phone has Privacy Toggle */}
               <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 md:col-span-2">
                 <Label>Phone Number</Label>
                 <Input className="mt-2 bg-white max-w-md" value={formData.phone} onChange={(e) => setField("phone", e.target.value)} placeholder="+92..." />

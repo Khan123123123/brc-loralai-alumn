@@ -3,8 +3,9 @@ import { AdminApprovalActions } from "@/components/admin/AdminApprovalActions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { redirect } from "next/navigation";
-import { Users, ShieldAlert, CheckCircle, XCircle, Search, HelpCircle } from "lucide-react";
+import { Users, ShieldAlert, CheckCircle, XCircle, Search, ExternalLink } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import Link from "next/link";
 
 export default async function AdminPage({
   searchParams,
@@ -54,7 +55,7 @@ export default async function AdminPage({
         <h1 className="text-3xl font-bold text-slate-900 tracking-tight mb-8">Admin Control Center</h1>
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-          <Card className="border-0 shadow-sm"><CardContent className="p-4 flex justify-between items-center"><span className="text-slate-600 font-semibold">Total</span><span className="text-2xl font-bold text-primary">{stats.total}</span></CardContent></Card>
+          <Card className="border-0 shadow-sm"><CardContent className="p-4 flex justify-between items-center"><span className="text-slate-600 font-semibold">Total Users</span><span className="text-2xl font-bold text-primary">{stats.total}</span></CardContent></Card>
           <Card className="border-0 shadow-sm border-b-4 border-yellow-400"><CardContent className="p-4 flex justify-between items-center"><span className="text-slate-600 font-semibold">Pending</span><span className="text-2xl font-bold text-yellow-600">{stats.pending}</span></CardContent></Card>
           <Card className="border-0 shadow-sm border-b-4 border-emerald-500"><CardContent className="p-4 flex justify-between items-center"><span className="text-slate-600 font-semibold">Approved</span><span className="text-2xl font-bold text-emerald-600">{stats.full}</span></CardContent></Card>
           <Card className="border-0 shadow-sm border-b-4 border-red-500"><CardContent className="p-4 flex justify-between items-center"><span className="text-slate-600 font-semibold">Rejected</span><span className="text-2xl font-bold text-red-600">{stats.rejected}</span></CardContent></Card>
@@ -66,7 +67,7 @@ export default async function AdminPage({
               <CardTitle className="text-xl">User Verification Dashboard</CardTitle>
               <form className="relative w-full md:w-96">
                 <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
-                <Input name="search" defaultValue={searchQuery} placeholder="Search names..." className="pl-9 bg-slate-50 border-slate-200"/>
+                <Input name="search" defaultValue={searchQuery} placeholder="Search names, emails, professions..." className="pl-9 bg-slate-50 border-slate-200"/>
               </form>
             </div>
           </CardHeader>
@@ -87,18 +88,27 @@ export default async function AdminPage({
                     allProfiles.map((profile) => (
                       <tr key={profile.id} className="hover:bg-slate-50/50">
                         <td className="px-6 py-4 align-top w-1/4">
-                          <div className="font-semibold text-slate-900">{profile.full_name || "Unnamed"}</div>
+                          <div className="font-semibold text-slate-900 text-base">{profile.full_name || "Unnamed User"}</div>
                           <div className="text-xs text-slate-500 mt-1">{profile.email}</div>
                           <div className="text-xs text-primary font-medium mt-2">Class of {profile.graduation_year || "N/A"}</div>
-                          <div className="text-xs text-slate-600 mt-1">{profile.profession || "No Profession"}</div>
+                          <div className="text-xs text-slate-600 mt-1 mb-3">{profile.profession || "No Profession"}</div>
+                          
+                          {/* Direct link to view the user's complete directory page */}
+                          <Link 
+                            href={`/directory/${profile.slug || profile.id}`} 
+                            target="_blank"
+                            className="inline-flex items-center gap-1 text-xs font-semibold text-blue-600 hover:text-blue-800 transition-colors bg-blue-50 px-2 py-1 rounded"
+                          >
+                            <ExternalLink className="w-3 h-3" /> View Full Profile
+                          </Link>
                         </td>
                         <td className="px-6 py-4 align-top w-1/2">
-                          <div className="bg-amber-50 rounded-lg p-3 text-xs border border-amber-100 text-slate-800 space-y-1.5">
-                            <div className="flex gap-2"><strong className="w-20 shrink-0 text-amber-900">House:</strong> <span>{profile.verification_answers?.houses || "-"}</span></div>
-                            <div className="flex gap-2"><strong className="w-20 shrink-0 text-amber-900">Teachers:</strong> <span>{profile.verification_answers?.teachers || "-"}</span></div>
-                            <div className="flex gap-2"><strong className="w-20 shrink-0 text-amber-900">Staff/Guards:</strong> <span>{profile.verification_answers?.staff || "-"}</span></div>
-                            <div className="flex gap-2"><strong className="w-20 shrink-0 text-amber-900">Principal:</strong> <span>{profile.verification_answers?.principal || "-"}</span></div>
-                            <div className="flex gap-2"><strong className="w-20 shrink-0 text-amber-900">Est. Year:</strong> <span>{profile.verification_answers?.established_year || "-"}</span></div>
+                          <div className="bg-amber-50 rounded-lg p-3 text-xs border border-amber-100 text-slate-800 space-y-2">
+                            <div className="flex gap-2"><strong className="w-20 shrink-0 text-amber-900">House:</strong> <span className="font-medium">{profile.verification_answers?.houses || "-"}</span></div>
+                            <div className="flex gap-2"><strong className="w-20 shrink-0 text-amber-900">Teachers:</strong> <span className="font-medium">{profile.verification_answers?.teachers || "-"}</span></div>
+                            <div className="flex gap-2"><strong className="w-20 shrink-0 text-amber-900">Staff/Guards:</strong> <span className="font-medium">{profile.verification_answers?.staff || "-"}</span></div>
+                            <div className="flex gap-2"><strong className="w-20 shrink-0 text-amber-900">Principal:</strong> <span className="font-medium">{profile.verification_answers?.principal || "-"}</span></div>
+                            <div className="flex gap-2"><strong className="w-20 shrink-0 text-amber-900">Est. Year:</strong> <span className="font-medium">{profile.verification_answers?.established_year || "-"}</span></div>
                           </div>
                         </td>
                         <td className="px-6 py-4 align-top text-right w-1/4">
