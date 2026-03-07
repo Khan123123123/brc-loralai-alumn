@@ -17,7 +17,7 @@ export async function deleteMyAccount() {
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   );
 
-  // 1. Delete the user's profile record (in case cascade deletion isn't fully configured)
+  // 1. Delete the user's profile record
   await serviceClient.from("profiles").delete().eq("id", user.id);
   
   // 2. Delete the user from the Supabase Auth system

@@ -240,7 +240,6 @@ export default function CompleteProfilePage() {
         show_phone_publicly: formData.show_phone_publicly, show_email_publicly: true, show_linkedin_publicly: true, show_in_directory: true,
         verification_answers: formData.verification_answers, verification_score: score,
         
-        // Push the strictly controlled statuses
         verification_status: nextVerificationStatus,
         access_level: nextAccessLevel, 
         admin_status: nextAdminStatus,

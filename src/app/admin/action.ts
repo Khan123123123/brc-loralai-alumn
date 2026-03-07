@@ -68,5 +68,6 @@ export async function deleteUserAccount(userId: string) {
   return { success: true };
 }
 
+// Kept for fallback compatibility if needed
 export async function approveProfile(profileId: string) { return updateProfileStatus(profileId, "full"); }
 export async function rejectProfile(profileId: string) { return updateProfileStatus(profileId, "rejected"); }

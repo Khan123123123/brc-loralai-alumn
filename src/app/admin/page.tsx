@@ -93,7 +93,6 @@ export default async function AdminPage({
                           <div className="text-xs text-primary font-medium mt-2">Class of {profile.graduation_year || "N/A"}</div>
                           <div className="text-xs text-slate-600 mt-1 mb-3">{profile.profession || "No Profession"}</div>
                           
-                          {/* Direct link to view the user's complete directory page */}
                           <Link 
                             href={`/directory/${profile.slug || profile.id}`} 
                             target="_blank"
