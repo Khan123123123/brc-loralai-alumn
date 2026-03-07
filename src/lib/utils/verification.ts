@@ -1,93 +1,75 @@
-// Auto-verification scoring - ONLY pending or full
-export function calculateProfileScore(profile: any): number {
+type VerificationAnswers = {
+  houses?: string;
+  teachers?: string;
+  staff?: string;
+  principal?: string;
+  established_year?: string;
+};
+
+type ProfileScoreInput = {
+  full_name?: string;
+  entry_year?: string | number | null;
+  graduation_year?: string | number | null;
+  home_district?: string | null;
+  student_type?: string | null;
+  roll_number?: string | null;
+  current_country?: string | null;
+  current_city?: string | null;
+  current_position?: string | null;
+  profession?: string | null;
+  current_organization?: string | null;
+  industry?: string | null;
+  employment_status?: string | null;
+  phone?: string | null;
+  linkedin_url?: string | null;
+  languages?: string[];
+  bio?: string | null;
+  achievements?: string | null;
+  verification_answers?: VerificationAnswers;
+};
+
+const clean = (value?: string | null) => (value || "").trim().toLowerCase();
+
+export function calculateProfileScore(data: ProfileScoreInput): number {
   let score = 0;
-  
-  // Basic BRC info (40 points)
-  if (profile.full_name?.length > 3) score += 10;
-  if (profile.entry_year && profile.entry_year > 1980) score += 10;
-  if (profile.graduation_year && profile.graduation_year > profile.entry_year) score += 10;
-  if (profile.home_district) score += 10;
-  
-  // Professional info (30 points)
-  if (profile.current_position?.length > 3) score += 10;
-  if (profile.profession?.length > 3) score += 10;
-  if (profile.current_organization?.length > 3) score += 10;
-  
-  // Contact & Bio (10 points)
-  if (profile.phone || profile.linkedin_url) score += 10;
-  if (profile.bio?.length > 50) score += 5; // Bonus
-  
-  // Verification answers - Auto checked (20 points max)
-  const answers = profile.verification_answers || {};
-  
-  // Q1: House names (5 points)
-  if (checkHouses(answers.houses)) score += 5;
-  
-  // Q2: Teachers (5 points)
-  if (checkTeachers(answers.teachers)) score += 5;
-  
-  // Q3: Staff (5 points)
-  if (checkStaff(answers.staff)) score += 5;
-  
-  // Q4: Principal OR Establishment year (5 points)
-  if (checkPrincipal(answers.principal) || checkEstablishment(answers.established_year)) score += 5;
-  
+
+  if (clean(data.full_name)) score += 10;
+  if (data.entry_year) score += 8;
+  if (data.graduation_year) score += 8;
+  if (clean(data.home_district)) score += 6;
+  if (clean(data.student_type)) score += 5;
+  if (clean(data.roll_number)) score += 4;
+
+  if (clean(data.current_city)) score += 8;
+  if (clean(data.current_country)) score += 4;
+  if (clean(data.current_position)) score += 8;
+  if (clean(data.profession)) score += 6;
+  if (clean(data.current_organization)) score += 6;
+  if (clean(data.industry)) score += 4;
+  if (clean(data.employment_status)) score += 3;
+  if (clean(data.phone)) score += 5;
+  if (clean(data.linkedin_url)) score += 5;
+  if (data.languages && data.languages.length > 0) score += 4;
+  if (clean(data.bio)) score += 4;
+  if (clean(data.achievements)) score += 2;
+
+  const answers = data.verification_answers || {};
+
+  if (clean(answers.houses).length >= 2) score += 4;
+  if (clean(answers.teachers).length >= 2) score += 4;
+  if (clean(answers.staff).length >= 2) score += 4;
+  if (clean(answers.principal).length >= 2) score += 4;
+  if (clean(answers.established_year).length >= 2) score += 4;
+
   return Math.min(score, 100);
 }
 
-// Auto-check: Must mention 2+ valid house names
-function checkHouses(answer: string): boolean {
-  if (!answer || answer.length < 5) return false;
-  const validHouses = ['jinnah', 'iqbal', 'liaquat', 'fatima', 'quaid', 'unity', 'faith'];
-  const lower = answer.toLowerCase();
-  let matches = 0;
-  validHouses.forEach(house => {
-    if (lower.includes(house)) matches++;
-  });
-  return matches >= 2;
-}
-
-// Auto-check: Must mention 2+ teacher names
-function checkTeachers(answer: string): boolean {
-  if (!answer || answer.length < 10) return false;
-  const names = answer.split(/,|\band\b/).filter(n => n.trim().length > 2);
-  return names.length >= 2;
-}
-
-// Auto-check: Must mention known staff or detailed info
-function checkStaff(answer: string): boolean {
-  if (!answer || answer.length < 5) return false;
-  const lower = answer.toLowerCase();
-  const knownStaff = ['ghulam nabi', 'nabi', 'mess', 'guard', 'peon', 'warden'];
-  return knownStaff.some(name => lower.includes(name)) || answer.length > 15;
-}
-
-// Auto-check: Principal name
-function checkPrincipal(answer: string): boolean {
-  if (!answer || answer.length < 3) return false;
-  const lower = answer.toLowerCase();
-  const valid = ['principal', 'headmaster', 'khan', 'ahmed', 'malik', 'qaiser', 'shah', 'director'];
-  return valid.some(v => lower.includes(v));
-}
-
-// Auto-check: Establishment year (BRC established 1982)
-function checkEstablishment(answer: string): boolean {
-  if (!answer) return false;
-  return answer.includes('1982') || answer.includes('1983') || answer.includes('80');
-}
-
-// ONLY two statuses: pending or full
-export function getVerificationStatus(score: number): 'full' | 'pending' {
+export function getVerificationStatus(score: number): "pending" | "basic" | "full" {
   if (score >= 70) return "full";
+  if (score >= 40) return "basic";
   return "pending";
 }
 
-// Helper to check if user has access
-export function hasFullAccess(status: string): boolean {
-  return status === 'full';
-}
-
-// Helper to check if pending
-export function isPending(status: string): boolean {
-  return status === 'pending' || !status;
+export function hasFullAccess(status?: string | null): boolean {
+  return status === "full";
 }

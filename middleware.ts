@@ -32,22 +32,14 @@ export async function middleware(request: NextRequest) {
   const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL?.toLowerCase() || "";
   const isAdmin = user.email?.toLowerCase() === adminEmail;
 
-  // Let authenticated users always access profile completion and their own profile
-  const alwaysAllowedForLoggedInUsers = [
-    "/profile/complete",
-    "/profile/me",
-  ];
-
-  if (alwaysAllowedForLoggedInUsers.includes(path)) {
-    return NextResponse.next();
-  }
-
-  // Restrict admin route
   if (path.startsWith("/admin") && !isAdmin) {
     return NextResponse.redirect(new URL("/directory", request.url));
   }
 
-  // Check profile state for other protected routes
+  if (path === "/profile/complete" || path === "/profile/me") {
+    return NextResponse.next();
+  }
+
   if (!isPublicRoute) {
     const { data: profile } = await supabase
       .from("profiles")
@@ -55,11 +47,10 @@ export async function middleware(request: NextRequest) {
       .eq("id", user.id)
       .single();
 
-    const isProfileComplete =
+    const hasFullAccess =
       Boolean(profile?.full_name) && profile?.verification_status === "full";
 
-    // Users without full profile can only work on completing it or viewing their own profile
-    if (!isProfileComplete) {
+    if (!hasFullAccess) {
       return NextResponse.redirect(new URL("/profile/complete", request.url));
     }
   }

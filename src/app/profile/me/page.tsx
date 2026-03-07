@@ -66,7 +66,7 @@ export default async function MyProfilePage() {
 
         <Link
           href="/profile/complete"
-          className="inline-flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800"
+          className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800"
         >
           <Edit className="h-4 w-4" />
           Edit Profile
@@ -75,7 +75,7 @@ export default async function MyProfilePage() {
 
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="space-y-6 lg:col-span-2">
-          <Card className="rounded-2xl shadow-sm">
+          <Card className="rounded-3xl shadow-sm">
             <CardHeader>
               <CardTitle>About</CardTitle>
             </CardHeader>
@@ -98,12 +98,12 @@ export default async function MyProfilePage() {
             </CardContent>
           </Card>
 
-          <Card className="rounded-2xl shadow-sm">
+          <Card className="rounded-3xl shadow-sm">
             <CardHeader>
               <CardTitle>Professional Details</CardTitle>
             </CardHeader>
-            <CardContent className="grid gap-4 sm:grid-cols-2 text-sm">
-              <div className="rounded-xl border p-4">
+            <CardContent className="grid gap-4 text-sm sm:grid-cols-2">
+              <div className="rounded-2xl border p-4">
                 <div className="mb-2 flex items-center gap-2 font-medium text-slate-900">
                   <Briefcase className="h-4 w-4" />
                   Profession
@@ -111,7 +111,7 @@ export default async function MyProfilePage() {
                 <div className="text-slate-600">{profile.profession || "Not added"}</div>
               </div>
 
-              <div className="rounded-xl border p-4">
+              <div className="rounded-2xl border p-4">
                 <div className="mb-2 flex items-center gap-2 font-medium text-slate-900">
                   <Building className="h-4 w-4" />
                   Organization
@@ -121,7 +121,7 @@ export default async function MyProfilePage() {
                 </div>
               </div>
 
-              <div className="rounded-xl border p-4">
+              <div className="rounded-2xl border p-4">
                 <div className="mb-2 flex items-center gap-2 font-medium text-slate-900">
                   <User className="h-4 w-4" />
                   Position
@@ -131,7 +131,7 @@ export default async function MyProfilePage() {
                 </div>
               </div>
 
-              <div className="rounded-xl border p-4">
+              <div className="rounded-2xl border p-4">
                 <div className="mb-2 flex items-center gap-2 font-medium text-slate-900">
                   <GraduationCap className="h-4 w-4" />
                   Industry
@@ -143,9 +143,9 @@ export default async function MyProfilePage() {
         </div>
 
         <div className="space-y-6">
-          <Card className="rounded-2xl shadow-sm">
+          <Card className="rounded-3xl shadow-sm">
             <CardHeader>
-              <CardTitle>Contact & Location</CardTitle>
+              <CardTitle>Contact and Location</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4 text-sm text-slate-700">
               <div className="flex items-start gap-3">
@@ -180,7 +180,7 @@ export default async function MyProfilePage() {
             </CardContent>
           </Card>
 
-          <Card className="rounded-2xl shadow-sm">
+          <Card className="rounded-3xl shadow-sm">
             <CardHeader>
               <CardTitle>BRC Details</CardTitle>
             </CardHeader>
@@ -213,7 +213,7 @@ export default async function MyProfilePage() {
             </CardContent>
           </Card>
 
-          <Card className="rounded-2xl shadow-sm">
+          <Card className="rounded-3xl shadow-sm">
             <CardHeader>
               <CardTitle>Extras</CardTitle>
             </CardHeader>

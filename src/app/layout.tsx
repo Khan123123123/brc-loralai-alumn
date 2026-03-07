@@ -3,7 +3,15 @@ import Link from "next/link";
 import "./globals.css";
 import { createClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
-import { Users, Home, Search, User, Settings, ShieldCheck, LogOut } from "lucide-react";
+import {
+  Users,
+  Home,
+  Search,
+  User,
+  Settings,
+  ShieldCheck,
+  LogOut,
+} from "lucide-react";
 
 export const metadata: Metadata = {
   title: "BRC Loralai Alumni Network",
@@ -44,17 +52,17 @@ export default async function RootLayout({
     <html lang="en">
       <body className="min-h-screen bg-slate-50 text-slate-900">
         <div className="min-h-screen flex flex-col">
-          <header className="sticky top-0 z-50 border-b bg-white/95 backdrop-blur">
-            <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
-              <Link href="/" className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-slate-900 text-white">
+          <header className="sticky top-0 z-50 border-b bg-white/90 backdrop-blur">
+            <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
+              <Link href={user ? "/directory" : "/"} className="flex items-center gap-3">
+                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-slate-900 text-white shadow-sm">
                   <Users className="h-5 w-5" />
                 </div>
                 <div>
-                  <div className="text-sm font-semibold tracking-wide text-slate-900">
+                  <div className="text-lg font-semibold leading-none">
                     BRC Loralai Alumni
                   </div>
-                  <div className="text-xs text-slate-500">
+                  <div className="mt-1 text-sm text-slate-500">
                     Koharians Worldwide
                   </div>
                 </div>
@@ -70,7 +78,7 @@ export default async function RootLayout({
                   </Link>
                 </div>
               ) : (
-                <div className="flex flex-wrap items-center justify-end gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <Link href="/">
                     <Button variant="ghost" className="gap-2">
                       <Home className="h-4 w-4" />
@@ -108,12 +116,12 @@ export default async function RootLayout({
                     </Link>
                   )}
 
-                  <Link href="/auth/signout">
-                    <Button variant="outline" className="gap-2">
+                  <form action="/auth/signout" method="get">
+                    <Button variant="outline" className="gap-2" type="submit">
                       <LogOut className="h-4 w-4" />
                       Sign out
                     </Button>
-                  </Link>
+                  </form>
                 </div>
               )}
             </div>
@@ -121,15 +129,15 @@ export default async function RootLayout({
             {user && (
               <div className="border-t bg-slate-50">
                 <div className="mx-auto flex max-w-7xl flex-col gap-1 px-4 py-2 text-sm sm:px-6 lg:px-8 md:flex-row md:items-center md:justify-between">
-                  <div className="text-slate-700">
+                  <div className="text-slate-600">
                     Signed in as{" "}
-                    <span className="font-semibold">
+                    <span className="font-semibold text-slate-900">
                       {profile?.full_name || user.email}
                     </span>
                   </div>
                   <div className="text-slate-500">
                     Status:{" "}
-                    <span className="font-medium capitalize">
+                    <span className="font-medium capitalize text-slate-700">
                       {profile?.verification_status || "incomplete"}
                     </span>
                   </div>

@@ -15,6 +15,7 @@ import {
   GraduationCap,
   UserCircle2,
   Sparkles,
+  Users,
 } from "lucide-react";
 
 export default async function DirectoryPage({
@@ -92,39 +93,41 @@ export default async function DirectoryPage({
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-      <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-        <div>
-          <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1 text-sm text-slate-600">
-            <Sparkles className="h-4 w-4" />
-            Verified Alumni Network
+      <div className="mb-8 rounded-3xl bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 p-8 text-white shadow-lg">
+        <div className="flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
+          <div>
+            <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-sm text-slate-200">
+              <Sparkles className="h-4 w-4" />
+              Verified alumni-only access
+            </div>
+            <h1 className="text-3xl font-bold tracking-tight md:text-4xl">
+              Alumni Directory
+            </h1>
+            <p className="mt-3 max-w-2xl text-slate-300">
+              Search verified Koharians by batch, district, city, profession, and organization.
+            </p>
           </div>
-          <h1 className="text-3xl font-bold tracking-tight text-slate-900">
-            Alumni Directory
-          </h1>
-          <p className="mt-2 text-slate-600">
-            Browse and reconnect with verified Koharians across batches, cities, and professions.
-          </p>
-        </div>
 
-        <div className="flex flex-wrap gap-3">
-          <Link
-            href="/profile/me"
-            className="inline-flex items-center rounded-lg border bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50"
-          >
-            My Profile
-          </Link>
-          <Link
-            href="/profile/complete"
-            className="inline-flex items-center rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800"
-          >
-            Edit Profile
-          </Link>
+          <div className="flex flex-wrap gap-3">
+            <Link
+              href="/profile/me"
+              className="inline-flex items-center rounded-xl bg-white px-4 py-2 text-sm font-medium text-slate-900 hover:bg-slate-100"
+            >
+              My Profile
+            </Link>
+            <Link
+              href="/profile/complete"
+              className="inline-flex items-center rounded-xl border border-white/20 bg-white/10 px-4 py-2 text-sm font-medium text-white hover:bg-white/20"
+            >
+              Edit Profile
+            </Link>
+          </div>
         </div>
       </div>
 
-      <Card className="mb-8 rounded-2xl shadow-sm">
+      <Card className="mb-8 rounded-3xl border-0 shadow-md">
         <CardHeader>
-          <CardTitle className="text-lg">Search & Filters</CardTitle>
+          <CardTitle className="text-xl">Search and Filters</CardTitle>
         </CardHeader>
         <CardContent>
           <form className="grid gap-4 md:grid-cols-4">
@@ -197,12 +200,13 @@ export default async function DirectoryPage({
         </CardContent>
       </Card>
 
-      <div className="mb-5 text-sm text-slate-500">
+      <div className="mb-5 flex items-center gap-2 text-sm text-slate-500">
+        <Users className="h-4 w-4" />
         {profiles?.length || 0} verified alumni found
       </div>
 
       {!profiles || profiles.length === 0 ? (
-        <Card className="rounded-2xl shadow-sm">
+        <Card className="rounded-3xl shadow-sm">
           <CardContent className="p-10 text-center">
             <h3 className="text-lg font-semibold text-slate-900">
               No verified alumni found
@@ -215,7 +219,7 @@ export default async function DirectoryPage({
       ) : (
         <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
           {profiles.map((profile) => (
-            <Card key={profile.id} className="rounded-2xl border-0 shadow-md">
+            <Card key={profile.id} className="rounded-3xl border-0 shadow-md transition-transform hover:-translate-y-1">
               <CardContent className="p-6">
                 <div className="mb-5 flex items-start gap-4">
                   <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-900 text-lg font-bold text-white">
@@ -284,7 +288,7 @@ export default async function DirectoryPage({
                 </div>
 
                 {profile.bio && (
-                  <div className="mt-5 rounded-xl bg-slate-50 p-4 text-sm text-slate-600">
+                  <div className="mt-5 rounded-2xl bg-slate-50 p-4 text-sm text-slate-600">
                     “{profile.bio}”
                   </div>
                 )}

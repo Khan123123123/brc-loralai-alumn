@@ -2,37 +2,52 @@ export interface Profile {
   id: string;
   email: string;
   full_name: string;
-  entry_year: number;
-  graduation_year: number;
-  program: string;
-  education_level?: string;
-  regular_self_finance?: 'Regular' | 'Self-Finance';
-  roll_number?: string;
-  home_district?: string;
-  student_type?: 'Hostelite' | 'Day Scholar';
-  current_country?: string;
-  current_city: string;
-  current_position?: string;
-  profession?: string;
-  current_organization?: string;
-  industry?: string;
-  experience_years?: number;
-  employment_status?: 'Employed' | 'Self-Employed' | 'Business Owner' | 'Student' | 'Retired' | 'Not Working';
-  phone?: string;
-  linkedin_url?: string;
-  open_to?: string[];
-  languages?: string[];
-  bio?: string;
-  achievements?: string;
-  featured_in_presentation?: boolean;
-  available_for_mentoring?: boolean;
-  verification_status: 'pending' | 'basic' | 'full' | 'rejected';
+  entry_year?: number | null;
+  graduation_year?: number | null;
+  regular_self_finance?: "Regular" | "Self-Finance" | null;
+  roll_number?: string | null;
+  home_district?: string | null;
+  student_type?: "Hostelite" | "Day Scholar" | null;
+
+  current_country?: string | null;
+  current_city?: string | null;
+  current_position?: string | null;
+  profession?: string | null;
+  current_organization?: string | null;
+  industry?: string | null;
+  experience_years?: number | null;
+  employment_status?:
+    | "Employed"
+    | "Self-Employed"
+    | "Business Owner"
+    | "Student"
+    | "Retired"
+    | "Not Working"
+    | null;
+
+  phone?: string | null;
+  linkedin_url?: string | null;
+  languages?: string[] | null;
+  bio?: string | null;
+  achievements?: string | null;
+  featured_in_presentation?: boolean | null;
+  available_for_mentoring?: boolean | null;
+
+  verification_status: "pending" | "basic" | "full" | "rejected";
   verification_score: number;
-  verification_answers: { houses?: string; teachers?: string; staff?: string; ghulam_nabi?: string; };
-  verified_by_peers: number;
-  needs_admin_review: boolean;
-  created_at: string;
-  updated_at: string;
+  verification_answers?: {
+    houses?: string;
+    teachers?: string;
+    staff?: string;
+    principal?: string;
+    established_year?: string;
+  } | null;
+
+  approved_at?: string | null;
+  verified_by_peers?: number | null;
+  needs_admin_review?: boolean | null;
+  created_at?: string | null;
+  updated_at?: string | null;
 }
 
 export interface VerificationLog {
