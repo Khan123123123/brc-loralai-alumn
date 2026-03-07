@@ -31,11 +31,8 @@ export default async function DirectoryMemberPage({ params }: { params: { slug: 
   if (!user) { redirect("/auth/login"); }
 
   const { data: viewerProfile } = await supabase.from("profiles").select("id, full_name, access_level, admin_status, verification_status, is_profile_complete").eq("id", user.id).single();
-  
-  // Clean boolean for Verified vs Unverified
   const isVerified = hasFullAccess(viewerProfile);
 
-  // Check if current user is Admin
   const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL?.toLowerCase();
   const isAdmin = user.email?.toLowerCase() === adminEmail || user.email === "qaisrani12116@gmail.com";
 
@@ -56,11 +53,11 @@ export default async function DirectoryMemberPage({ params }: { params: { slug: 
         <Link href="/directory" className="text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors">← Back to directory</Link>
       </div>
 
-      <div className="mb-8 rounded-3xl bg-primary p-8 text-white shadow-xl relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-secondary/10 rounded-full blur-3xl pointer-events-none"></div>
+      <div className="mb-8 rounded-3xl bg-gradient-to-br from-primary to-secondary p-8 text-white shadow-xl relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl pointer-events-none"></div>
         <div className="relative flex flex-col gap-5 md:flex-row md:items-start md:justify-between">
           <div className="flex items-start gap-4">
-            <div className="flex h-20 w-20 items-center justify-center rounded-3xl bg-white/10 text-2xl font-bold text-white shadow-inner">
+            <div className="flex h-20 w-20 items-center justify-center rounded-3xl bg-white/10 backdrop-blur-sm text-2xl font-bold text-white shadow-inner">
               {getAvatarFallback(member)}
             </div>
             <div>
@@ -74,7 +71,7 @@ export default async function DirectoryMemberPage({ params }: { params: { slug: 
                 )}
               </div>
               {isVerified && (member.current_position || member.profession) && (
-                <p className="mt-4 text-slate-300 font-medium">{member.current_position || member.profession}</p>
+                <p className="mt-4 text-slate-100 font-medium">{member.current_position || member.profession}</p>
               )}
             </div>
           </div>
@@ -107,7 +104,7 @@ export default async function DirectoryMemberPage({ params }: { params: { slug: 
               <div className="mb-2 flex items-center gap-2 font-bold text-amber-900 text-lg"><Lock className="h-5 w-5" /> Unverified Access</div>
               <p className="text-sm text-amber-800">You are currently unverified and can only see basic identity details. You must get verified by an admin to view contact info, jobs, and full background.</p>
             </div>
-            <Link href="/profile/complete" className="inline-flex items-center justify-center rounded-xl bg-slate-900 px-6 py-2.5 text-sm font-semibold text-white hover:bg-slate-800 transition-all whitespace-nowrap shadow-md">Get Verified</Link>
+            <Link href="/profile/complete" className="inline-flex items-center justify-center rounded-xl bg-primary px-6 py-2.5 text-sm font-semibold text-white hover:bg-blue-900 transition-all whitespace-nowrap shadow-md">Get Verified</Link>
           </CardContent>
         </Card>
       )}
@@ -115,7 +112,6 @@ export default async function DirectoryMemberPage({ params }: { params: { slug: 
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="space-y-6 lg:col-span-2">
           
-          {/* Only render About/Bio if Verified */}
           {isVerified && (
             <Card className="rounded-3xl border-0 shadow-md bg-white">
               <CardHeader className="pb-4"><CardTitle className="text-lg">About</CardTitle></CardHeader>
@@ -176,7 +172,7 @@ export default async function DirectoryMemberPage({ params }: { params: { slug: 
 
         <div className="space-y-6">
           <Card className="rounded-3xl border-0 shadow-md bg-white">
-            <CardHeader className="pb-4"><CardTitle className="text-lg">BRC Identity Details</CardTitle></CardHeader>
+            <CardHeader className="pb-4"><CardTitle className="text-lg">Identity Details</CardTitle></CardHeader>
             <CardContent className="space-y-4 text-sm text-slate-700">
               <div className="flex justify-between border-b border-slate-50 pb-3"><span className="font-medium text-slate-900">Entry Year</span><span className="text-slate-600 font-semibold">{member.entry_year || "—"}</span></div>
               <div className="flex justify-between border-b border-slate-50 pb-3"><span className="font-medium text-slate-900">Graduation</span><span className="text-slate-600 font-semibold">{member.graduation_year || "—"}</span></div>
@@ -184,7 +180,6 @@ export default async function DirectoryMemberPage({ params }: { params: { slug: 
             </CardContent>
           </Card>
 
-          {/* Only render Location if Verified */}
           {isVerified && (
             <Card className="rounded-3xl border-0 shadow-md bg-white">
               <CardHeader className="pb-4"><CardTitle className="text-lg">Location</CardTitle></CardHeader>
@@ -197,10 +192,9 @@ export default async function DirectoryMemberPage({ params }: { params: { slug: 
             </Card>
           )}
 
-          {/* Only render Contact if Verified */}
           {isVerified && (
             <Card className="rounded-3xl border-0 shadow-md bg-white">
-              <CardHeader className="pb-4"><CardTitle className="text-lg">Contact</CardTitle></CardHeader>
+              <CardHeader className="pb-4"><CardTitle className="text-lg">Contact Information</CardTitle></CardHeader>
               <CardContent className="space-y-4 text-sm text-slate-700">
                 {visibleContacts.email ? (
                   <a href={`mailto:${visibleContacts.email}`} className="group flex items-center gap-4 rounded-2xl border border-slate-100 p-3 hover:bg-slate-50 transition-colors">

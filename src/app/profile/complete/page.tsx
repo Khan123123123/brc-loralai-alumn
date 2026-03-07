@@ -15,13 +15,11 @@ import { Education, Job } from "@/types/database";
 import { deleteMyAccount } from "@/app/profile/actions";
 import { ArrowLeft, ArrowRight, Plus, Trash2, Save, ShieldCheck, Lock, Settings, AlertTriangle, ChevronDown, ChevronUp } from "lucide-react";
 
-// (Keep all arrays exactly the same: districts, studentTypes, employmentStatuses, industries)
 const districts = ["Awaran", "Barkhan", "Chagai", "Chaman", "Dera Bugti", "Duki", "Gwadar", "Harnai", "Hub", "Jafarabad", "Jhal Magsi", "Kachhi (Bolan)", "Kalat", "Kech (Turbat)", "Kharan", "Khuzdar", "Killa Abdullah", "Killa Saifullah", "Kohlu", "Lasbela", "Loralai", "Mastung", "Musakhel", "Naseerabad", "Nushki", "Panjgur", "Pishin", "Quetta", "Sherani", "Sibi", "Sohbatpur", "Surab", "Usta Muhammad", "Washuk", "Zhob", "Ziarat", "Other"];
 const studentTypes = ["Hostelite", "Day Scholar"];
 const employmentStatuses = ["Employed", "Self-Employed", "Business Owner", "Student", "Retired", "Not Working", "House Wife/Husband"];
 const industries = ["Healthcare/Medical", "IT/Software/Technology", "Education/Teaching", "Government/Public Sector", "Business/Trade", "Banking/Finance", "Engineering", "Law/Legal", "Media/Journalism", "Agriculture", "Military/Defense", "Real Estate", "Transportation", "Construction", "Mining", "Other"];
 
-// [Keep FormDataType and emptyForm exactly as they were]
 type FormDataType = {
   full_name: string; entry_year: string; graduation_year: string; home_district: string; student_type: string; regular_self_finance: string; roll_number: string;
   current_country: string; current_city: string; current_position: string; profession: string; current_organization: string; industry: string; experience_years: string; employment_status: string;
@@ -54,7 +52,6 @@ export default function CompleteProfilePage() {
   const [formData, setFormData] = useState<FormDataType>(emptyForm);
   const [banner, setBanner] = useState<{ type: "success" | "error" | "info"; text: string } | null>(null);
 
-  // Advanced Settings Toggle
   const [showSecuritySettings, setShowSecuritySettings] = useState(false);
   const [newEmail, setNewEmail] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -167,23 +164,23 @@ export default function CompleteProfilePage() {
   return (
     <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
       
-      {/* VIBRANT HERO BANNER */}
-      <div className="mb-8 rounded-[2rem] bg-gradient-to-r from-blue-900 via-primary to-slate-900 p-8 text-white shadow-2xl relative overflow-hidden border border-white/10">
-        <div className="absolute -top-32 -right-32 w-96 h-96 bg-secondary/20 rounded-full blur-[80px] pointer-events-none"></div>
+      {/* UPENN COLORED HERO BANNER */}
+      <div className="mb-8 rounded-[2rem] bg-gradient-to-r from-primary via-primary to-secondary p-8 text-white shadow-2xl relative overflow-hidden border border-white/10">
+        <div className="absolute -top-32 -right-32 w-96 h-96 bg-white/10 rounded-full blur-[80px] pointer-events-none"></div>
         <div className="relative flex flex-col gap-6 md:flex-row md:items-center md:justify-between z-10">
           <div>
-            <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-white/10 border border-white/20 px-4 py-1.5 text-sm shadow-sm backdrop-blur-sm">
-              <ShieldCheck className="h-4 w-4 text-secondary" /> Profile Central
+            <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-black/20 border border-white/20 px-4 py-1.5 text-sm shadow-sm backdrop-blur-sm font-semibold">
+              <ShieldCheck className="h-4 w-4 text-white" /> Profile Settings
             </div>
-            <h1 className="text-4xl font-extrabold tracking-tight">Edit Your Dossier</h1>
-            <p className="text-blue-100 mt-2 max-w-md text-sm leading-relaxed">Update your academic background, professional milestones, and global coordinates.</p>
+            <h1 className="text-4xl font-extrabold tracking-tight">Edit Your Profile</h1>
+            <p className="text-white/90 mt-2 max-w-md text-sm leading-relaxed">Update your academic background, professional experience, and contact details.</p>
           </div>
           <div className="flex-shrink-0">
             <div className="rounded-2xl bg-black/30 backdrop-blur-md px-6 py-4 border border-white/10 shadow-inner">
-              <div className="text-blue-200 text-xs font-medium uppercase tracking-wider mb-1">Network Status</div>
+              <div className="text-white/70 text-xs font-bold uppercase tracking-wider mb-1">Account Status</div>
               <div className="font-bold text-lg flex items-center gap-2">
                 {isAlreadyApproved ? <ShieldCheck className="w-5 h-5 text-emerald-400 drop-shadow-md" /> : <Lock className="w-5 h-5 text-amber-400" />}
-                {isAlreadyApproved ? <span className="text-emerald-400">Verified Member</span> : <span className="text-amber-400">Unverified</span>}
+                {isAlreadyApproved ? <span className="text-emerald-400">Verified</span> : <span className="text-amber-400">Unverified</span>}
               </div>
             </div>
           </div>
@@ -211,7 +208,7 @@ export default function CompleteProfilePage() {
                 {isAlreadyApproved && (
                   <div className="bg-emerald-50 dark:bg-emerald-900/20 text-emerald-800 dark:text-emerald-300 p-4 rounded-xl text-sm border border-emerald-200 dark:border-emerald-800/30 flex items-start gap-3 shadow-sm">
                     <Lock className="w-5 h-5 shrink-0 mt-0.5" /> 
-                    <p>Your account is fully verified. Core identity fields (Name and Years) are now permanently locked to protect directory integrity.</p>
+                    <p>Your account is verified. Core identity fields (Name and Years) are now locked to protect directory integrity.</p>
                   </div>
                 )}
               </div>
@@ -280,9 +277,9 @@ export default function CompleteProfilePage() {
               <div className="space-y-2"><Label className="text-slate-600 dark:text-slate-400 font-semibold">Current City *</Label><Input className="bg-white dark:bg-slate-950 rounded-xl" value={formData.current_city} onChange={(e) => setField("current_city", e.target.value)} /></div>
               <div className="space-y-2"><Label className="text-slate-600 dark:text-slate-400 font-semibold">Current Country</Label><Input className="bg-white dark:bg-slate-950 rounded-xl" value={formData.current_country} onChange={(e) => setField("current_country", e.target.value)} /></div>
               <div className="bg-blue-50 dark:bg-blue-950/30 p-5 rounded-3xl border border-blue-100 dark:border-blue-900/50 md:col-span-2 shadow-sm">
-                <Label className="text-blue-900 dark:text-blue-300 font-bold text-base">Phone Number</Label>
+                <Label className="text-primary dark:text-blue-300 font-bold text-base">Phone Number</Label>
                 <Input className="mt-3 bg-white dark:bg-slate-950 max-w-md rounded-xl" value={formData.phone} onChange={(e) => setField("phone", e.target.value)} placeholder="+92..." />
-                <label className="flex items-center gap-3 mt-4 text-sm text-blue-800 dark:text-blue-200 cursor-pointer font-medium">
+                <label className="flex items-center gap-3 mt-4 text-sm text-primary/80 dark:text-blue-200 cursor-pointer font-medium">
                   <Checkbox checked={!formData.show_phone_publicly} onCheckedChange={(c) => setField("show_phone_publicly", !c)} />
                   Keep my phone number strictly private (hidden from other alumni)
                 </label>
@@ -296,7 +293,7 @@ export default function CompleteProfilePage() {
             <div className="grid gap-6 md:grid-cols-2 animate-in fade-in duration-300">
               <div className="md:col-span-2 p-5 bg-gradient-to-r from-amber-50 to-amber-100 dark:from-amber-950/40 dark:to-amber-900/20 text-amber-900 dark:text-amber-200 rounded-3xl text-sm border border-amber-200 dark:border-amber-800 shadow-sm flex gap-3 items-start">
                 <ShieldCheck className="w-6 h-6 shrink-0 mt-0.5 text-amber-600 dark:text-amber-500" />
-                <p><strong>Security Verification:</strong> The answers below are strictly confidential. Only platform administrators can view them to confirm your authentic BRC identity.</p>
+                <p><strong>Security Verification:</strong> The answers below are strictly confidential. Only platform administrators can view them to confirm your authentic identity.</p>
               </div>
               <div className="space-y-2"><Label className="font-semibold text-slate-700 dark:text-slate-300">House names or hostel references</Label><Input className="bg-white dark:bg-slate-950 rounded-xl" value={formData.verification_answers.houses} onChange={(e) => setVerificationField("houses", e.target.value)} /></div>
               <div className="space-y-2"><Label className="font-semibold text-slate-700 dark:text-slate-300">Teachers you remember</Label><Input className="bg-white dark:bg-slate-950 rounded-xl" value={formData.verification_answers.teachers} onChange={(e) => setVerificationField("teachers", e.target.value)} /></div>
@@ -325,7 +322,7 @@ export default function CompleteProfilePage() {
           className="text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 rounded-full"
         >
           <Settings className="w-4 h-4 mr-2"/> 
-          {showSecuritySettings ? "Hide Security Settings" : "Advanced Account Settings"} 
+          {showSecuritySettings ? "Hide Security Settings" : "Account Security Settings"} 
           {showSecuritySettings ? <ChevronUp className="w-4 h-4 ml-2"/> : <ChevronDown className="w-4 h-4 ml-2"/>}
         </Button>
 
@@ -333,24 +330,24 @@ export default function CompleteProfilePage() {
           <div className="w-full mt-6 animate-in slide-in-from-top-4 fade-in duration-300">
             <Card className="rounded-[2rem] border border-slate-200 shadow-lg bg-white dark:bg-slate-900 overflow-hidden">
               <CardHeader className="border-b bg-slate-50/50 dark:bg-slate-900/50 pb-5">
-                <CardTitle className="text-xl flex items-center gap-2 text-slate-800 dark:text-slate-100"><Settings className="w-5 h-5 text-primary"/> Credentials & Access</CardTitle>
-                <CardDescription>Update your authentication or permanently leave the network.</CardDescription>
+                <CardTitle className="text-xl flex items-center gap-2 text-slate-800 dark:text-slate-100"><Settings className="w-5 h-5 text-primary"/> Credentials</CardTitle>
+                <CardDescription>Update your login credentials or permanently delete your account here.</CardDescription>
               </CardHeader>
               <CardContent className="p-8 space-y-8">
                 <div className="grid gap-6 md:grid-cols-2 border-b dark:border-slate-800 pb-8">
                   <div className="bg-slate-50 dark:bg-slate-950 p-5 rounded-2xl border border-slate-100 dark:border-slate-800">
-                    <Label className="text-slate-800 dark:text-slate-200 font-bold">Change Email</Label>
-                    <p className="text-xs text-slate-500 mb-3 mt-1">Current: <span className="font-mono bg-white dark:bg-slate-800 px-1.5 py-0.5 rounded border dark:border-slate-700 shadow-sm">{user?.email}</span></p>
+                    <Label className="text-slate-800 dark:text-slate-200 font-bold">Change Login Email</Label>
+                    <p className="text-xs text-slate-500 mb-3 mt-1">Current email: <span className="font-mono bg-white dark:bg-slate-800 px-1.5 py-0.5 rounded border dark:border-slate-700 shadow-sm">{user?.email}</span></p>
                     <div className="flex gap-2">
-                      <Input type="email" placeholder="New address" className="bg-white dark:bg-slate-900" value={newEmail} onChange={(e) => setNewEmail(e.target.value)} disabled={authLoading} />
+                      <Input type="email" placeholder="New Email Address" className="bg-white dark:bg-slate-900" value={newEmail} onChange={(e) => setNewEmail(e.target.value)} disabled={authLoading} />
                       <Button variant="outline" onClick={() => handleUpdateAuth("email")} disabled={authLoading || !newEmail}>Update</Button>
                     </div>
                   </div>
                   <div className="bg-slate-50 dark:bg-slate-950 p-5 rounded-2xl border border-slate-100 dark:border-slate-800">
                     <Label className="text-slate-800 dark:text-slate-200 font-bold">Change Password</Label>
-                    <p className="text-xs text-slate-500 mb-3 mt-1">Require next login with new credentials.</p>
+                    <p className="text-xs text-slate-500 mb-3 mt-1">Enter a secure new password for your account.</p>
                     <div className="flex gap-2">
-                      <Input type="password" placeholder="New password" className="bg-white dark:bg-slate-900" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} disabled={authLoading} />
+                      <Input type="password" placeholder="New Password" className="bg-white dark:bg-slate-900" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} disabled={authLoading} />
                       <Button variant="outline" onClick={() => handleUpdateAuth("password")} disabled={authLoading || !newPassword}>Update</Button>
                     </div>
                   </div>
@@ -358,7 +355,7 @@ export default function CompleteProfilePage() {
                 <div className="bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/50 rounded-2xl p-6 flex flex-col md:flex-row md:items-center justify-between gap-6 shadow-inner">
                   <div>
                     <h4 className="font-extrabold text-red-800 dark:text-red-400 flex items-center gap-2"><AlertTriangle className="w-5 h-5"/> Danger Zone</h4>
-                    <p className="text-sm text-red-700/80 dark:text-red-400/80 mt-1 max-w-lg">Permanently delete your account, authentication details, and all associated profile records from the server. This action is irreversible.</p>
+                    <p className="text-sm text-red-700/80 dark:text-red-400/80 mt-1 max-w-lg">Permanently delete your account and all associated profile data. This cannot be undone.</p>
                   </div>
                   <Button variant="destructive" onClick={handleDeleteAccount} disabled={authLoading} className="shrink-0 rounded-xl font-bold shadow-md">
                     Delete My Account

@@ -4,6 +4,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { createClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import {
   Users,
   Home,
@@ -18,8 +19,7 @@ const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 
 export const metadata: Metadata = {
   title: "BRC Loralai Alumni Network",
-  description:
-    "Connecting Koharians worldwide - Alumni network for Balochistan Residential College, Loralai",
+  description: "Connecting Koharians worldwide",
 };
 
 export default async function RootLayout({
@@ -28,23 +28,11 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  let profile: {
-    full_name?: string | null;
-    verification_status?: string | null;
-  } | null = null;
-
+  let profile = null;
   if (user) {
-    const { data } = await supabase
-      .from("profiles")
-      .select("full_name, verification_status")
-      .eq("id", user.id)
-      .single();
-
+    const { data } = await supabase.from("profiles").select("full_name, verification_status").eq("id", user.id).single();
     profile = data;
   }
 
@@ -52,101 +40,75 @@ export default async function RootLayout({
   const isAdmin = user?.email?.toLowerCase() === adminEmail || user?.email === "qaisrani12116@gmail.com";
 
   return (
-    <html lang="en">
-      <body className={`${inter.variable} font-sans min-h-screen bg-slate-50 text-slate-900`}>
-        <div className="min-h-screen flex flex-col">
-          {/* Made relative on mobile, sticky only on desktop so it doesn't consume screen space */}
-          <header className="relative lg:sticky top-0 z-50 border-b bg-white/95 backdrop-blur shadow-sm">
-            <div className="mx-auto flex max-w-7xl flex-col lg:flex-row lg:items-center justify-between px-4 py-3 sm:px-6 lg:px-8 gap-4">
-              <Link href={user ? "/directory" : "/"} className="flex items-center gap-3 shrink-0">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-white shadow-sm">
+    <html lang="en" suppressHydrationWarning>
+      <body className={`${inter.variable} font-sans min-h-screen flex flex-col`}>
+        
+        <header className="relative lg:sticky top-0 z-50 border-b border-border bg-white/80 dark:bg-slate-950/80 backdrop-blur-md shadow-sm">
+          <div className="mx-auto flex max-w-7xl flex-col lg:flex-row lg:items-center justify-between px-4 py-3 sm:px-6 lg:px-8 gap-4">
+            
+            <div className="flex items-center justify-between w-full lg:w-auto">
+              <Link href={user ? "/directory" : "/"} className="flex items-center gap-3 shrink-0 group">
+                {/* UPenn Colorful Logo Background */}
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-secondary text-white shadow-md group-hover:shadow-lg transition-all">
                   <Users className="h-5 w-5" />
                 </div>
                 <div>
-                  <div className="text-lg font-bold leading-none text-primary">
-                    BRC Loralai
-                  </div>
-                  <div className="mt-1 text-xs font-medium text-slate-500 uppercase tracking-wider">
-                    Alumni Network
-                  </div>
+                  <div className="text-lg font-bold leading-none text-primary dark:text-white">BRC Loralai</div>
+                  <div className="mt-1 text-[10px] font-bold text-secondary uppercase tracking-widest">Alumni Network</div>
                 </div>
               </Link>
+              
+              <div className="lg:hidden"><ThemeToggle /></div>
+            </div>
 
-              {!user ? (
-                <div className="flex items-center gap-2">
-                  <Link href="/auth/login">
-                    <Button variant="outline" size="sm">Login</Button>
-                  </Link>
-                  <Link href="/auth/signup">
-                    <Button size="sm" className="bg-secondary text-primary hover:bg-yellow-500">Join Network</Button>
-                  </Link>
-                </div>
-              ) : (
-                <div className="flex overflow-x-auto pb-1 lg:pb-0 items-center gap-2 scrollbar-hide w-full lg:w-auto">
-                  <Link href="/" className="shrink-0">
-                    <Button variant="ghost" size="sm" className="gap-2 text-slate-600">
-                      <Home className="h-4 w-4" /> Home
+            {!user ? (
+              <div className="flex items-center gap-3">
+                <Link href="/auth/login"><Button variant="outline" size="sm" className="rounded-full">Login</Button></Link>
+                <Link href="/auth/signup"><Button size="sm" className="bg-primary text-white hover:bg-secondary font-bold rounded-full shadow-md hover:shadow-lg transition-all">Join Network</Button></Link>
+                <div className="hidden lg:block ml-2"><ThemeToggle /></div>
+              </div>
+            ) : (
+              <div className="flex overflow-x-auto pb-2 lg:pb-0 items-center gap-1.5 scrollbar-hide w-full lg:w-auto">
+                <Link href="/" className="shrink-0"><Button variant="ghost" size="sm" className="gap-2 text-slate-600 dark:text-slate-300 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800"><Home className="h-4 w-4" /> Home</Button></Link>
+                <Link href="/directory" className="shrink-0"><Button variant="ghost" size="sm" className="gap-2 text-slate-600 dark:text-slate-300 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800"><Search className="h-4 w-4" /> Directory</Button></Link>
+                <Link href="/profile/me" className="shrink-0"><Button variant="ghost" size="sm" className="gap-2 text-slate-600 dark:text-slate-300 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800"><User className="h-4 w-4" /> Profile</Button></Link>
+                <Link href="/profile/complete" className="shrink-0"><Button variant="ghost" size="sm" className="gap-2 text-slate-600 dark:text-slate-300 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800"><Settings className="h-4 w-4" /> Edit</Button></Link>
+                
+                {isAdmin && (
+                  <Link href="/admin" className="shrink-0">
+                    <Button variant="ghost" size="sm" className="gap-2 text-white bg-primary hover:bg-secondary rounded-full shadow-sm ml-1 transition-colors">
+                      <ShieldCheck className="h-4 w-4" /> Admin
                     </Button>
                   </Link>
+                )}
 
-                  <Link href="/directory" className="shrink-0">
-                    <Button variant="ghost" size="sm" className="gap-2 text-slate-600">
-                      <Search className="h-4 w-4" /> Directory
-                    </Button>
-                  </Link>
-
-                  <Link href="/profile/me" className="shrink-0">
-                    <Button variant="ghost" size="sm" className="gap-2 text-slate-600">
-                      <User className="h-4 w-4" /> Profile
-                    </Button>
-                  </Link>
-
-                  <Link href="/profile/complete" className="shrink-0">
-                    <Button variant="ghost" size="sm" className="gap-2 text-slate-600">
-                      <Settings className="h-4 w-4" /> Edit
-                    </Button>
-                  </Link>
-
-                  {isAdmin && (
-                    <Link href="/admin" className="shrink-0">
-                      <Button variant="ghost" size="sm" className="gap-2 text-primary font-semibold bg-blue-50">
-                        <ShieldCheck className="h-4 w-4" /> Admin
-                      </Button>
-                    </Link>
-                  )}
-
-                  <form action="/auth/signout" method="get" className="shrink-0 ml-auto lg:ml-2">
-                    <Button variant="outline" size="sm" className="gap-2 text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200" type="submit">
+                <div className="hidden lg:flex ml-2 border-l border-slate-200 dark:border-slate-800 pl-3 gap-2">
+                  <ThemeToggle />
+                  <form action="/auth/signout" method="get">
+                    <Button variant="outline" size="sm" className="gap-2 text-red-600 border-red-200 hover:bg-red-50 dark:hover:bg-red-950 rounded-full" type="submit">
                       <LogOut className="h-4 w-4" /> Sign out
                     </Button>
                   </form>
                 </div>
-              )}
-            </div>
-
-            {user && (
-              <div className="border-t bg-slate-100 hidden lg:block">
-                <div className="mx-auto flex max-w-7xl items-center justify-between px-8 py-1.5 text-xs">
-                  <div className="text-slate-500">
-                    Signed in as <span className="font-semibold text-slate-900">{profile?.full_name || user.email}</span>
-                  </div>
-                  <div className="text-slate-500">
-                    Status: <span className="font-medium capitalize text-primary">{profile?.verification_status || "incomplete"}</span>
-                  </div>
-                </div>
               </div>
             )}
-          </header>
+          </div>
+        </header>
 
-          <main className="flex-1">{children}</main>
+        {/* Subtle radial gradient background */}
+        <main className="flex-1 w-full bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-blue-50/50 via-background to-background dark:from-slate-900 dark:via-background dark:to-background">
+          {children}
+        </main>
 
-          <footer className="border-t bg-white">
-            <div className="mx-auto flex max-w-7xl flex-col gap-2 px-4 py-6 text-sm text-slate-500 sm:px-6 lg:px-8 md:flex-row md:items-center md:justify-between">
-              <p>© 2026 BRC Loralai Alumni Network</p>
-              <p>Connecting Koharians worldwide</p>
+        <footer className="border-t border-border bg-white dark:bg-slate-950">
+          <div className="mx-auto flex max-w-7xl flex-col gap-2 px-4 py-8 text-sm text-slate-500 dark:text-slate-400 sm:px-6 lg:px-8 md:flex-row md:items-center md:justify-between">
+            <div className="flex items-center gap-2">
+              <Users className="w-5 h-5 text-primary dark:text-primary" />
+              <p className="font-semibold text-slate-800 dark:text-slate-200">© 2026 BRC Loralai Alumni</p>
             </div>
-          </footer>
-        </div>
+            <p>Connecting Koharians worldwide.</p>
+          </div>
+        </footer>
       </body>
     </html>
   );

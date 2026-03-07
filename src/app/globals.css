@@ -4,48 +4,50 @@
 
 @layer base {
   :root {
-    /* Light Mode - BRC Institutional Theme */
+    /* Light Mode */
     --background: 210 20% 98%; 
-    --foreground: 222.2 84% 4.9%;
+    --foreground: 220 98% 10%;
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 220 98% 10%;
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover-foreground: 220 98% 10%;
     
-    /* BRC Institutional Navy */
-    --primary: 215 100% 15%; 
-    --primary-foreground: 210 40% 98%;
+    /* UPenn Blue (#011F5B) */
+    --primary: 220 98% 18%; 
+    --primary-foreground: 0 0% 100%;
     
-    /* BRC Gold / Prestige Accent */
-    --secondary: 46 65% 52%;
-    --secondary-foreground: 215 100% 15%;
+    /* UPenn Red (#990000) */
+    --secondary: 0 100% 30%;
+    --secondary-foreground: 0 0% 100%;
     
     --muted: 210 40% 96.1%;
     --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 215 100% 15%;
+    --accent: 220 98% 18%;
     --accent-foreground: 0 0% 100%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
-    --ring: 46 65% 52%;
+    --ring: 0 100% 30%; /* UPenn Red Focus Rings */
     --radius: 1rem; 
   }
 
   .dark {
-    /* Dark Mode - Sleek Navy/Slate */
-    --background: 222.2 47% 7%;
+    /* Dark Mode - UPenn Theme Optimized */
+    --background: 222 47% 7%;
     --foreground: 210 40% 98%;
-    --card: 215 35% 10%;
+    --card: 220 40% 11%;
     --card-foreground: 210 40% 98%;
-    --popover: 215 35% 10%;
+    --popover: 220 40% 11%;
     --popover-foreground: 210 40% 98%;
     
-    --primary: 210 40% 98%;
-    --primary-foreground: 215 100% 15%;
+    /* Brightened UPenn Blue for dark mode contrast */
+    --primary: 220 85% 55%;
+    --primary-foreground: 0 0% 100%;
     
-    --secondary: 46 65% 52%;
-    --secondary-foreground: 215 100% 15%;
+    /* Brightened UPenn Red for dark mode contrast */
+    --secondary: 0 80% 55%;
+    --secondary-foreground: 0 0% 100%;
     
     --muted: 215 35% 15%;
     --muted-foreground: 215 20.2% 65.1%;
@@ -55,7 +57,7 @@
     --destructive-foreground: 210 40% 98%;
     --border: 215 35% 18%;
     --input: 215 35% 18%;
-    --ring: 46 65% 52%;
+    --ring: 0 80% 55%;
   }
 }
 
@@ -68,7 +70,6 @@
   }
 }
 
-/* Hide scrollbar for clean horizontal scrolls */
 .scrollbar-hide::-webkit-scrollbar {
     display: none;
 }
