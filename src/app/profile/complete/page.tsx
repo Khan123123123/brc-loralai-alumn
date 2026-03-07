@@ -17,6 +17,7 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { Education, Job } from "@/types/database";
+import { deleteMyAccount } from "@/app/profile/actions";
 import {
   AlertCircle,
   ArrowLeft,
@@ -27,47 +28,20 @@ import {
   Save,
   ShieldCheck,
   UserCircle2,
+  Lock,
+  Settings,
+  AlertTriangle
 } from "lucide-react";
 
-// Updated comprehensive list of all districts in Balochistan
+// Comprehensive list of all districts in Balochistan
 const districts = [
-  "Awaran",
-  "Barkhan",
-  "Chagai",
-  "Chaman",
-  "Dera Bugti",
-  "Duki",
-  "Gwadar",
-  "Harnai",
-  "Hub",
-  "Jafarabad",
-  "Jhal Magsi",
-  "Kachhi (Bolan)",
-  "Kalat",
-  "Kech (Turbat)",
-  "Kharan",
-  "Khuzdar",
-  "Killa Abdullah",
-  "Killa Saifullah",
-  "Kohlu",
-  "Lasbela",
-  "Loralai",
-  "Mastung",
-  "Musakhel",
-  "Naseerabad",
-  "Nushki",
-  "Panjgur",
-  "Pishin",
-  "Quetta",
-  "Sherani",
-  "Sibi",
-  "Sohbatpur",
-  "Surab",
-  "Usta Muhammad",
-  "Washuk",
-  "Zhob",
-  "Ziarat",
-  "Other",
+  "Awaran", "Barkhan", "Chagai", "Chaman", "Dera Bugti", "Duki", 
+  "Gwadar", "Harnai", "Hub", "Jafarabad", "Jhal Magsi", "Kachhi (Bolan)", 
+  "Kalat", "Kech (Turbat)", "Kharan", "Khuzdar", "Killa Abdullah", 
+  "Killa Saifullah", "Kohlu", "Lasbela", "Loralai", "Mastung", 
+  "Musakhel", "Naseerabad", "Nushki", "Panjgur", "Pishin", "Quetta", 
+  "Sherani", "Sibi", "Sohbatpur", "Surab", "Usta Muhammad", "Washuk", 
+  "Zhob", "Ziarat", "Other",
 ];
 
 const studentTypes = ["Hostelite", "Day Scholar"];
@@ -142,8 +116,13 @@ const emptyForm: FormDataType = {
   higher_education: [], job_history: [],
   phone: "", linkedin_url: "", languages: [], bio: "", achievements: "",
   featured_in_presentation: false, available_for_mentoring: false,
-  show_phone_publicly: false, show_email_publicly: false, 
-  show_linkedin_publicly: true, show_in_directory: true,
+  
+  // All visible by default
+  show_phone_publicly: true, 
+  show_email_publicly: true, 
+  show_linkedin_publicly: true, 
+  show_in_directory: true,
+  
   verification_answers: { houses: "", teachers: "", staff: "", principal: "", established_year: "" },
 };
 
@@ -161,6 +140,11 @@ export default function CompleteProfilePage() {
 
   const [formData, setFormData] = useState<FormDataType>(emptyForm);
   const [banner, setBanner] = useState<{ type: "success" | "error" | "info"; text: string } | null>(null);
+
+  // Auth/Account Settings State
+  const [newEmail, setNewEmail] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [authLoading, setAuthLoading] = useState(false);
 
   useEffect(() => {
     const load = async () => {
@@ -204,10 +188,11 @@ export default function CompleteProfilePage() {
           featured_in_presentation: Boolean(profile.featured_in_presentation),
           available_for_mentoring: Boolean(profile.available_for_mentoring),
 
-          show_phone_publicly: Boolean(profile.show_phone_publicly),
-          show_email_publicly: Boolean(profile.show_email_publicly),
-          show_linkedin_publicly: profile.show_linkedin_publicly === null ? true : Boolean(profile.show_linkedin_publicly),
-          show_in_directory: profile.show_in_directory === null ? true : Boolean(profile.show_in_directory),
+          // Enforce hardcoded true for fields that should no longer be hidden
+          show_phone_publicly: profile.show_phone_publicly === null ? true : Boolean(profile.show_phone_publicly),
+          show_email_publicly: true,
+          show_linkedin_publicly: true,
+          show_in_directory: true,
 
           verification_answers: {
             houses: profile.verification_answers?.houses || "",
@@ -269,18 +254,11 @@ export default function CompleteProfilePage() {
     setField("job_history", updated);
   };
 
-  const toggleLanguage = (language: string) => {
-    setFormData((prev) => ({
-      ...prev, languages: prev.languages.includes(language) ? prev.languages.filter((i) => i !== language) : [...prev.languages, language],
-    }));
-  };
-
   const score = useMemo(() => calculateProfileScore(formData), [formData]);
   const computedAccessLevel = useMemo(() => getAccessLevelFromProfile(formData), [formData]);
   const profileComplete = useMemo(() => isProfileComplete(formData), [formData]);
 
   const effectiveAdminStatusText = existingAdminStatus === "approved" ? "Approved" : existingAdminStatus === "rejected" ? "Rejected" : "Pending review";
-  const accessText = computedAccessLevel === "full" ? "Full access" : "Limited access";
 
   const handleSubmit = async () => {
     if (!user) return;
@@ -289,8 +267,11 @@ export default function CompleteProfilePage() {
 
     try {
       const computedSlug = slugifyProfileName(formData.full_name || user.email || "member", formData.graduation_year ? parseInt(formData.graduation_year) : null);
+      
+      // CRITICAL LOGIC: Never revert an approved user to pending.
       const nextAdminStatus = existingAdminStatus === "approved" ? "approved" : "pending";
-      const nextAccessLevel = computedAccessLevel;
+      const nextAccessLevel = existingAdminStatus === "approved" ? "full" : computedAccessLevel;
+      const nextVerificationStatus = existingAdminStatus === "approved" ? "full" : getLegacyVerificationStatus(nextAccessLevel, nextAdminStatus);
 
       const payload = {
         id: user.id, email: user.email, full_name: formData.full_name || null, slug: computedSlug,
@@ -307,20 +288,23 @@ export default function CompleteProfilePage() {
         phone: formData.phone || null, linkedin_url: formData.linkedin_url || null,
         languages: formData.languages, bio: formData.bio || null, achievements: formData.achievements || null,
         featured_in_presentation: formData.featured_in_presentation, available_for_mentoring: formData.available_for_mentoring,
-        show_phone_publicly: formData.show_phone_publicly, show_email_publicly: formData.show_email_publicly,
-        show_linkedin_publicly: formData.show_linkedin_publicly, show_in_directory: formData.show_in_directory,
+        
+        // Only Phone has a toggle now. Rest are forced to true.
+        show_phone_publicly: formData.show_phone_publicly, 
+        show_email_publicly: true,
+        show_linkedin_publicly: true, 
+        show_in_directory: true,
+        
         verification_answers: formData.verification_answers, verification_score: score,
-        verification_status: getLegacyVerificationStatus(nextAccessLevel, nextAdminStatus),
+        verification_status: nextVerificationStatus,
         access_level: nextAccessLevel, admin_status: nextAdminStatus,
-        is_profile_complete: profileComplete, submitted_for_review: nextAdminStatus !== "approved",
+        is_profile_complete: profileComplete, 
+        submitted_for_review: nextAdminStatus !== "approved", // Only flag for review if not already approved
         updated_at: new Date().toISOString(),
       };
 
       const { error } = await supabase.from("profiles").upsert(payload);
       if (error) throw error;
-
-      setExistingAdminStatus(nextAdminStatus);
-      setExistingAccessLevel(nextAccessLevel);
 
       setBanner({ type: "success", text: "Profile saved successfully." });
       router.refresh();
@@ -332,9 +316,48 @@ export default function CompleteProfilePage() {
     }
   };
 
+  const handleUpdateAuth = async (type: "email" | "password") => {
+    if (!confirm(`Are you sure you want to change your ${type}?`)) return;
+    
+    setAuthLoading(true);
+    try {
+      let updateData = {};
+      if (type === "email" && newEmail) updateData = { email: newEmail };
+      if (type === "password" && newPassword) updateData = { password: newPassword };
+      
+      const { error } = await supabase.auth.updateUser(updateData);
+      if (error) throw error;
+      
+      alert(`Your ${type} has been successfully updated. ${type === 'email' ? 'Please check your new email inbox for a confirmation link.' : ''}`);
+      if (type === "email") setNewEmail("");
+      if (type === "password") setNewPassword("");
+    } catch (e: any) {
+      alert("Error: " + e.message);
+    } finally {
+      setAuthLoading(false);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    if (!confirm("DANGER: This action is permanent and cannot be undone. Are you absolutely sure you want to delete your BRC Loralai Alumni account?")) return;
+    
+    setAuthLoading(true);
+    try {
+      await deleteMyAccount();
+      // Redirect to login after successful deletion
+      window.location.href = "/auth/login";
+    } catch (e: any) {
+      alert("Error deleting account: " + e.message);
+      setAuthLoading(false);
+    }
+  };
+
   if (bootLoading) {
     return <div className="text-center p-10 mt-20 text-slate-500">Loading your profile...</div>;
   }
+
+  // Determine if specific fields should be locked
+  const isApprovedAndLocked = existingAdminStatus === "approved";
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
@@ -342,14 +365,17 @@ export default function CompleteProfilePage() {
         <div className="flex flex-col gap-5 md:flex-row md:items-start md:justify-between">
           <div>
             <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-sm">
-              <ShieldCheck className="h-4 w-4" /> Member Profile & Privacy
+              <ShieldCheck className="h-4 w-4" /> Member Profile
             </div>
             <h1 className="text-3xl font-bold">Edit your profile</h1>
           </div>
           <div className="grid gap-3 min-w-[200px]">
             <div className="rounded-2xl bg-white/10 px-4 py-3 text-sm">
-              <div className="text-slate-300">Status</div>
-              <div className="mt-1 font-semibold">{effectiveAdminStatusText}</div>
+              <div className="text-slate-300">Account Status</div>
+              <div className="mt-1 font-semibold flex items-center gap-2">
+                {isApprovedAndLocked && <Lock className="w-4 h-4 text-emerald-400" />}
+                {effectiveAdminStatusText}
+              </div>
             </div>
           </div>
         </div>
@@ -361,13 +387,13 @@ export default function CompleteProfilePage() {
         </div>
       )}
 
-      <Card className="rounded-3xl border-0 shadow-md">
+      <Card className="rounded-3xl border-0 shadow-md mb-8">
         <CardHeader>
           <CardTitle>Step {step} of 4</CardTitle>
           <CardDescription>
             {step === 1 && "BRC and batch details"}
             {step === 2 && "Education and Experience"}
-            {step === 3 && "Contact Details & Personal Info"}
+            {step === 3 && "Contact Details & Bio"}
             {step === 4 && "Verification Questions (Admin Only)"}
           </CardDescription>
         </CardHeader>
@@ -375,18 +401,47 @@ export default function CompleteProfilePage() {
         <CardContent className="space-y-8">
           {step === 1 && (
             <div className="grid gap-6 md:grid-cols-2">
-              <div><Label>Full name *</Label><Input value={formData.full_name} onChange={(e) => setField("full_name", e.target.value)} /></div>
-              <div><Label>Roll number</Label><Input value={formData.roll_number} onChange={(e) => setField("roll_number", e.target.value)} /></div>
+              <div className="md:col-span-2">
+                {isApprovedAndLocked && (
+                  <div className="bg-emerald-50 text-emerald-700 p-3 rounded-lg text-sm border border-emerald-200 flex items-center gap-2">
+                    <Lock className="w-4 h-4" /> 
+                    Your account is approved. Core identity fields (Name and Years) are now locked to maintain integrity. Contact an admin if you need to change them.
+                  </div>
+                )}
+              </div>
+              <div>
+                <Label>Full name *</Label>
+                <Input 
+                  value={formData.full_name} 
+                  onChange={(e) => setField("full_name", e.target.value)} 
+                  disabled={isApprovedAndLocked}
+                  className={isApprovedAndLocked ? "bg-slate-100" : ""}
+                />
+              </div>
+              <div>
+                <Label>Roll number</Label>
+                <Input value={formData.roll_number} onChange={(e) => setField("roll_number", e.target.value)} />
+              </div>
               <div>
                 <Label>Entry year *</Label>
-                <select className="mt-2 h-10 w-full rounded-md border px-3 text-sm" value={formData.entry_year} onChange={(e) => setField("entry_year", e.target.value)}>
+                <select 
+                  className={`mt-2 h-10 w-full rounded-md border px-3 text-sm ${isApprovedAndLocked ? "bg-slate-100 opacity-70 pointer-events-none" : ""}`} 
+                  value={formData.entry_year} 
+                  onChange={(e) => setField("entry_year", e.target.value)}
+                  disabled={isApprovedAndLocked}
+                >
                   <option value="">Select year</option>
                   {Array.from({ length: 50 }, (_, i) => 1980 + i).map(y => <option key={y} value={y}>{y}</option>)}
                 </select>
               </div>
               <div>
                 <Label>Graduation year *</Label>
-                <select className="mt-2 h-10 w-full rounded-md border px-3 text-sm" value={formData.graduation_year} onChange={(e) => setField("graduation_year", e.target.value)}>
+                <select 
+                  className={`mt-2 h-10 w-full rounded-md border px-3 text-sm ${isApprovedAndLocked ? "bg-slate-100 opacity-70 pointer-events-none" : ""}`} 
+                  value={formData.graduation_year} 
+                  onChange={(e) => setField("graduation_year", e.target.value)}
+                  disabled={isApprovedAndLocked}
+                >
                   <option value="">Select year</option>
                   {Array.from({ length: 50 }, (_, i) => 1984 + i).map(y => <option key={y} value={y}>{y}</option>)}
                 </select>
@@ -484,43 +539,22 @@ export default function CompleteProfilePage() {
               <div><Label>Current City *</Label><Input value={formData.current_city} onChange={(e) => setField("current_city", e.target.value)} /></div>
               <div><Label>Current Country</Label><Input value={formData.current_country} onChange={(e) => setField("current_country", e.target.value)} /></div>
 
-              {/* Inline Privacy for Phone */}
-              <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
+              {/* Single Privacy Toggle for Phone */}
+              <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 md:col-span-2">
                 <Label>Phone Number</Label>
-                <Input className="mt-2 bg-white" value={formData.phone} onChange={(e) => setField("phone", e.target.value)} placeholder="+92..." />
-                <label className="flex items-center gap-2 mt-3 text-sm text-slate-600">
-                  <Checkbox checked={formData.show_phone_publicly} onCheckedChange={(c) => setField("show_phone_publicly", Boolean(c))} />
-                  Show phone publicly to verified alumni
+                <Input className="mt-2 bg-white max-w-md" value={formData.phone} onChange={(e) => setField("phone", e.target.value)} placeholder="+92..." />
+                <label className="flex items-center gap-2 mt-3 text-sm text-slate-600 cursor-pointer">
+                  <Checkbox checked={!formData.show_phone_publicly} onCheckedChange={(c) => setField("show_phone_publicly", !c)} />
+                  Do not show my phone number to other alumni
                 </label>
               </div>
 
-              {/* Inline Privacy for LinkedIn */}
-              <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
+              <div>
                 <Label>LinkedIn URL</Label>
                 <Input className="mt-2 bg-white" value={formData.linkedin_url} onChange={(e) => setField("linkedin_url", e.target.value)} placeholder="https://linkedin.com/in/..." />
-                <label className="flex items-center gap-2 mt-3 text-sm text-slate-600">
-                  <Checkbox checked={formData.show_linkedin_publicly} onCheckedChange={(c) => setField("show_linkedin_publicly", Boolean(c))} />
-                  Show LinkedIn publicly to verified alumni
-                </label>
-              </div>
-
-              {/* Email Privacy */}
-              <div className="md:col-span-2 bg-slate-50 p-4 rounded-xl border border-slate-200">
-                <p className="text-sm font-medium mb-2">Email Privacy</p>
-                <label className="flex items-center gap-2 text-sm text-slate-600">
-                  <Checkbox checked={formData.show_email_publicly} onCheckedChange={(c) => setField("show_email_publicly", Boolean(c))} />
-                  Show my email address publicly to verified alumni
-                </label>
               </div>
 
               <div className="md:col-span-2"><Label>Bio</Label><Textarea value={formData.bio} onChange={(e) => setField("bio", e.target.value)} rows={3} /></div>
-              
-              <div className="md:col-span-2">
-                <label className="flex items-center gap-2 text-sm font-medium">
-                  <Checkbox checked={formData.show_in_directory} onCheckedChange={(c) => setField("show_in_directory", Boolean(c))} />
-                  Make my profile visible in the directory
-                </label>
-              </div>
             </div>
           )}
 
@@ -546,6 +580,47 @@ export default function CompleteProfilePage() {
               <Button type="button" onClick={handleSubmit} disabled={saving} className="bg-primary hover:bg-primary/90 text-white"><Save className="h-4 w-4 mr-2" /> {saving ? "Saving..." : "Save Profile"}</Button>
             )}
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Account Security Settings Block */}
+      <Card className="rounded-3xl border border-slate-200 shadow-sm mt-12 bg-white">
+        <CardHeader className="border-b bg-slate-50 rounded-t-3xl pb-4">
+          <CardTitle className="text-xl flex items-center gap-2 text-slate-800"><Settings className="w-5 h-5 text-slate-500"/> Account Security Settings</CardTitle>
+          <CardDescription>Update your login credentials or permanently delete your account here.</CardDescription>
+        </CardHeader>
+        <CardContent className="p-6 space-y-8">
+          
+          <div className="grid gap-4 md:grid-cols-2 border-b pb-6">
+            <div>
+              <Label className="text-slate-700 font-semibold">Change Login Email</Label>
+              <p className="text-xs text-slate-500 mb-2 mt-1">Current email: <span className="font-mono bg-slate-100 px-1 py-0.5 rounded">{user?.email}</span></p>
+              <div className="flex gap-2 mt-2">
+                <Input type="email" placeholder="New Email Address" value={newEmail} onChange={(e) => setNewEmail(e.target.value)} disabled={authLoading} />
+                <Button variant="outline" onClick={() => handleUpdateAuth("email")} disabled={authLoading || !newEmail}>Update</Button>
+              </div>
+            </div>
+            
+            <div>
+              <Label className="text-slate-700 font-semibold">Change Password</Label>
+              <p className="text-xs text-slate-500 mb-2 mt-1">Enter a secure new password for your account.</p>
+              <div className="flex gap-2 mt-2">
+                <Input type="password" placeholder="New Password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} disabled={authLoading} />
+                <Button variant="outline" onClick={() => handleUpdateAuth("password")} disabled={authLoading || !newPassword}>Update</Button>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-red-50 border border-red-200 rounded-2xl p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+              <h4 className="font-bold text-red-800 flex items-center gap-2"><AlertTriangle className="w-5 h-5"/> Danger Zone</h4>
+              <p className="text-sm text-red-700 mt-1">Permanently delete your account and all associated profile data. This cannot be undone.</p>
+            </div>
+            <Button variant="destructive" onClick={handleDeleteAccount} disabled={authLoading} className="shrink-0">
+              Delete My Account
+            </Button>
+          </div>
+
         </CardContent>
       </Card>
     </div>
