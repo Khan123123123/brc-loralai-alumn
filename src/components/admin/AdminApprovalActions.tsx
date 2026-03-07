@@ -1,8 +1,9 @@
 "use client";
+
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { approveProfile, rejectProfile } from "@/app/admin/action";
-import { CheckCircle, XCircle } from "lucide-react";
+import { updateProfileStatus } from "@/app/admin/action";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Loader2 } from "lucide-react";
 
 export function AdminApprovalActions({ 
   profileId, 
@@ -11,46 +12,41 @@ export function AdminApprovalActions({
   profileId: string; 
   currentStatus: string;
 }) {
-  const [loading, setLoading] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [status, setStatus] = useState(currentStatus);
 
-  const handleAction = async (action: "approve" | "reject") => {
-    setLoading(action);
+  const handleStatusChange = async (newStatus: "full" | "pending" | "rejected" | "limited") => {
+    setLoading(true);
+    setStatus(newStatus);
     try {
-      if (action === "approve") {
-        await approveProfile(profileId, currentStatus);
-      } else if (action === "reject") {
-        await rejectProfile(profileId, currentStatus);
-      }
+      await updateProfileStatus(profileId, newStatus);
       window.location.reload();
     } catch (error) {
-      alert("Error: " + (error as Error).message);
+      alert("Error updating status: " + (error as Error).message);
+      setStatus(currentStatus); // Revert on failure
     } finally {
-      setLoading(null);
+      setLoading(false);
     }
   };
 
   return (
-    <div className="flex gap-2">
-      <Button
-        size="sm"
-        className="bg-green-600 hover:bg-green-700 text-white"
-        onClick={() => handleAction("approve")}
-        disabled={!!loading}
+    <div className="flex items-center gap-2 min-w-[160px]">
+      {loading && <Loader2 className="w-4 h-4 animate-spin text-primary" />}
+      <Select 
+        value={status} 
+        onValueChange={handleStatusChange} 
+        disabled={loading}
       >
-        <CheckCircle className="w-4 h-4 mr-1" />
-        {loading === "approve" ? "..." : "Approve (Full)"}
-      </Button>
-      
-      <Button
-        size="sm"
-        variant="outline"
-        className="text-red-600 border-red-600 hover:bg-red-50"
-        onClick={() => handleAction("reject")}
-        disabled={!!loading}
-      >
-        <XCircle className="w-4 h-4 mr-1" />
-        {loading === "reject" ? "..." : "Reject"}
-      </Button>
+        <SelectTrigger className="w-[160px] h-9 bg-white border-slate-200 focus:ring-secondary focus:border-secondary">
+          <SelectValue placeholder="Set Status" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="pending" className="text-yellow-700 font-medium">Pending Review</SelectItem>
+          <SelectItem value="full" className="text-emerald-700 font-medium">Approved (Full)</SelectItem>
+          <SelectItem value="limited" className="text-slate-700 font-medium">Limited Access</SelectItem>
+          <SelectItem value="rejected" className="text-red-700 font-medium">Rejected</SelectItem>
+        </SelectContent>
+      </Select>
     </div>
   );
 }
