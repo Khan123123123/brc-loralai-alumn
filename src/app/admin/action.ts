@@ -13,7 +13,6 @@ const serviceClient = createServiceClient(
 export async function updateProfileStatus(profileId: string, uiStatus: "full" | "pending" | "rejected" | "limited") {
   const supabase = createClient();
   
-  // Verify admin
   const { data: { user } } = await supabase.auth.getUser();
   const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL?.toLowerCase();
   
@@ -21,65 +20,34 @@ export async function updateProfileStatus(profileId: string, uiStatus: "full" | 
     throw new Error("Unauthorized - Admin privileges required");
   }
 
-  // Safely map the UI dropdown status to strict database column constraints
   let dbUpdate = {};
 
   switch (uiStatus) {
     case "full":
-      dbUpdate = {
-        verification_status: "full",
-        access_level: "full",
-        admin_status: "approved",
-        approved_at: new Date().toISOString()
-      };
+      dbUpdate = { verification_status: "full", access_level: "full", admin_status: "approved", approved_at: new Date().toISOString() };
       break;
     case "pending":
-      dbUpdate = {
-        verification_status: "pending",
-        access_level: "limited",
-        admin_status: "pending",
-        approved_at: null
-      };
+      dbUpdate = { verification_status: "pending", access_level: "limited", admin_status: "pending", approved_at: null };
       break;
     case "rejected":
-      dbUpdate = {
-        verification_status: "rejected",
-        access_level: "limited",
-        admin_status: "rejected",
-        approved_at: null
-      };
+      dbUpdate = { verification_status: "rejected", access_level: "limited", admin_status: "rejected", approved_at: null };
       break;
     case "limited":
-      // "limited" UI state maps to "basic" verification and "limited" access level
-      dbUpdate = {
-        verification_status: "basic", 
-        access_level: "limited",
-        admin_status: "pending",
-        approved_at: null
-      };
+      dbUpdate = { verification_status: "basic", access_level: "limited", admin_status: "pending", approved_at: null };
       break;
   }
 
-  const { error } = await serviceClient
-    .from("profiles")
-    .update(dbUpdate)
-    .eq("id", profileId);
-
-  if (error) {
-    console.error("Status update error:", error);
-    throw new Error(error.message);
-  }
+  const { error } = await serviceClient.from("profiles").update(dbUpdate).eq("id", profileId);
+  if (error) throw new Error(error.message);
 
   revalidatePath("/admin");
   revalidatePath("/directory");
   return { success: true };
 }
 
-// Securely delete an entire user account (Auth + Profile)
 export async function deleteUserAccount(userId: string) {
   const supabase = createClient();
   
-  // Verify admin
   const { data: { user } } = await supabase.auth.getUser();
   const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL?.toLowerCase();
   
@@ -87,32 +55,18 @@ export async function deleteUserAccount(userId: string) {
     throw new Error("Unauthorized - Admin privileges required");
   }
 
-  // 1. Delete the profile record from the public database
-  const { error: profileError } = await serviceClient
-    .from("profiles")
-    .delete()
-    .eq("id", userId);
+  // 1. Delete profile
+  const { error: profileError } = await serviceClient.from("profiles").delete().eq("id", userId);
+  if (profileError) throw new Error("Failed to delete profile: " + profileError.message);
 
-  if (profileError) {
-    throw new Error("Failed to delete profile record: " + profileError.message);
-  }
-
-  // 2. Delete the user entirely from the Supabase Authentication system
+  // 2. Delete Auth record
   const { error: authError } = await serviceClient.auth.admin.deleteUser(userId);
-
-  if (authError) {
-    throw new Error("Failed to delete auth user: " + authError.message);
-  }
+  if (authError) throw new Error("Failed to delete auth user: " + authError.message);
 
   revalidatePath("/admin");
   revalidatePath("/directory");
   return { success: true };
 }
 
-export async function approveProfile(profileId: string) {
-  return updateProfileStatus(profileId, "full");
-}
-
-export async function rejectProfile(profileId: string) {
-  return updateProfileStatus(profileId, "rejected");
-}
+export async function approveProfile(profileId: string) { return updateProfileStatus(profileId, "full"); }
+export async function rejectProfile(profileId: string) { return updateProfileStatus(profileId, "rejected"); }

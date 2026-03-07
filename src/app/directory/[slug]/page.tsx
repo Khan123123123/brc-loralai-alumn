@@ -17,10 +17,11 @@ import {
   MapPin,
   Phone,
   ShieldCheck,
+  ShieldAlert,
   UserCircle2,
   Users,
 } from "lucide-react";
-import { Job, Education } from "@/types/database";
+import { Job, Education, VerificationAnswers } from "@/types/database";
 
 const isUUID = (str: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str);
 
@@ -33,6 +34,10 @@ export default async function DirectoryMemberPage({ params }: { params: { slug: 
   const { data: viewerProfile } = await supabase.from("profiles").select("id, full_name, access_level, admin_status, verification_status, is_profile_complete").eq("id", user.id).single();
   const viewerHasFullAccess = hasFullAccess(viewerProfile);
 
+  // Check if current user is Admin
+  const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL?.toLowerCase();
+  const isAdmin = user.email?.toLowerCase() === adminEmail || user.email === "qaisrani12116@gmail.com";
+
   let query = supabase.from("profiles").select("*");
   if (isUUID(params.slug)) { query = query.or(`slug.eq.${params.slug},id.eq.${params.slug}`); } 
   else { query = query.eq("slug", params.slug); }
@@ -42,6 +47,7 @@ export default async function DirectoryMemberPage({ params }: { params: { slug: 
   if (!canAppearInDirectory(member)) { notFound(); }
 
   const visibleContacts = getVisibleContactFields(member, viewerProfile);
+  const answers = member.verification_answers as VerificationAnswers | undefined;
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
@@ -65,31 +71,43 @@ export default async function DirectoryMemberPage({ params }: { params: { slug: 
                 ) : (
                   <Badge variant="secondary" className="bg-white/20 text-white hover:bg-white/30 border-0">Limited Profile</Badge>
                 )}
-                {viewerHasFullAccess && member.available_for_mentoring && (
-                  <Badge className="bg-secondary/20 text-secondary border border-secondary/30">Available for Mentoring</Badge>
-                )}
               </div>
               {(member.current_position || member.profession) && (
                 <p className="mt-4 text-slate-300 font-medium">{member.current_position || member.profession}</p>
               )}
             </div>
           </div>
-          {!viewerHasFullAccess && (
-            <div className="rounded-2xl bg-white/10 px-4 py-3 text-sm text-slate-200 max-w-xs border border-white/10 shadow-sm">
-              Get verified to view complete professional details.
-            </div>
-          )}
         </div>
       </div>
+
+      {/* ADMIN ONLY VERIFICATION ANSWERS VIEW */}
+      {isAdmin && answers && (
+        <Card className="mb-8 rounded-3xl border-red-200 bg-red-50 shadow-sm">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg text-red-800 flex items-center gap-2">
+              <ShieldAlert className="w-5 h-5" /> Admin Security View: Verification Answers
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 text-sm text-red-900">
+              <div className="bg-white/50 p-3 rounded-xl border border-red-100"><strong>House:</strong><br/> {answers.houses || "-"}</div>
+              <div className="bg-white/50 p-3 rounded-xl border border-red-100"><strong>Teachers:</strong><br/> {answers.teachers || "-"}</div>
+              <div className="bg-white/50 p-3 rounded-xl border border-red-100"><strong>Staff:</strong><br/> {answers.staff || "-"}</div>
+              <div className="bg-white/50 p-3 rounded-xl border border-red-100"><strong>Principal:</strong><br/> {answers.principal || "-"}</div>
+              <div className="bg-white/50 p-3 rounded-xl border border-red-100"><strong>Est. Year:</strong><br/> {answers.established_year || "-"}</div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {!viewerHasFullAccess && (
         <Card className="mb-8 rounded-3xl border-amber-200 bg-amber-50 shadow-sm">
           <CardContent className="flex flex-col gap-4 p-6 md:flex-row md:items-center md:justify-between">
             <div>
               <div className="mb-2 flex items-center gap-2 font-semibold text-amber-900"><Lock className="h-4 w-4" /> Limited Member View</div>
-              <p className="text-sm text-amber-800">You can currently see basic details only. Complete verification to view contact info, job history, and full background.</p>
+              <p className="text-sm text-amber-800">Complete verification to view contact info, job history, and full background.</p>
             </div>
-            <Link href="/profile/complete" className="inline-flex items-center justify-center rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 transition-colors whitespace-nowrap">Complete Verification</Link>
+            <Link href="/profile/complete" className="inline-flex items-center justify-center rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800">Complete Verification</Link>
           </CardContent>
         </Card>
       )}
@@ -115,7 +133,6 @@ export default async function DirectoryMemberPage({ params }: { params: { slug: 
             </CardContent>
           </Card>
 
-          {/* Job History */}
           {viewerHasFullAccess && member.job_history && (member.job_history as Job[]).length > 0 && (
             <Card className="rounded-3xl border-0 shadow-md bg-white">
               <CardHeader className="pb-4"><CardTitle className="text-lg flex items-center gap-2"><Briefcase className="w-5 h-5 text-slate-400" /> Job History</CardTitle></CardHeader>
@@ -134,7 +151,6 @@ export default async function DirectoryMemberPage({ params }: { params: { slug: 
             </Card>
           )}
 
-          {/* Education History */}
           {viewerHasFullAccess && member.higher_education && (member.higher_education as Education[]).length > 0 && (
             <Card className="rounded-3xl border-0 shadow-md bg-white">
               <CardHeader className="pb-4"><CardTitle className="text-lg flex items-center gap-2"><BookOpen className="w-5 h-5 text-slate-400" /> Higher Education</CardTitle></CardHeader>
@@ -155,16 +171,6 @@ export default async function DirectoryMemberPage({ params }: { params: { slug: 
         </div>
 
         <div className="space-y-6">
-          <Card className="rounded-3xl border-0 shadow-md bg-white">
-            <CardHeader className="pb-4"><CardTitle className="text-lg">BRC Loralai Details</CardTitle></CardHeader>
-            <CardContent className="space-y-4 text-sm text-slate-700">
-              <div className="flex justify-between border-b border-slate-50 pb-3"><span className="font-medium text-slate-900">Entry Year</span><span className="text-slate-600">{member.entry_year || "—"}</span></div>
-              <div className="flex justify-between border-b border-slate-50 pb-3"><span className="font-medium text-slate-900">Graduation</span><span className="text-slate-600">{member.graduation_year || "—"}</span></div>
-              <div className="flex justify-between border-b border-slate-50 pb-3"><span className="font-medium text-slate-900">District</span><span className="text-slate-600">{member.home_district || "—"}</span></div>
-              <div className="flex justify-between"><span className="font-medium text-slate-900">Student Type</span><span className="text-slate-600">{member.student_type || "—"}</span></div>
-            </CardContent>
-          </Card>
-
           <Card className="rounded-3xl border-0 shadow-md bg-white">
             <CardHeader className="pb-4"><CardTitle className="text-lg">Location</CardTitle></CardHeader>
             <CardContent className="text-sm text-slate-700">
