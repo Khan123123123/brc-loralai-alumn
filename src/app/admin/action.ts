@@ -1,7 +1,14 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { createClient as createServiceClient } from "@supabase/supabase-js";
 import { revalidatePath } from "next/cache";
+
+// Service role client bypasses RLS
+const serviceClient = createServiceClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
 
 export async function approveProfile(profileId: string, currentStatus: string) {
   const supabase = createClient();
@@ -11,7 +18,7 @@ export async function approveProfile(profileId: string, currentStatus: string) {
     throw new Error("Unauthorized");
   }
 
-  const { error } = await supabase
+  const { error } = await serviceClient
     .from("profiles")
     .update({ 
       verification_status: "basic", 
@@ -19,10 +26,7 @@ export async function approveProfile(profileId: string, currentStatus: string) {
     })
     .eq("id", profileId);
 
-  if (error) {
-    console.error("Approval error:", error);
-    throw error;
-  }
+  if (error) throw error;
 
   revalidatePath("/admin");
   revalidatePath("/directory");
@@ -37,7 +41,7 @@ export async function rejectProfile(profileId: string, currentStatus: string) {
     throw new Error("Unauthorized");
   }
 
-  const { error } = await supabase
+  const { error } = await serviceClient
     .from("profiles")
     .update({ 
       verification_status: "rejected",
@@ -59,7 +63,7 @@ export async function fullVerifyProfile(profileId: string, currentStatus: string
     throw new Error("Unauthorized");
   }
 
-  const { error } = await supabase
+  const { error } = await serviceClient
     .from("profiles")
     .update({ 
       verification_status: "full", 
