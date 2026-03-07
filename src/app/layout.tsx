@@ -48,7 +48,6 @@ export default async function RootLayout({
             
             <div className="flex items-center justify-between w-full lg:w-auto">
               <Link href={user ? "/directory" : "/"} className="flex items-center gap-3 shrink-0 group">
-                {/* UPenn Colorful Logo Background */}
                 <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-secondary text-white shadow-md group-hover:shadow-lg transition-all">
                   <Users className="h-5 w-5" />
                 </div>
@@ -95,18 +94,18 @@ export default async function RootLayout({
           </div>
         </header>
 
-        {/* Subtle radial gradient background */}
         <main className="flex-1 w-full bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-blue-50/50 via-background to-background dark:from-slate-900 dark:via-background dark:to-background">
           {children}
         </main>
 
         <footer className="border-t border-border bg-white dark:bg-slate-950">
-          <div className="mx-auto flex max-w-7xl flex-col gap-2 px-4 py-8 text-sm text-slate-500 dark:text-slate-400 sm:px-6 lg:px-8 md:flex-row md:items-center md:justify-between">
-            <div className="flex items-center gap-2">
-              <Users className="w-5 h-5 text-primary dark:text-primary" />
-              <p className="font-semibold text-slate-800 dark:text-slate-200">© 2026 BRC Loralai Alumni</p>
+          <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-8 text-sm text-slate-500 dark:text-slate-400 sm:px-6 lg:px-8 md:flex-row md:items-center md:justify-between">
+            <div className="flex items-center">
+              <div className="rounded-xl bg-gradient-to-r from-primary to-secondary px-5 py-2.5 text-white shadow-md border border-white/20">
+                <span className="font-bold tracking-wide">Developed & Managed by Dr Arif Qaisrani (1998-2005 Batch)</span>
+              </div>
             </div>
-            <p>Connecting Koharians worldwide.</p>
+            <p className="font-medium text-slate-600 dark:text-slate-400">Connecting Koharians worldwide.</p>
           </div>
         </footer>
       </body>

@@ -102,9 +102,9 @@ export default async function DirectoryMemberPage({ params }: { params: { slug: 
           <CardContent className="flex flex-col gap-4 p-6 md:flex-row md:items-center md:justify-between">
             <div>
               <div className="mb-2 flex items-center gap-2 font-bold text-amber-900 text-lg"><Lock className="h-5 w-5" /> Unverified Access</div>
-              <p className="text-sm text-amber-800">You are currently unverified and can only see basic identity details. You must get verified by an admin to view contact info, jobs, and full background.</p>
+              <p className="text-sm text-amber-800 leading-relaxed">Your account is currently Unverified. You are viewing restricted profile data. Please wait for an administrator to verify your account to unlock full professional details and contact information. Verification may take upto 72 hours. If you have filled all your information, you do not need to take any action now.</p>
             </div>
-            <Link href="/profile/complete" className="inline-flex items-center justify-center rounded-xl bg-primary px-6 py-2.5 text-sm font-semibold text-white hover:bg-blue-900 transition-all whitespace-nowrap shadow-md">Get Verified</Link>
+            <Link href="/profile/complete" className="inline-flex items-center justify-center rounded-xl bg-primary px-6 py-2.5 text-sm font-semibold text-white hover:bg-blue-900 transition-all whitespace-nowrap shadow-md mt-4 md:mt-0">Check Profile</Link>
           </CardContent>
         </Card>
       )}

@@ -105,12 +105,12 @@ export default async function DirectoryPage({
               <div className="mb-2 flex items-center gap-2 font-extrabold text-amber-900 dark:text-amber-500 text-lg">
                 <Lock className="h-5 w-5" /> Unverified View
               </div>
-              <p className="text-sm text-amber-800/80 dark:text-amber-400/80 max-w-2xl">
-                Your account is currently Unverified. You are viewing restricted profile data. Please wait for an administrator to verify your account to unlock full professional details and contact information.
+              <p className="text-sm text-amber-800/80 dark:text-amber-400/80 max-w-3xl leading-relaxed">
+                Your account is currently Unverified. You are viewing restricted profile data. Please wait for an administrator to verify your account to unlock full professional details and contact information. Verification may take upto 72 hours. If you have filled all your information, you do not need to take any action now.
               </p>
             </div>
-            <Link href="/profile/complete" className="shrink-0 inline-flex items-center justify-center rounded-full bg-slate-900 dark:bg-amber-500 dark:text-slate-950 px-6 py-2.5 text-sm font-bold text-white hover:scale-105 transition-transform shadow-lg">
-              Get Verified
+            <Link href="/profile/complete" className="shrink-0 inline-flex items-center justify-center rounded-full bg-slate-900 dark:bg-amber-500 dark:text-slate-950 px-6 py-2.5 text-sm font-bold text-white hover:scale-105 transition-transform shadow-lg mt-4 md:mt-0">
+              Check Profile
             </Link>
           </CardContent>
         </Card>
