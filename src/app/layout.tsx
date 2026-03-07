@@ -120,7 +120,7 @@ export default async function RootLayout({
           {children}
         </main>
 
-        <footer className="border-t border-border bg-white dark:bg-slate-950">
+        <footer className="border-t border-border bg-white dark:bg-slate-950 mt-auto">
           <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-8 sm:px-6 lg:px-8 md:flex-row md:items-center md:justify-between">
             <div className="flex flex-col items-center md:items-start gap-1">
               <div className="flex items-center gap-2">
@@ -130,10 +130,12 @@ export default async function RootLayout({
               <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Connecting Koharians worldwide.</p>
             </div>
 
-            {/* Subtle, Professional Developer Badge */}
-            <div className="inline-flex items-center justify-center rounded-full bg-slate-50 dark:bg-slate-900 px-4 py-2 text-[11px] sm:text-xs font-medium text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-800 shadow-sm">
-              Developed & Managed by <span className="text-primary dark:text-blue-400 font-bold ml-1">Dr Arif Qaisrani (1998-2005 Batch)</span>
+            {/* VERY SUBTLE DEVELOPER BADGE */}
+            <div className="inline-flex items-center justify-center px-3 py-1.5 text-[10px] sm:text-[11px] font-medium text-slate-500 dark:text-slate-400 border border-slate-200/80 dark:border-slate-800/80 rounded-md bg-slate-50/50 dark:bg-slate-900/30 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors shadow-sm text-center">
+              Developed & Managed by 
+              <span className="font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent ml-1">Dr Arif Qaisrani (1998-2005 Batch)</span>
             </div>
+            
           </div>
         </footer>
       </body>
