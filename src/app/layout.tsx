@@ -62,10 +62,15 @@ export default async function RootLayout({
                     <>
                       <div className="text-[15px] font-extrabold leading-none text-primary dark:text-white flex items-center gap-1.5">
                         <span className="truncate max-w-[130px] sm:max-w-[200px]">{profile.full_name || "My Account"}</span>
+                        {/* Wrapped in a span to fix TypeScript title error */}
                         {isVerified ? (
-                          <ShieldCheck className="w-4 h-4 text-emerald-500" title="Verified" />
+                          <span title="Verified" className="inline-flex items-center">
+                            <ShieldCheck className="w-4 h-4 text-emerald-500" />
+                          </span>
                         ) : (
-                          <Lock className="w-3.5 h-3.5 text-amber-500" title="Unverified" />
+                          <span title="Unverified" className="inline-flex items-center">
+                            <Lock className="w-3.5 h-3.5 text-amber-500" />
+                          </span>
                         )}
                       </div>
                       <div className="mt-1 text-[10px] font-bold text-secondary uppercase tracking-widest">BRC Loralai Alumni</div>
@@ -130,7 +135,6 @@ export default async function RootLayout({
               <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Connecting Koharians worldwide.</p>
             </div>
 
-            {/* VERY SUBTLE DEVELOPER BADGE */}
             <div className="inline-flex items-center justify-center px-3 py-1.5 text-[10px] sm:text-[11px] font-medium text-slate-500 dark:text-slate-400 border border-slate-200/80 dark:border-slate-800/80 rounded-md bg-slate-50/50 dark:bg-slate-900/30 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors shadow-sm text-center">
               Developed & Managed by 
               <span className="font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent ml-1">Dr Arif Qaisrani (1998-2005 Batch)</span>
