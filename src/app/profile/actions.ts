@@ -24,9 +24,13 @@ export async function updateProfile(formData: FormData) {
   const account_type = formData.get("account_type") as string;
   const full_name = formData.get("full_name") as string;
   const bio = formData.get("bio") as string;
+  
+  // BRC Details
   const entry_year = formData.get("entry_year") ? parseInt(formData.get("entry_year") as string) : null;
   const graduation_year = formData.get("graduation_year") ? parseInt(formData.get("graduation_year") as string) : null;
-  
+  const roll_number = formData.get("roll_number") as string;
+  const regular_self_finance = formData.get("regular_self_finance") as string;
+
   // Location
   const current_city = formData.get("current_city") as string;
   const current_country = formData.get("current_country") as string;
@@ -38,6 +42,12 @@ export async function updateProfile(formData: FormData) {
   const industry = formData.get("industry") as string;
   const current_position = formData.get("current_position") as string;
   const current_organization = formData.get("current_organization") as string;
+  const employment_status = formData.get("employment_status") as string;
+  const experience_years = formData.get("experience_years") ? parseInt(formData.get("experience_years") as string) : null;
+
+  // Arrays (Jobs & Education)
+  const job_history = JSON.parse((formData.get("job_history") as string) || "[]");
+  const higher_education = JSON.parse((formData.get("higher_education") as string) || "[]");
 
   // Contact & Socials
   const phone_number = formData.get("phone_number") as string;
@@ -51,11 +61,9 @@ export async function updateProfile(formData: FormData) {
   const favorite_teacher = formData.get("favorite_teacher") as string;
   const message_for_koharians = formData.get("message_for_koharians") as string;
 
-  // Preferences
-  const show_email = formData.get("show_email") === "on";
+  // Preferences (Only Phone is hideable now)
   const show_phone = formData.get("show_phone") === "on";
   const available_for_mentoring = formData.get("available_for_mentoring") === "on";
-  const show_in_directory = formData.get("show_in_directory") !== "off";
 
   const updates: any = {
     full_name,
@@ -63,6 +71,8 @@ export async function updateProfile(formData: FormData) {
     account_type,
     entry_year,
     graduation_year,
+    roll_number,
+    regular_self_finance,
     current_city,
     current_country,
     home_city,
@@ -71,22 +81,28 @@ export async function updateProfile(formData: FormData) {
     industry,
     current_position,
     current_organization,
+    employment_status,
+    experience_years,
+    job_history,
+    higher_education,
     phone_number,
+    phone: phone_number, // Sync legacy field
     linkedin_url,
     languages,
     achievements_brc,
     achievements_after,
     favorite_teacher,
     message_for_koharians,
-    show_email,
     show_phone,
+    show_phone_publicly: show_phone, // Sync legacy
+    show_email: true, // Always true for verified users
+    show_email_publicly: true, // Always true
+    show_linkedin_publicly: true, // Always true
     available_for_mentoring,
-    show_in_directory,
     is_profile_complete: true,
     updated_at: new Date().toISOString(),
   };
 
-  // ONLY process verification answers if the user is NOT already verified
   if (!isVerified) {
     const houses = formData.get("verify_houses") as string;
     const teachers = formData.get("verify_teachers") as string;
@@ -99,14 +115,11 @@ export async function updateProfile(formData: FormData) {
     }
   }
 
-  // Update deep search text
-  updates.deep_search_text = `${full_name} ${profession} ${industry} ${current_organization} ${current_city} ${current_country} ${graduation_year} ${entry_year}`.toLowerCase();
+  updates.deep_search_text = `${full_name} ${profession} ${industry} ${current_organization} ${current_city} ${current_country} ${graduation_year} ${entry_year} ${roll_number}`.toLowerCase();
 
   const { error } = await supabase.from("profiles").update(updates).eq("id", user.id);
 
-  if (error) {
-    throw new Error(error.message);
-  }
+  if (error) throw new Error(error.message);
 
   revalidatePath("/profile/me");
   revalidatePath("/directory");

@@ -54,22 +54,16 @@ export function getVisibleContactFields(
 ) {
   const viewerHasFullAccess = hasFullAccess(viewerProfile);
 
-  // Checks both the new show_email flag and the old show_email_publicly flag
-  const isEmailVisible = profile.show_email ?? profile.show_email_publicly;
+  // Phone respects user choice
   const isPhoneVisible = profile.show_phone ?? profile.show_phone_publicly;
 
   return {
-    email: canViewPublicContactField(isEmailVisible, viewerHasFullAccess)
-      ? profile.email
-      : null,
+    // Email and LinkedIn are always visible if the viewer is verified
+    email: viewerHasFullAccess ? profile.email : null,
+    linkedin_url: viewerHasFullAccess ? profile.linkedin_url : null,
+    // Phone requires BOTH verified viewer AND user permission
     phone: canViewPublicContactField(isPhoneVisible, viewerHasFullAccess)
       ? (profile.phone || profile.phone_number)
-      : null,
-    linkedin_url: canViewPublicContactField(
-      profile.show_linkedin_publicly,
-      viewerHasFullAccess
-    )
-      ? profile.linkedin_url
       : null,
   };
 }
