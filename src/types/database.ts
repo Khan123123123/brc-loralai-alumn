@@ -110,3 +110,12 @@ export interface VerificationLog {
   notes?: string | null;
   created_at: string;
 }
+export type Announcement = {
+  id: string;
+  title: string;
+  content: string;
+  type: "Event" | "News" | "Urgent";
+  link_url: string | null;
+  is_active: boolean;
+  created_at: string;
+};

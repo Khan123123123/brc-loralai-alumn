@@ -71,3 +71,52 @@ export async function deleteUserAccount(userId: string) {
 // Kept for fallback compatibility if needed
 export async function approveProfile(profileId: string) { return updateProfileStatus(profileId, "full"); }
 export async function rejectProfile(profileId: string) { return updateProfileStatus(profileId, "rejected"); }
+
+// ------------------------------------------------------------------
+// NEW: ANNOUNCEMENT BOARD ACTIONS
+// ------------------------------------------------------------------
+
+export async function createAnnouncement(formData: FormData) {
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL?.toLowerCase() || "qaisrani12116@gmail.com";
+  
+  if (user?.email?.toLowerCase() !== adminEmail) throw new Error("Unauthorized");
+
+  const title = formData.get("title") as string;
+  const content = formData.get("content") as string;
+  const type = formData.get("type") as string;
+  const link_url = formData.get("link_url") as string;
+
+  const { error } = await serviceClient.from("announcements").insert({
+    title, content, type, link_url: link_url || null
+  });
+
+  if (error) throw new Error(error.message);
+  
+  revalidatePath("/admin/announcements");
+  revalidatePath("/directory");
+  return { success: true };
+}
+
+export async function deleteAnnouncement(id: string) {
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL?.toLowerCase() || "qaisrani12116@gmail.com";
+  if (user?.email?.toLowerCase() !== adminEmail) throw new Error("Unauthorized");
+
+  await serviceClient.from("announcements").delete().eq("id", id);
+  revalidatePath("/admin/announcements");
+  revalidatePath("/directory");
+}
+
+export async function toggleAnnouncementStatus(id: string, currentStatus: boolean) {
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL?.toLowerCase() || "qaisrani12116@gmail.com";
+  if (user?.email?.toLowerCase() !== adminEmail) throw new Error("Unauthorized");
+
+  await serviceClient.from("announcements").update({ is_active: !currentStatus }).eq("id", id);
+  revalidatePath("/admin/announcements");
+  revalidatePath("/directory");
+}
