@@ -1,23 +1,22 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
 
-async function handleSignOut() {
+// Force the route to be dynamic so Vercel doesn't cache the redirect
+export const dynamic = "force-dynamic";
+
+export async function GET(request: NextRequest) {
   const supabase = createClient();
   await supabase.auth.signOut();
 
-  return NextResponse.redirect(
-    new URL(
-      "/auth/login",
-      process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"
-    ),
-    { status: 302 }
-  );
+  // request.url automatically captures the exact current domain (localhost or Vercel)
+  // preventing the DEPLOYMENT_NOT_FOUND error
+  return NextResponse.redirect(new URL("/auth/login", request.url));
 }
 
-export async function GET() {
-  return handleSignOut();
-}
+export async function POST(request: NextRequest) {
+  const supabase = createClient();
+  await supabase.auth.signOut();
 
-export async function POST() {
-  return handleSignOut();
+  return NextResponse.redirect(new URL("/auth/login", request.url));
 }

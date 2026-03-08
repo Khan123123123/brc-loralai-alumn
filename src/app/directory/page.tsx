@@ -25,18 +25,19 @@ export default async function DirectoryPage({
   const { data: viewerProfile } = await supabase.from("profiles").select("id, full_name, access_level, admin_status, verification_status, is_profile_complete").eq("id", user.id).single();
   const isVerified = hasFullAccess(viewerProfile);
   
-  // Unified Admin Check
   const adminEnvEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL?.toLowerCase() || "";
   const userEmail = user?.email?.toLowerCase() || "";
   const isAdmin = userEmail && (userEmail === adminEnvEmail || userEmail === "qaisrani12116@gmail.com" || userEmail === "brcloralai123@gmail.com");
 
+  // Filter Parameters
   const search = (searchParams.search as string) || "";
   const yearFilter = (searchParams.year as string) || "all";
+  const entryYearFilter = (searchParams.entry_year as string) || "all";
+  const accountTypeFilter = (searchParams.account_type as string) || "all";
   const countryFilter = (searchParams.country as string) || "all";
   const cityFilter = (searchParams.city as string) || "all";
   const industryFilter = (searchParams.industry as string) || "all";
   const mentorsOnly = searchParams.mentors === "true";
-  const facultyOnly = searchParams.faculty === "true";
 
   const PAGE_SIZE = 24;
   const page = parseInt((searchParams.page as string) || "0");
@@ -50,11 +51,12 @@ export default async function DirectoryPage({
   }
   
   if (yearFilter !== "all") query = query.eq("graduation_year", parseInt(yearFilter));
+  if (entryYearFilter !== "all") query = query.eq("entry_year", parseInt(entryYearFilter));
+  if (accountTypeFilter !== "all") query = query.eq("account_type", accountTypeFilter);
   if (countryFilter !== "all") query = query.eq("current_country", countryFilter);
-  if (cityFilter !== "all") query = query.ilike("current_city", cityFilter); // Use ilike for city string matching
+  if (cityFilter !== "all") query = query.ilike("current_city", cityFilter); 
   if (industryFilter !== "all") query = query.eq("industry", industryFilter);
   if (mentorsOnly) query = query.eq("available_for_mentoring", true);
-  if (facultyOnly) query = query.eq("account_type", "Faculty");
 
   query = query.range(from, to);
 
@@ -62,12 +64,14 @@ export default async function DirectoryPage({
   const profiles = rawProfiles || [];
 
   // Fetch unique fields for dropdown options
-  const { data: filterProfiles } = await supabase.from("profiles").select("graduation_year, current_country, current_city, industry").eq("show_in_directory", true);
+  const { data: filterProfiles } = await supabase.from("profiles").select("graduation_year, entry_year, current_country, current_city, industry, account_type").eq("show_in_directory", true);
   
   const years = Array.from(new Set(filterProfiles?.map((p) => p.graduation_year).filter((v): v is number => typeof v === "number"))).sort((a, b) => b - a);
+  const entryYears = Array.from(new Set(filterProfiles?.map((p) => p.entry_year).filter((v): v is number => typeof v === "number"))).sort((a, b) => b - a);
   const countries = Array.from(new Set(filterProfiles?.map((p) => p.current_country).filter(Boolean))).sort() as string[];
   const cities = Array.from(new Set(filterProfiles?.map((p) => p.current_city).filter(Boolean))).sort() as string[];
   const industries = Array.from(new Set(filterProfiles?.map((p) => p.industry).filter(Boolean))).sort() as string[];
+  const accountTypes = Array.from(new Set(filterProfiles?.map((p) => p.account_type).filter(Boolean))).sort() as string[];
 
   const { data: announcements } = await supabase
     .from("announcements")
@@ -154,26 +158,46 @@ export default async function DirectoryPage({
               <Input name="search" defaultValue={search} placeholder="Search by name, physics teacher, batch, or company..." className="pl-12 h-12 rounded-2xl border-slate-200 shadow-inner bg-slate-50/50" />
             </div>
             
-            <select name="year" defaultValue={yearFilter} className="h-11 rounded-xl border border-slate-200 px-3 text-sm shadow-sm font-bold bg-white cursor-pointer"><option value="all">All Batches</option>{years.map((year) => (<option key={year} value={String(year)}>Class of {year}</option>))}</select>
+            {/* Main Filters */}
+            <select name="year" defaultValue={yearFilter} className="h-11 rounded-xl border border-slate-200 px-3 text-sm shadow-sm font-bold bg-white cursor-pointer"><option value="all">Graduation Batch</option>{years.map((year) => (<option key={year} value={String(year)}>Class of {year}</option>))}</select>
             <select name="industry" defaultValue={industryFilter} className="h-11 rounded-xl border border-slate-200 px-3 text-sm shadow-sm font-bold bg-white cursor-pointer"><option value="all">All Fields/Industries</option>{industries.map((industry) => (<option key={industry} value={industry}>{industry}</option>))}</select>
             <select name="country" defaultValue={countryFilter} className="h-11 rounded-xl border border-slate-200 px-3 text-sm shadow-sm font-bold bg-white cursor-pointer"><option value="all">Any Country</option>{countries.map((country) => (<option key={country} value={country}>{country}</option>))}</select>
             <select name="city" defaultValue={cityFilter} className="h-11 rounded-xl border border-slate-200 px-3 text-sm shadow-sm font-bold bg-white cursor-pointer"><option value="all">Any City</option>{cities.map((city) => (<option key={city} value={city}>{city}</option>))}</select>
 
-            <div className="flex flex-col sm:flex-row items-center gap-2">
-              <div className="flex items-center gap-2 h-11 px-3 border border-slate-200 rounded-xl bg-white shadow-sm w-full sm:w-auto">
-                <input type="checkbox" name="mentors" value="true" defaultChecked={mentorsOnly} className="w-4 h-4 rounded text-primary border-slate-300 focus:ring-primary cursor-pointer" />
-                <label className="text-xs font-bold text-slate-700 cursor-pointer">Mentors</label>
-              </div>
-              
-              <div className="flex items-center gap-2 h-11 px-3 border border-indigo-100 rounded-xl bg-indigo-50 shadow-sm w-full sm:w-auto">
-                <input type="checkbox" name="faculty" value="true" defaultChecked={facultyOnly} className="w-4 h-4 rounded text-indigo-600 border-indigo-300 focus:ring-indigo-600 cursor-pointer" />
-                <label className="text-xs font-bold text-indigo-900 cursor-pointer flex items-center gap-1.5">
-                  <BookOpen className="w-3.5 h-3.5 text-indigo-500" /> Faculty
-                </label>
-              </div>
-            </div>
+            {/* Apply Main Button (visible when details are closed, or placed consistently) */}
+            <button type="submit" className="hidden lg:block rounded-xl bg-primary text-white font-extrabold h-11 hover:bg-blue-900 shadow-md hover:shadow-lg transition-all">Search</button>
 
-            <button type="submit" className="md:col-span-2 lg:col-span-5 rounded-xl bg-primary text-white font-extrabold h-11 hover:bg-blue-900 shadow-md hover:shadow-lg transition-all">Apply All Filters</button>
+            {/* Collapsible Advanced Filters */}
+            <details className="group md:col-span-2 lg:col-span-5 bg-slate-50/50 rounded-2xl p-4 border border-slate-100 shadow-inner">
+              <summary className="cursor-pointer text-sm font-bold text-primary flex items-center gap-2 select-none hover:text-blue-800 transition-colors w-max">
+                 <span className="group-open:hidden flex items-center gap-1">➕ Show More Filters</span>
+                 <span className="hidden group-open:flex items-center gap-1">➖ Hide Advanced Filters</span>
+              </summary>
+              <div className="grid gap-4 md:grid-cols-3 pt-4 mt-4 border-t border-slate-200">
+                 
+                 <div className="space-y-1.5">
+                   <label className="text-xs font-semibold text-slate-500 px-1">Entry Year</label>
+                   <select name="entry_year" defaultValue={entryYearFilter} className="w-full h-11 rounded-xl border border-slate-200 px-3 text-sm shadow-sm font-bold bg-white cursor-pointer"><option value="all">Any Entry Year</option>{entryYears.map((year) => (<option key={year} value={String(year)}>Entered in {year}</option>))}</select>
+                 </div>
+
+                 <div className="space-y-1.5">
+                   <label className="text-xs font-semibold text-slate-500 px-1">Role / Account Type</label>
+                   <select name="account_type" defaultValue={accountTypeFilter} className="w-full h-11 rounded-xl border border-slate-200 px-3 text-sm shadow-sm font-bold bg-white cursor-pointer"><option value="all">All Roles</option>{accountTypes.map((type) => (<option key={type} value={type}>{type}</option>))}</select>
+                 </div>
+                 
+                 <div className="space-y-1.5">
+                   <label className="text-xs font-semibold text-slate-500 px-1">Mentorship</label>
+                   <div className="flex items-center gap-2 h-11 px-3 border border-slate-200 rounded-xl bg-white shadow-sm w-full">
+                      <input type="checkbox" name="mentors" value="true" defaultChecked={mentorsOnly} className="w-4 h-4 rounded text-primary border-slate-300 focus:ring-primary cursor-pointer" />
+                      <label className="text-sm font-bold text-slate-700 cursor-pointer">Available Mentors Only</label>
+                   </div>
+                 </div>
+
+              </div>
+            </details>
+
+            <button type="submit" className="lg:hidden md:col-span-2 rounded-xl bg-primary text-white font-extrabold h-11 hover:bg-blue-900 shadow-md hover:shadow-lg transition-all">Apply All Filters</button>
+
           </form>
         </CardContent>
       </Card>

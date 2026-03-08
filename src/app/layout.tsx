@@ -140,11 +140,7 @@ export default async function RootLayout({
               </div>
               <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Connecting Koharians worldwide.</p>
             </div>
-
-            <div className="inline-flex items-center justify-center px-4 py-2 text-[11px] font-bold text-slate-600 dark:text-slate-400 border border-slate-200/80 dark:border-slate-800/80 rounded-md bg-slate-50/50 dark:bg-slate-900/30 shadow-sm text-center">
-              Official Alumni Platform
-            </div>
-            
+            {/* Removed the Official Platform text here */}
           </div>
         </footer>
       </body>
