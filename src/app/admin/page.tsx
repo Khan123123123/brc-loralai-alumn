@@ -6,7 +6,7 @@ import { AdminApprovalActions } from "@/components/admin/AdminApprovalActions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useRouter } from "next/navigation";
-import { Search, ExternalLink, LogOut, MessageSquare } from "lucide-react";
+import { Search, ExternalLink, LogOut, MessageSquare, Megaphone } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import Link from "next/link";
 
@@ -92,9 +92,14 @@ export default function AdminPage({
         {/* HEADER */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
           <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Admin Control Center</h1>
-          <button onClick={handleSignOut} className="inline-flex items-center gap-2 px-5 py-2 bg-white border border-slate-200 text-slate-700 hover:bg-red-50 hover:text-red-700 hover:border-red-200 rounded-xl text-sm font-bold shadow-sm transition-all">
-            <LogOut className="w-4 h-4" /> Sign Out
-          </button>
+          <div className="flex items-center gap-3">
+            <Link href="/admin/announcements" className="inline-flex items-center gap-2 px-5 py-2 bg-primary text-white hover:bg-blue-900 rounded-xl text-sm font-bold shadow-sm transition-all">
+              <Megaphone className="w-4 h-4" /> Manage Announcements
+            </Link>
+            <button onClick={handleSignOut} className="inline-flex items-center gap-2 px-5 py-2 bg-white border border-slate-200 text-slate-700 hover:bg-red-50 hover:text-red-700 hover:border-red-200 rounded-xl text-sm font-bold shadow-sm transition-all">
+              <LogOut className="w-4 h-4" /> Sign Out
+            </button>
+          </div>
         </div>
 
         {/* STATS */}

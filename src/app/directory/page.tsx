@@ -33,6 +33,7 @@ export default async function DirectoryPage({
   const search = (searchParams.search as string) || "";
   const yearFilter = (searchParams.year as string) || "all";
   const countryFilter = (searchParams.country as string) || "all";
+  const cityFilter = (searchParams.city as string) || "all";
   const industryFilter = (searchParams.industry as string) || "all";
   const mentorsOnly = searchParams.mentors === "true";
   const facultyOnly = searchParams.faculty === "true";
@@ -50,6 +51,7 @@ export default async function DirectoryPage({
   
   if (yearFilter !== "all") query = query.eq("graduation_year", parseInt(yearFilter));
   if (countryFilter !== "all") query = query.eq("current_country", countryFilter);
+  if (cityFilter !== "all") query = query.ilike("current_city", cityFilter); // Use ilike for city string matching
   if (industryFilter !== "all") query = query.eq("industry", industryFilter);
   if (mentorsOnly) query = query.eq("available_for_mentoring", true);
   if (facultyOnly) query = query.eq("account_type", "Faculty");
@@ -59,9 +61,12 @@ export default async function DirectoryPage({
   const { data: rawProfiles, count } = await query;
   const profiles = rawProfiles || [];
 
-  const { data: filterProfiles } = await supabase.from("profiles").select("graduation_year, current_country, industry").eq("show_in_directory", true);
+  // Fetch unique fields for dropdown options
+  const { data: filterProfiles } = await supabase.from("profiles").select("graduation_year, current_country, current_city, industry").eq("show_in_directory", true);
+  
   const years = Array.from(new Set(filterProfiles?.map((p) => p.graduation_year).filter((v): v is number => typeof v === "number"))).sort((a, b) => b - a);
   const countries = Array.from(new Set(filterProfiles?.map((p) => p.current_country).filter(Boolean))).sort() as string[];
+  const cities = Array.from(new Set(filterProfiles?.map((p) => p.current_city).filter(Boolean))).sort() as string[];
   const industries = Array.from(new Set(filterProfiles?.map((p) => p.industry).filter(Boolean))).sort() as string[];
 
   const { data: announcements } = await supabase
@@ -143,31 +148,32 @@ export default async function DirectoryPage({
       {/* ENHANCED SEARCH FILTERS */}
       <Card className="mb-8 rounded-3xl border border-slate-200 shadow-lg overflow-hidden bg-white/50 backdrop-blur-sm">
         <CardContent className="pt-8">
-          <form className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            <div className="md:col-span-2 lg:col-span-4 relative">
+          <form className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
+            <div className="md:col-span-2 lg:col-span-5 relative">
               <Search className="absolute left-4 top-3.5 h-5 w-5 text-slate-400" />
               <Input name="search" defaultValue={search} placeholder="Search by name, physics teacher, batch, or company..." className="pl-12 h-12 rounded-2xl border-slate-200 shadow-inner bg-slate-50/50" />
             </div>
             
             <select name="year" defaultValue={yearFilter} className="h-11 rounded-xl border border-slate-200 px-3 text-sm shadow-sm font-bold bg-white cursor-pointer"><option value="all">All Batches</option>{years.map((year) => (<option key={year} value={String(year)}>Class of {year}</option>))}</select>
-            <select name="country" defaultValue={countryFilter} className="h-11 rounded-xl border border-slate-200 px-3 text-sm shadow-sm font-bold bg-white cursor-pointer"><option value="all">Current Location (All)</option>{countries.map((country) => (<option key={country} value={country}>{country}</option>))}</select>
-            <select name="industry" defaultValue={industryFilter} className="h-11 rounded-xl border border-slate-200 px-3 text-sm shadow-sm font-bold bg-white cursor-pointer"><option value="all">All Industries</option>{industries.map((industry) => (<option key={industry} value={industry}>{industry}</option>))}</select>
+            <select name="industry" defaultValue={industryFilter} className="h-11 rounded-xl border border-slate-200 px-3 text-sm shadow-sm font-bold bg-white cursor-pointer"><option value="all">All Fields/Industries</option>{industries.map((industry) => (<option key={industry} value={industry}>{industry}</option>))}</select>
+            <select name="country" defaultValue={countryFilter} className="h-11 rounded-xl border border-slate-200 px-3 text-sm shadow-sm font-bold bg-white cursor-pointer"><option value="all">Any Country</option>{countries.map((country) => (<option key={country} value={country}>{country}</option>))}</select>
+            <select name="city" defaultValue={cityFilter} className="h-11 rounded-xl border border-slate-200 px-3 text-sm shadow-sm font-bold bg-white cursor-pointer"><option value="all">Any City</option>{cities.map((city) => (<option key={city} value={city}>{city}</option>))}</select>
 
-            <div className="flex flex-col sm:flex-row items-center gap-3">
-              <div className="flex items-center gap-3 h-11 px-4 border border-slate-200 rounded-xl bg-white shadow-sm w-full sm:w-auto">
+            <div className="flex flex-col sm:flex-row items-center gap-2">
+              <div className="flex items-center gap-2 h-11 px-3 border border-slate-200 rounded-xl bg-white shadow-sm w-full sm:w-auto">
                 <input type="checkbox" name="mentors" value="true" defaultChecked={mentorsOnly} className="w-4 h-4 rounded text-primary border-slate-300 focus:ring-primary cursor-pointer" />
-                <label className="text-sm font-bold text-slate-700 cursor-pointer">Mentors</label>
+                <label className="text-xs font-bold text-slate-700 cursor-pointer">Mentors</label>
               </div>
               
-              <div className="flex items-center gap-3 h-11 px-4 border border-indigo-100 rounded-xl bg-indigo-50 shadow-sm w-full sm:w-auto">
+              <div className="flex items-center gap-2 h-11 px-3 border border-indigo-100 rounded-xl bg-indigo-50 shadow-sm w-full sm:w-auto">
                 <input type="checkbox" name="faculty" value="true" defaultChecked={facultyOnly} className="w-4 h-4 rounded text-indigo-600 border-indigo-300 focus:ring-indigo-600 cursor-pointer" />
-                <label className="text-sm font-bold text-indigo-900 cursor-pointer flex items-center gap-2">
-                  <BookOpen className="w-4 h-4 text-indigo-500" /> Faculty
+                <label className="text-xs font-bold text-indigo-900 cursor-pointer flex items-center gap-1.5">
+                  <BookOpen className="w-3.5 h-3.5 text-indigo-500" /> Faculty
                 </label>
               </div>
             </div>
 
-            <button type="submit" className="md:col-span-2 lg:col-span-4 rounded-xl bg-primary text-white font-extrabold h-11 hover:bg-blue-900 shadow-md hover:shadow-lg transition-all">Apply Filters</button>
+            <button type="submit" className="md:col-span-2 lg:col-span-5 rounded-xl bg-primary text-white font-extrabold h-11 hover:bg-blue-900 shadow-md hover:shadow-lg transition-all">Apply All Filters</button>
           </form>
         </CardContent>
       </Card>
