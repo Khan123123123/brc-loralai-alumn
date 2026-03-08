@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
-import { UserCircle2, Briefcase, MapPin, GraduationCap, Lock, Heart, MessageSquare, Plus, Trash2, ArrowRight, ArrowLeft, CheckCircle2 } from "lucide-react";
+import { UserCircle2, Briefcase, MapPin, GraduationCap, Lock, Heart, MessageSquare, Plus, Trash2, ArrowRight, ArrowLeft, CheckCircle2, Award } from "lucide-react";
 
 export default function ProfileForm({ profile, answers, isVerified }: any) {
   const [step, setStep] = useState(1);
