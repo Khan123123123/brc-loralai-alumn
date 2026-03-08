@@ -33,8 +33,9 @@ export default async function DirectoryMemberPage({ params }: { params: { slug: 
   const { data: viewerProfile } = await supabase.from("profiles").select("id, full_name, access_level, admin_status, verification_status, is_profile_complete").eq("id", user.id).single();
   const isVerified = hasFullAccess(viewerProfile);
 
-  const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL?.toLowerCase();
-  const isAdmin = user.email?.toLowerCase() === adminEmail || user.email === "qaisrani12116@gmail.com";
+  const adminEnvEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL?.toLowerCase() || "";
+  const userEmail = user?.email?.toLowerCase() || "";
+  const isAdmin = userEmail && (userEmail === adminEnvEmail || userEmail === "qaisrani12116@gmail.com" || userEmail === "brcloralai123@gmail.com");
 
   let query = supabase.from("profiles").select("*");
   if (isUUID(params.slug)) { query = query.or(`slug.eq.${params.slug},id.eq.${params.slug}`); } 

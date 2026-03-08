@@ -54,10 +54,10 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // BULLETPROOF ADMIN CHECK (Bypasses Vercel env cache issues)
+  // BULLETPROOF ADMIN CHECK
   const adminEnvEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL?.toLowerCase() || "";
   const userEmail = user.email?.toLowerCase() || "";
-  const isAdmin = userEmail === adminEnvEmail || userEmail === "brcloralai123@gmail.com";
+  const isAdmin = userEmail && (userEmail === adminEnvEmail || userEmail === "qaisrani12116@gmail.com" || userEmail === "brcloralai123@gmail.com");
 
   if (pathname.startsWith("/admin") && !isAdmin) {
     return NextResponse.redirect(new URL("/directory", request.url));

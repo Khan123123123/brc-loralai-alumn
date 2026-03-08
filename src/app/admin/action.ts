@@ -4,21 +4,25 @@ import { createClient } from "@/lib/supabase/server";
 import { createClient as createServiceClient } from "@supabase/supabase-js";
 import { revalidatePath } from "next/cache";
 
-// Service role client - bypasses ALL RLS---
+// Service role client - bypasses ALL RLS
 const serviceClient = createServiceClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-export async function updateProfileStatus(profileId: string, uiStatus: "full" | "pending" | "rejected" | "limited") {
+const verifyAdminAccess = async () => {
   const supabase = createClient();
-  
   const { data: { user } } = await supabase.auth.getUser();
-  const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL?.toLowerCase();
+  const adminEnvEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL?.toLowerCase() || "";
+  const userEmail = user?.email?.toLowerCase() || "";
   
-  if (user?.email?.toLowerCase() !== adminEmail && user?.email !== "brcloralai123@gmail.com") {
+  if (!userEmail || (userEmail !== adminEnvEmail && userEmail !== "qaisrani12116@gmail.com" && userEmail !== "brcloralai123@gmail.com")) {
     throw new Error("Unauthorized - Admin privileges required");
   }
+};
+
+export async function updateProfileStatus(profileId: string, uiStatus: "full" | "pending" | "rejected" | "limited") {
+  await verifyAdminAccess();
 
   let dbUpdate = {};
 
@@ -46,14 +50,7 @@ export async function updateProfileStatus(profileId: string, uiStatus: "full" | 
 }
 
 export async function deleteUserAccount(userId: string) {
-  const supabase = createClient();
-  
-  const { data: { user } } = await supabase.auth.getUser();
-  const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL?.toLowerCase();
-  
-  if (user?.email?.toLowerCase() !== adminEmail && user?.email !== "brcloralai123@gmail.com") {
-    throw new Error("Unauthorized - Admin privileges required");
-  }
+  await verifyAdminAccess();
 
   // 1. Delete profile
   const { error: profileError } = await serviceClient.from("profiles").delete().eq("id", userId);
@@ -73,15 +70,11 @@ export async function approveProfile(profileId: string) { return updateProfileSt
 export async function rejectProfile(profileId: string) { return updateProfileStatus(profileId, "rejected"); }
 
 // ------------------------------------------------------------------
-// NEW: ANNOUNCEMENT BOARD ACTIONS
+// ANNOUNCEMENT BOARD ACTIONS
 // ------------------------------------------------------------------
 
 export async function createAnnouncement(formData: FormData) {
-  const supabase = createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL?.toLowerCase() || "brcloralai123@gmail.com";
-  
-  if (user?.email?.toLowerCase() !== adminEmail) throw new Error("Unauthorized");
+  await verifyAdminAccess();
 
   const title = formData.get("title") as string;
   const content = formData.get("content") as string;
@@ -99,22 +92,14 @@ export async function createAnnouncement(formData: FormData) {
 }
 
 export async function deleteAnnouncement(id: string) {
-  const supabase = createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL?.toLowerCase() || "brcloralai123@gmail.com";
-  if (user?.email?.toLowerCase() !== adminEmail) throw new Error("Unauthorized");
-
+  await verifyAdminAccess();
   await serviceClient.from("announcements").delete().eq("id", id);
   revalidatePath("/admin/announcements");
   revalidatePath("/directory");
 }
 
 export async function toggleAnnouncementStatus(id: string, currentStatus: boolean) {
-  const supabase = createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL?.toLowerCase() || "brcloralai123@gmail.com";
-  if (user?.email?.toLowerCase() !== adminEmail) throw new Error("Unauthorized");
-
+  await verifyAdminAccess();
   await serviceClient.from("announcements").update({ is_active: !currentStatus }).eq("id", id);
   revalidatePath("/admin/announcements");
   revalidatePath("/directory");

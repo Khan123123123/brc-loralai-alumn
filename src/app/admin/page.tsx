@@ -27,10 +27,13 @@ export default function AdminPage({
   useEffect(() => {
     const loadAdminData = async () => {
       const { data: { user } } = await supabase.auth.getUser();
-      const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL?.toLowerCase() || "brcloralai123@gmail.com";
       
+      const adminEnvEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL?.toLowerCase() || "";
+      const userEmail = user?.email?.toLowerCase() || "";
+      const isAdmin = userEmail && (userEmail === adminEnvEmail || userEmail === "qaisrani12116@gmail.com" || userEmail === "brcloralai123@gmail.com");
+
       // ADMIN ACCESS CHECK
-      if (!user || (user.email?.toLowerCase() !== adminEmail && user.email !== "brcloralai123@gmail.com")) {
+      if (!isAdmin) {
         window.location.replace("/directory");
         return;
       }
@@ -161,7 +164,7 @@ export default function AdminPage({
           </CardContent>
         </Card>
 
-        {/* NEW FEATURE: ADMIN INBOX FOR CONTACT REPORTS */}
+        {/* ADMIN INBOX FOR CONTACT REPORTS */}
         <Card className="border-0 shadow-md mb-12">
           <CardHeader className="border-b bg-white rounded-t-xl pb-4">
              <CardTitle className="text-xl flex items-center gap-2"><MessageSquare className="w-5 h-5 text-primary"/> User Messages & Reports</CardTitle>

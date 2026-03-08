@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { hasFullAccess } from "@/lib/utils/access";
@@ -9,8 +9,7 @@ import { getAvatarFallback } from "@/lib/utils/profile";
 import { ContactBox } from "@/components/ContactBox";
 import {
   Briefcase, Building, GraduationCap, MapPin, Search, ShieldCheck,
-  UserCircle2, Users, Lock, AlertTriangle, Globe, Mail, Linkedin,
-  Calendar, Megaphone, BookOpen, LayoutDashboard, Settings, ChevronDown
+  UserCircle2, Users, Lock, AlertTriangle, Calendar, Megaphone, BookOpen
 } from "lucide-react";
 
 export default async function DirectoryPage({
@@ -26,12 +25,14 @@ export default async function DirectoryPage({
   const { data: viewerProfile } = await supabase.from("profiles").select("id, full_name, access_level, admin_status, verification_status, is_profile_complete").eq("id", user.id).single();
   const isVerified = hasFullAccess(viewerProfile);
   
-  // STRICT HARDCODED ADMIN CHECK
-  const isAdmin = user.email?.toLowerCase() === "brcloralai123@gmail.com";
+  // Unified Admin Check
+  const adminEnvEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL?.toLowerCase() || "";
+  const userEmail = user?.email?.toLowerCase() || "";
+  const isAdmin = userEmail && (userEmail === adminEnvEmail || userEmail === "qaisrani12116@gmail.com" || userEmail === "brcloralai123@gmail.com");
 
   const search = (searchParams.search as string) || "";
   const yearFilter = (searchParams.year as string) || "all";
-  const districtFilter = (searchParams.district as string) || "all";
+  const countryFilter = (searchParams.country as string) || "all";
   const industryFilter = (searchParams.industry as string) || "all";
   const mentorsOnly = searchParams.mentors === "true";
   const facultyOnly = searchParams.faculty === "true";
@@ -48,7 +49,7 @@ export default async function DirectoryPage({
   }
   
   if (yearFilter !== "all") query = query.eq("graduation_year", parseInt(yearFilter));
-  if (districtFilter !== "all") query = query.eq("home_district", districtFilter);
+  if (countryFilter !== "all") query = query.eq("current_country", countryFilter);
   if (industryFilter !== "all") query = query.eq("industry", industryFilter);
   if (mentorsOnly) query = query.eq("available_for_mentoring", true);
   if (facultyOnly) query = query.eq("account_type", "Faculty");
@@ -58,15 +59,10 @@ export default async function DirectoryPage({
   const { data: rawProfiles, count } = await query;
   const profiles = rawProfiles || [];
 
-  const { data: filterProfiles } = await supabase.from("profiles").select("graduation_year, home_district, current_country").eq("show_in_directory", true);
+  const { data: filterProfiles } = await supabase.from("profiles").select("graduation_year, current_country, industry").eq("show_in_directory", true);
   const years = Array.from(new Set(filterProfiles?.map((p) => p.graduation_year).filter((v): v is number => typeof v === "number"))).sort((a, b) => b - a);
-  const districts = Array.from(new Set(filterProfiles?.map((p) => p.home_district).filter(Boolean))).sort() as string[];
-
-  const countryCounts = filterProfiles?.reduce((acc: Record<string, number>, p) => {
-    if (p.current_country) acc[p.current_country] = (acc[p.current_country] || 0) + 1;
-    return acc;
-  }, {}) || {};
-  const topCountries = Object.entries(countryCounts).sort(([, a], [, b]) => b - a).slice(0, 4);
+  const countries = Array.from(new Set(filterProfiles?.map((p) => p.current_country).filter(Boolean))).sort() as string[];
+  const industries = Array.from(new Set(filterProfiles?.map((p) => p.industry).filter(Boolean))).sort() as string[];
 
   const { data: announcements } = await supabase
     .from("announcements")
@@ -77,7 +73,7 @@ export default async function DirectoryPage({
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
       
-      {/* TOP ROW: USER STATUS & ADMIN TOGGLES */}
+      {/* TOP ROW: USER STATUS */}
       <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <div className="inline-flex items-center gap-2 rounded-2xl bg-slate-100 border border-slate-200 px-4 py-2 shadow-sm">
@@ -89,26 +85,6 @@ export default async function DirectoryPage({
               <Badge className="bg-amber-500/10 text-amber-600 border-amber-200 uppercase text-[10px] font-extrabold tracking-tighter ml-1">Unverified</Badge>
             )}
           </div>
-        </div>
-
-        <div className="flex items-center gap-3">
-          {isAdmin && (
-            <div className="relative group">
-              <button className="inline-flex items-center gap-2 rounded-2xl bg-slate-900 text-white font-bold px-5 py-2.5 text-sm shadow-lg hover:bg-slate-800 transition-all">
-                <Settings className="w-4 h-4 text-emerald-400" /> Admin Controls <ChevronDown className="w-4 h-4 opacity-50" />
-              </button>
-              <div className="absolute right-0 mt-2 w-52 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
-                <div className="flex flex-col gap-1 p-2 bg-white rounded-2xl shadow-2xl border border-slate-100">
-                  <Link href="/admin" className="px-3 py-2.5 text-sm font-bold text-slate-700 hover:bg-slate-50 rounded-xl flex items-center gap-3 transition-colors">
-                    <LayoutDashboard className="w-4 h-4 text-emerald-600" /> User Approvals
-                  </Link>
-                  <Link href="/admin/announcements" className="px-3 py-2.5 text-sm font-bold text-slate-700 hover:bg-slate-50 rounded-xl flex items-center gap-3 transition-colors">
-                    <Megaphone className="w-4 h-4 text-amber-600" /> Manage Notices
-                  </Link>
-                </div>
-              </div>
-            </div>
-          )}
         </div>
       </div>
 
@@ -164,30 +140,34 @@ export default async function DirectoryPage({
         </div>
       )}
 
-      {/* SEARCH FILTERS */}
+      {/* ENHANCED SEARCH FILTERS */}
       <Card className="mb-8 rounded-3xl border border-slate-200 shadow-lg overflow-hidden bg-white/50 backdrop-blur-sm">
         <CardContent className="pt-8">
-          <form className="grid gap-4 md:grid-cols-4 lg:grid-cols-5">
-            <div className="md:col-span-4 lg:col-span-5 relative">
+          <form className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <div className="md:col-span-2 lg:col-span-4 relative">
               <Search className="absolute left-4 top-3.5 h-5 w-5 text-slate-400" />
               <Input name="search" defaultValue={search} placeholder="Search by name, physics teacher, batch, or company..." className="pl-12 h-12 rounded-2xl border-slate-200 shadow-inner bg-slate-50/50" />
             </div>
+            
             <select name="year" defaultValue={yearFilter} className="h-11 rounded-xl border border-slate-200 px-3 text-sm shadow-sm font-bold bg-white cursor-pointer"><option value="all">All Batches</option>{years.map((year) => (<option key={year} value={String(year)}>Class of {year}</option>))}</select>
-            <select name="district" defaultValue={districtFilter} className="h-11 rounded-xl border border-slate-200 px-3 text-sm shadow-sm font-bold bg-white cursor-pointer"><option value="all">All Districts</option>{districts.map((district) => (<option key={district} value={district}>{district}</option>))}</select>
-            
-            <div className="flex items-center gap-3 h-11 px-4 border border-slate-200 rounded-xl bg-white shadow-sm">
-              <input type="checkbox" name="mentors" value="true" defaultChecked={mentorsOnly} className="w-4 h-4 rounded text-primary border-slate-300 focus:ring-primary cursor-pointer" />
-              <label className="text-sm font-bold text-slate-700 cursor-pointer">Mentors Only</label>
-            </div>
-            
-            <div className="flex items-center gap-3 h-11 px-4 border border-indigo-100 rounded-xl bg-indigo-50 shadow-sm">
-              <input type="checkbox" name="faculty" value="true" defaultChecked={facultyOnly} className="w-4 h-4 rounded text-indigo-600 border-indigo-300 focus:ring-indigo-600 cursor-pointer" />
-              <label className="text-sm font-bold text-indigo-900 cursor-pointer flex items-center gap-2">
-                <BookOpen className="w-4 h-4 text-indigo-500" /> Faculty Only
-              </label>
+            <select name="country" defaultValue={countryFilter} className="h-11 rounded-xl border border-slate-200 px-3 text-sm shadow-sm font-bold bg-white cursor-pointer"><option value="all">Current Location (All)</option>{countries.map((country) => (<option key={country} value={country}>{country}</option>))}</select>
+            <select name="industry" defaultValue={industryFilter} className="h-11 rounded-xl border border-slate-200 px-3 text-sm shadow-sm font-bold bg-white cursor-pointer"><option value="all">All Industries</option>{industries.map((industry) => (<option key={industry} value={industry}>{industry}</option>))}</select>
+
+            <div className="flex flex-col sm:flex-row items-center gap-3">
+              <div className="flex items-center gap-3 h-11 px-4 border border-slate-200 rounded-xl bg-white shadow-sm w-full sm:w-auto">
+                <input type="checkbox" name="mentors" value="true" defaultChecked={mentorsOnly} className="w-4 h-4 rounded text-primary border-slate-300 focus:ring-primary cursor-pointer" />
+                <label className="text-sm font-bold text-slate-700 cursor-pointer">Mentors</label>
+              </div>
+              
+              <div className="flex items-center gap-3 h-11 px-4 border border-indigo-100 rounded-xl bg-indigo-50 shadow-sm w-full sm:w-auto">
+                <input type="checkbox" name="faculty" value="true" defaultChecked={facultyOnly} className="w-4 h-4 rounded text-indigo-600 border-indigo-300 focus:ring-indigo-600 cursor-pointer" />
+                <label className="text-sm font-bold text-indigo-900 cursor-pointer flex items-center gap-2">
+                  <BookOpen className="w-4 h-4 text-indigo-500" /> Faculty
+                </label>
+              </div>
             </div>
 
-            <button type="submit" className="rounded-xl bg-primary text-white font-extrabold h-11 hover:bg-blue-900 shadow-md hover:shadow-lg transition-all">Search Network</button>
+            <button type="submit" className="md:col-span-2 lg:col-span-4 rounded-xl bg-primary text-white font-extrabold h-11 hover:bg-blue-900 shadow-md hover:shadow-lg transition-all">Apply Filters</button>
           </form>
         </CardContent>
       </Card>

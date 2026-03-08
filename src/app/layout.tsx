@@ -42,8 +42,9 @@ export default async function RootLayout({
     }
   }
 
-  const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL?.toLowerCase() || "";
-  const isAdmin = user?.email?.toLowerCase() === adminEmail || user?.email === "qaisrani12116@gmail.com";
+  const adminEnvEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL?.toLowerCase() || "";
+  const userEmail = user?.email?.toLowerCase() || "";
+  const isAdmin = userEmail && (userEmail === adminEnvEmail || userEmail === "qaisrani12116@gmail.com" || userEmail === "brcloralai123@gmail.com");
 
   return (
     <html lang="en" suppressHydrationWarning>
@@ -62,7 +63,6 @@ export default async function RootLayout({
                     <>
                       <div className="text-[15px] font-extrabold leading-none text-primary dark:text-white flex items-center gap-1.5">
                         <span className="truncate max-w-[130px] sm:max-w-[200px]">{profile.full_name || "My Account"}</span>
-                        {/* Wrapped in a span to fix TypeScript title error */}
                         {isVerified ? (
                           <span title="Verified" className="inline-flex items-center">
                             <ShieldCheck className="w-4 h-4 text-emerald-500" />
@@ -84,7 +84,14 @@ export default async function RootLayout({
                 </div>
               </Link>
               
-              <div className="lg:hidden"><ThemeToggle /></div>
+              <div className="flex lg:hidden items-center gap-2">
+                {isAdmin && (
+                  <Link href="/admin" className="flex items-center gap-1 px-3 py-1.5 bg-slate-900 text-white text-xs font-bold rounded-full shadow-md">
+                    <ShieldCheck className="h-3 w-3 text-emerald-400" /> Admin
+                  </Link>
+                )}
+                <ThemeToggle />
+              </div>
             </div>
 
             {!user ? (
@@ -94,21 +101,20 @@ export default async function RootLayout({
                 <div className="hidden lg:block ml-2"><ThemeToggle /></div>
               </div>
             ) : (
-              <div className="flex overflow-x-auto pb-2 lg:pb-0 items-center gap-1.5 scrollbar-hide w-full lg:w-auto">
-                <Link href="/" className="shrink-0"><Button variant="ghost" size="sm" className="gap-2 text-slate-600 dark:text-slate-300 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800"><Home className="h-4 w-4" /> Home</Button></Link>
-                <Link href="/directory" className="shrink-0"><Button variant="ghost" size="sm" className="gap-2 text-slate-600 dark:text-slate-300 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800"><Search className="h-4 w-4" /> Directory</Button></Link>
-                <Link href="/profile/me" className="shrink-0"><Button variant="ghost" size="sm" className="gap-2 text-slate-600 dark:text-slate-300 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800"><User className="h-4 w-4" /> Profile</Button></Link>
-                <Link href="/profile/complete" className="shrink-0"><Button variant="ghost" size="sm" className="gap-2 text-slate-600 dark:text-slate-300 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800"><Settings className="h-4 w-4" /> Edit</Button></Link>
+              <div className="flex overflow-x-auto pb-2 lg:pb-0 items-center justify-between w-full lg:w-auto gap-4 scrollbar-hide">
+                <div className="flex items-center gap-1.5">
+                  <Link href="/" className="shrink-0"><Button variant="ghost" size="sm" className="gap-2 text-slate-600 dark:text-slate-300 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800"><Home className="h-4 w-4" /> Home</Button></Link>
+                  <Link href="/directory" className="shrink-0"><Button variant="ghost" size="sm" className="gap-2 text-slate-600 dark:text-slate-300 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800"><Search className="h-4 w-4" /> Directory</Button></Link>
+                  <Link href="/profile/me" className="shrink-0"><Button variant="ghost" size="sm" className="gap-2 text-slate-600 dark:text-slate-300 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800"><User className="h-4 w-4" /> Profile</Button></Link>
+                  <Link href="/profile/complete" className="shrink-0"><Button variant="ghost" size="sm" className="gap-2 text-slate-600 dark:text-slate-300 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800"><Settings className="h-4 w-4" /> Edit</Button></Link>
+                </div>
                 
-                {isAdmin && (
-                  <Link href="/admin" className="shrink-0">
-                    <Button variant="ghost" size="sm" className="gap-2 text-white bg-primary hover:bg-secondary rounded-full shadow-sm ml-1 transition-colors">
-                      <ShieldCheck className="h-4 w-4" /> Admin
-                    </Button>
-                  </Link>
-                )}
-
-                <div className="hidden lg:flex ml-2 border-l border-slate-200 dark:border-slate-800 pl-3 gap-2">
+                <div className="hidden lg:flex items-center gap-2 border-l border-slate-200 dark:border-slate-800 pl-4">
+                  {isAdmin && (
+                    <Link href="/admin" className="flex items-center gap-1.5 px-4 py-1.5 bg-slate-900 dark:bg-emerald-700 text-white text-xs font-bold rounded-full shadow-md hover:shadow-lg transition-all">
+                      <ShieldCheck className="h-4 w-4 text-emerald-400 dark:text-white" /> Admin Panel
+                    </Link>
+                  )}
                   <ThemeToggle />
                   <form action="/auth/signout" method="get">
                     <Button variant="outline" size="sm" className="gap-2 text-red-600 border-red-200 hover:bg-red-50 dark:hover:bg-red-950 rounded-full" type="submit">
@@ -135,9 +141,8 @@ export default async function RootLayout({
               <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Connecting Koharians worldwide.</p>
             </div>
 
-            <div className="inline-flex items-center justify-center px-3 py-1.5 text-[10px] sm:text-[11px] font-medium text-slate-500 dark:text-slate-400 border border-slate-200/80 dark:border-slate-800/80 rounded-md bg-slate-50/50 dark:bg-slate-900/30 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors shadow-sm text-center">
-              Developed & Managed by 
-              <span className="font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent ml-1">Dr Arif Qaisrani (1998-2005 Batch)</span>
+            <div className="inline-flex items-center justify-center px-4 py-2 text-[11px] font-bold text-slate-600 dark:text-slate-400 border border-slate-200/80 dark:border-slate-800/80 rounded-md bg-slate-50/50 dark:bg-slate-900/30 shadow-sm text-center">
+              Official Alumni Platform
             </div>
             
           </div>

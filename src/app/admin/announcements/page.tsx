@@ -11,9 +11,12 @@ import { Trash2, Power, Megaphone, ArrowLeft } from "lucide-react";
 export default async function AdminAnnouncementsPage() {
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL || "brcloralai123@gmail.com";
+  
+  const adminEnvEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL?.toLowerCase() || "";
+  const userEmail = user?.email?.toLowerCase() || "";
+  const isAdmin = userEmail && (userEmail === adminEnvEmail || userEmail === "qaisrani12116@gmail.com" || userEmail === "brcloralai123@gmail.com");
 
-  if (!user || user.email?.toLowerCase() !== adminEmail.toLowerCase()) {
+  if (!isAdmin) {
     redirect("/directory");
   }
 
