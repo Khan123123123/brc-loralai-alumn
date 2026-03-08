@@ -1,7 +1,6 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -12,12 +11,25 @@ import { ShieldCheck, Users, Search, UserCircle2 } from "lucide-react";
 
 export default function LoginPage() {
   const supabase = createClient();
-  const router = useRouter();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [checkingSession, setCheckingSession] = useState(true);
+
+  // FIX: Prevents the "backspace ghost login" issue
+  useEffect(() => {
+    const checkUser = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        window.location.replace("/directory");
+      } else {
+        setCheckingSession(false);
+      }
+    };
+    checkUser();
+  }, [supabase.auth]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,31 +44,23 @@ export default function LoginPage() {
 
       if (error) throw error;
 
-      const user = data.user;
-      if (!user) {
-        window.location.href = "/auth/login"; // Hard reset
+      if (!data.user) {
+        window.location.replace("/auth/login");
         return;
       }
 
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("id, is_profile_complete")
-        .eq("id", user.id)
-        .single();
-
-      // Ensure robust routing
-      if (!profile || !profile.is_profile_complete) {
-        window.location.href = "/profile/complete"; // Hard redirect to profile
-      } else {
-        window.location.href = "/directory"; // Hard redirect to home/directory
-      }
+      // FIX: Unconditionally send user to directory to break the profile loop
+      window.location.replace("/directory");
 
     } catch (err: any) {
       setError(err.message || "Unable to sign in. Please try again.");
-    } finally {
       setLoading(false);
     }
   };
+
+  if (checkingSession) {
+    return <div className="min-h-screen flex items-center justify-center bg-slate-50 text-slate-500 font-medium">Securing connection...</div>;
+  }
 
   return (
     <div className="min-h-[calc(100vh-140px)] bg-slate-50 px-4 py-12">

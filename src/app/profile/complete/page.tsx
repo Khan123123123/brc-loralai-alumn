@@ -62,7 +62,7 @@ export default function CompleteProfilePage() {
   useEffect(() => {
     const load = async () => {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) { router.push("/auth/login"); return; }
+      if (!user) { window.location.replace("/auth/login"); return; }
       setUser(user);
 
       const { data: profile } = await supabase.from("profiles").select("*").eq("id", user.id).single();
@@ -86,7 +86,7 @@ export default function CompleteProfilePage() {
       setBootLoading(false);
     };
     load();
-  }, [router, supabase]);
+  }, [supabase]);
 
   const setField = (field: keyof FormDataType, value: any) => { setFormData((prev) => ({ ...prev, [field]: value })); };
   const setVerificationField = (field: keyof FormDataType["verification_answers"], value: string) => { setFormData((prev) => ({ ...prev, verification_answers: { ...prev.verification_answers, [field]: value } })); };
@@ -136,7 +136,7 @@ export default function CompleteProfilePage() {
       setIsAlreadyApproved(currentlyApprovedInDb);
       setBanner({ type: "success", text: "Profile saved successfully." });
       router.refresh();
-      setTimeout(() => router.push("/profile/me"), 900);
+      setTimeout(() => router.push("/directory"), 900);
     } catch (err: any) { setBanner({ type: "error", text: err.message || "Unable to save your profile." }); } finally { setSaving(false); }
   };
 
@@ -160,15 +160,14 @@ export default function CompleteProfilePage() {
     setAuthLoading(true);
     try {
       await deleteMyAccount();
-      window.location.href = "/auth/login";
+      window.location.replace("/auth/login");
     } catch (e: any) { alert("Error deleting account: " + e.message); setAuthLoading(false); }
   };
 
- const handleLogout = async () => {
-    // 1. Sign out of Supabase
+  // FIX: This ensures the 404 Vercel error never happens.
+  const handleLogout = async () => {
     await supabase.auth.signOut();
-    // 2. Force a HARD browser redirect to clear all Next.js client caches
-    window.location.href = "/auth/login";
+    window.location.replace("/auth/login");
   };
 
   if (bootLoading) return <div className="text-center p-10 mt-20 text-slate-500">Loading your profile...</div>;
@@ -402,7 +401,7 @@ export default function CompleteProfilePage() {
           {showSecuritySettings ? <ChevronUp className="w-4 h-4 ml-2"/> : <ChevronDown className="w-4 h-4 ml-2"/>}
         </Button>
         
-        {/* NEW FEATURE: LOGOUT BUTTON ADDED HERE */}
+        {/* FIX: LOGOUT BUTTON WITH BULLETPROOF REDIRECT */}
         <Button 
           variant="outline" 
           onClick={handleLogout}

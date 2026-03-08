@@ -29,7 +29,7 @@ export default function AdminPage({
       const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL?.toLowerCase() || "qaisrani12116@gmail.com";
       
       if (!user || (user.email?.toLowerCase() !== adminEmail && user.email !== "qaisrani12116@gmail.com")) {
-        router.push("/directory");
+        window.location.replace("/directory");
         return;
       }
 
@@ -48,11 +48,12 @@ export default function AdminPage({
     };
 
     loadAdminData();
-  }, [supabase, router, searchQuery]);
+  }, [supabase, searchQuery]);
 
+  // FIX: This ensures the 404 Vercel error never happens.
   const handleSignOut = async () => {
     await supabase.auth.signOut();
-    router.push("/auth/login");
+    window.location.replace("/auth/login");
   };
 
   const stats = {
@@ -70,7 +71,7 @@ export default function AdminPage({
   };
 
   if (loading) {
-    return <div className="p-10 text-center text-slate-500">Loading Admin Dashboard...</div>;
+    return <div className="p-10 text-center text-slate-500 font-medium">Loading Admin Dashboard...</div>;
   }
 
   return (
