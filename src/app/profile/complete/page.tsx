@@ -164,9 +164,11 @@ export default function CompleteProfilePage() {
     } catch (e: any) { alert("Error deleting account: " + e.message); setAuthLoading(false); }
   };
 
-  const handleLogout = async () => {
+ const handleLogout = async () => {
+    // 1. Sign out of Supabase
     await supabase.auth.signOut();
-    router.push("/auth/login");
+    // 2. Force a HARD browser redirect to clear all Next.js client caches
+    window.location.href = "/auth/login";
   };
 
   if (bootLoading) return <div className="text-center p-10 mt-20 text-slate-500">Loading your profile...</div>;

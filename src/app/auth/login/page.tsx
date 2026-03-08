@@ -34,8 +34,7 @@ export default function LoginPage() {
 
       const user = data.user;
       if (!user) {
-        router.push("/auth/login");
-        router.refresh();
+        window.location.href = "/auth/login"; // Hard reset
         return;
       }
 
@@ -45,13 +44,13 @@ export default function LoginPage() {
         .eq("id", user.id)
         .single();
 
+      // Ensure robust routing
       if (!profile || !profile.is_profile_complete) {
-        router.push("/profile/complete");
+        window.location.href = "/profile/complete"; // Hard redirect to profile
       } else {
-        router.push("/directory");
+        window.location.href = "/directory"; // Hard redirect to home/directory
       }
 
-      router.refresh();
     } catch (err: any) {
       setError(err.message || "Unable to sign in. Please try again.");
     } finally {
