@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { AdminApprovalActions } from "./AdminApprovalActions"; // Corrected import to the local one
+import { AdminApprovalActions } from "@/components/admin/AdminApprovalActions"; // Corrected import path
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Search, ExternalLink, LogOut, MessageSquare, Megaphone, Star } from "lucide-react";
