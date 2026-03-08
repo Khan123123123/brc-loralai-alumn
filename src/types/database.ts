@@ -1,19 +1,24 @@
-export type AccessLevel = "limited" | "full";
-
+export type VerificationStatus = "pending" | "basic" | "full" | "rejected";
+export type AccessLevel = "none" | "limited" | "full";
 export type AdminStatus = "pending" | "approved" | "rejected";
+export type AccountType = "Alumni" | "Faculty" | "Student";
 
-export type StudentType = "Hostelite" | "Day Scholar";
+export interface Job {
+  title: string;
+  company: string;
+  start_date: string;
+  end_date?: string;
+  is_current: boolean;
+  description?: string;
+}
 
-export type FinanceType = "Regular" | "Self-Finance";
-
-export type EmploymentStatus =
-  | "Employed"
-  | "Self-Employed"
-  | "Business Owner"
-  | "Student"
-  | "Retired"
-  | "Not Working"
-  | "House Wife/Husband";
+export interface Education {
+  institution: string;
+  degree: string;
+  field: string;
+  start_date: string;
+  end_date?: string;
+}
 
 export interface VerificationAnswers {
   houses?: string;
@@ -23,103 +28,66 @@ export interface VerificationAnswers {
   established_year?: string;
 }
 
-export interface Education {
-  institution: string;
-  degree: string;
-  field: string;
-  start_date: string;
-  end_date: string;
-}
-
-export interface Job {
-  company: string;
-  title: string;
-  start_date: string;
-  end_date: string;
-  is_current: boolean;
-}
-
 export interface Profile {
   id: string;
   email: string;
   full_name: string;
+  slug?: string;
+  avatar_url?: string;
+  account_type: AccountType;
+  
+  // New Engaging Fields
+  languages?: string[];
+  achievements_brc?: string;
+  achievements_after?: string;
+  favorite_teacher?: string;
+  message_for_koharians?: string;
 
-  slug?: string | null;
-  profile_photo_url?: string | null;
+  // BRC Details
+  entry_year?: number;
+  graduation_year?: number;
+  house?: string;
+  roll_number?: string;
+  subjects_taught?: string[];
 
-  account_type?: string | null;
-  subjects_taught?: string[] | null;
+  // Professional
+  profession?: string;
+  industry?: string;
+  current_position?: string;
+  current_organization?: string;
+  expertise_areas?: string[];
+  job_history?: Job[];
+  higher_education?: Education[];
 
-  entry_year?: number | null;
-  graduation_year?: number | null;
-  regular_self_finance?: FinanceType | null;
-  roll_number?: string | null;
-  home_district?: string | null;
-  student_type?: StudentType | null;
+  // Location
+  current_city?: string;
+  current_country?: string;
+  home_city?: string;
+  home_district?: string;
 
-  current_country?: string | null;
-  current_city?: string | null;
-  current_position?: string | null;
-  profession?: string | null;
-  current_organization?: string | null;
-  industry?: string | null;
-  experience_years?: number | null;
-  employment_status?: EmploymentStatus | null;
+  // Contact (Privacy Protected)
+  phone_number?: string;
+  linkedin_url?: string;
+  twitter_url?: string;
+  website_url?: string;
 
-  higher_education?: Education[] | null;
-  job_history?: Job[] | null;
+  // Settings & Status
+  show_email: boolean;
+  show_phone: boolean;
+  available_for_mentoring: boolean;
+  show_in_directory: boolean;
 
-  phone?: string | null;
-  linkedin_url?: string | null;
-  languages?: string[] | null;
-  bio?: string | null;
-  achievements?: string | null;
-
-  featured_in_presentation?: boolean | null;
-  available_for_mentoring?: boolean | null;
-
-  show_phone_publicly?: boolean | null;
-  show_email_publicly?: boolean | null;
-  show_linkedin_publicly?: boolean | null;
-  show_in_directory?: boolean | null;
-
-  access_level?: AccessLevel | null;
-  admin_status?: AdminStatus | null;
-
-  is_profile_complete?: boolean | null;
-  submitted_for_review?: boolean | null;
-
-  verification_status?: "pending" | "basic" | "full" | "rejected" | null;
-  verification_score?: number | null;
-  verification_answers?: VerificationAnswers | null;
-
-  approved_at?: string | null;
-  last_profile_reviewed_at?: string | null;
-  reviewed_by?: string | null;
-  verified_by_peers?: number | null;
-  needs_admin_review?: boolean | null;
-
-  created_at?: string | null;
-  updated_at?: string | null;
-}
-
-export interface VerificationLog {
-  id: number;
-  profile_id: string;
-  action: string;
-  previous_status?: string | null;
-  new_status?: string | null;
-  performed_by?: string | null;
-  notes?: string | null;
+  // System
+  verification_status: VerificationStatus;
+  access_level: AccessLevel;
+  admin_status: AdminStatus;
+  verification_answers?: VerificationAnswers;
+  is_profile_complete: boolean;
+  
   created_at: string;
+  updated_at: string;
+  approved_at?: string;
+  deep_search_text?: string;
+  bio?: string;
+  achievements?: string;
 }
-
-export type Announcement = {
-  id: string;
-  title: string;
-  content: string;
-  type: "Event" | "News" | "Urgent";
-  link_url: string | null;
-  is_active: boolean;
-  created_at: string;
-};
