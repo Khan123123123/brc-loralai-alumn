@@ -7,9 +7,8 @@ export function ThemeToggle() {
   const [isDark, setIsDark] = useState(false);
 
   useEffect(() => {
-    const theme = localStorage.getItem("theme");
-    if (theme === "dark" || (!theme && window.matchMedia("(prefers-color-scheme: dark)").matches)) {
-      document.documentElement.classList.add("dark");
+    // Only check current state, don't force manipulation on mount to avoid FOUC
+    if (document.documentElement.classList.contains("dark")) {
       setIsDark(true);
     }
   }, []);

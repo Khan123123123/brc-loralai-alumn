@@ -7,11 +7,9 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
-import { UserCircle2, Briefcase, MapPin, GraduationCap, Lock, Plus, Trash2, ArrowRight, ArrowLeft, CheckCircle2, Award, Loader2 } from "lucide-react";
+import { UserCircle2, Briefcase, MapPin, GraduationCap, Lock, Plus, Trash2, ArrowRight, ArrowLeft, CheckCircle2, Award, Loader2, Link2, EyeOff, ShieldCheck } from "lucide-react";
 
-// DEFENSIVE PARSING: Prevents page crashes if DB returns strings instead of arrays
 const safeParseArray = (data: any) => {
   if (!data) return [];
   if (Array.isArray(data)) return data;
@@ -31,18 +29,23 @@ export default function ProfileForm({ profile, answers, isVerified }: any) {
   const [step, setStep] = useState(1);
   const [isSaving, setIsSaving] = useState(false);
   const totalSteps = 4;
+  
+  // Account Type State for conditional rendering
+  const [accountType, setAccountType] = useState(profile.account_type || "Alumni");
 
-  // Safely initialize arrays to prevent .map() crashes
+  // Arrays State
   const [jobs, setJobs] = useState<any[]>(safeParseArray(profile.job_history));
   const [edu, setEdu] = useState<any[]>(safeParseArray(profile.higher_education));
 
-  // Safely handle languages which might be a string or array
-  let defaultLanguages = "";
-  if (Array.isArray(profile.languages)) {
-    defaultLanguages = profile.languages.join(", ");
-  } else if (typeof profile.languages === "string") {
-    defaultLanguages = profile.languages;
-  }
+  // Toggles State (Rock solid boolean tracking for forms)
+  const [showInDir, setShowInDir] = useState(profile.show_in_directory !== false); // Default true
+  const [showEmail, setShowEmail] = useState(profile.show_email_publicly !== false);
+  const [showLinkedIn, setShowLinkedIn] = useState(profile.show_linkedin_publicly !== false);
+  const [showPhone, setShowPhone] = useState(!!profile.show_phone_publicly);
+  const [mentor, setMentor] = useState(!!profile.available_for_mentoring);
+
+  let defaultLanguages = Array.isArray(profile.languages) ? profile.languages.join(", ") : (profile.languages || "");
+  let defaultSubjects = Array.isArray(profile.subjects_taught) ? profile.subjects_taught.join(", ") : (profile.subjects_taught || "");
 
   const addJob = () => setJobs([...jobs, { company: "", title: "", start_date: "", end_date: "", is_current: false }]);
   const removeJob = (index: number) => setJobs(jobs.filter((_, i) => i !== index));
@@ -60,14 +63,15 @@ export default function ProfileForm({ profile, answers, isVerified }: any) {
     setEdu(newEdu);
   };
 
+  const jumpToStep = (s: number) => {
+    if (profile.is_profile_complete) setStep(s);
+  };
   const nextStep = () => setStep((s) => Math.min(s + 1, totalSteps));
   const prevStep = () => setStep((s) => Math.max(s - 1, 1));
 
-  // SAFE SUBMISSION HANDLER
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsSaving(true);
-    
     const formData = new FormData(e.currentTarget);
     const res = await updateProfile(formData);
     
@@ -83,6 +87,13 @@ export default function ProfileForm({ profile, answers, isVerified }: any) {
     <form onSubmit={handleSubmit} className="space-y-8 relative">
       <input type="hidden" name="job_history" value={JSON.stringify(jobs)} />
       <input type="hidden" name="higher_education" value={JSON.stringify(edu)} />
+      
+      {/* Absolute reliable hidden inputs for toggles */}
+      <input type="hidden" name="show_in_directory" value={showInDir ? "on" : "off"} />
+      <input type="hidden" name="show_email_publicly" value={showEmail ? "on" : "off"} />
+      <input type="hidden" name="show_linkedin_publicly" value={showLinkedIn ? "on" : "off"} />
+      <input type="hidden" name="show_phone_publicly" value={showPhone ? "on" : "off"} />
+      <input type="hidden" name="available_for_mentoring" value={mentor ? "on" : "off"} />
 
       {/* STEP PROGRESS BAR */}
       <div className="flex items-center justify-between mb-8 relative">
@@ -90,9 +101,14 @@ export default function ProfileForm({ profile, answers, isVerified }: any) {
         <div className="absolute left-0 top-1/2 -translate-y-1/2 h-1 bg-primary rounded-full z-0 transition-all duration-300" style={{ width: `${((step - 1) / (totalSteps - 1)) * 100}%` }}></div>
         
         {[1, 2, 3, 4].map((s) => (
-          <div key={s} className={`relative z-10 flex items-center justify-center w-8 h-8 rounded-full font-bold text-sm border-2 transition-all ${step >= s ? 'bg-primary border-primary text-white shadow-md' : 'bg-white border-slate-300 text-slate-400'}`}>
-            {step > s ? <CheckCircle2 className="w-5 h-5" /> : s}
-          </div>
+          <button 
+            key={s} 
+            type="button" 
+            onClick={() => jumpToStep(s)}
+            className={`relative z-10 flex items-center justify-center w-8 h-8 rounded-full font-bold text-sm border-2 transition-all ${step === s ? 'ring-4 ring-primary/20' : ''} ${step >= s ? 'bg-primary border-primary text-white shadow-md' : 'bg-white border-slate-300 text-slate-400'} ${profile.is_profile_complete ? 'cursor-pointer hover:scale-110' : 'cursor-default'}`}
+          >
+            {step > s && !profile.is_profile_complete ? <CheckCircle2 className="w-5 h-5" /> : s}
+          </button>
         ))}
       </div>
 
@@ -109,15 +125,29 @@ export default function ProfileForm({ profile, answers, isVerified }: any) {
             </div>
             <div className="space-y-2">
               <Label>Account Type</Label>
-              <select name="account_type" defaultValue={profile.account_type || "Alumni"} className="w-full h-10 px-3 rounded-xl border border-slate-200 text-sm bg-slate-50 font-medium">
+              <select name="account_type" value={accountType} onChange={(e) => setAccountType(e.target.value)} className="w-full h-10 px-3 rounded-xl border border-slate-200 text-sm bg-slate-50 font-medium">
                 <option value="Alumni">Alumnus / Former Student</option>
                 <option value="Faculty">Faculty Member</option>
                 <option value="Student">Current Student</option>
               </select>
             </div>
+            
             <div className="space-y-2 sm:col-span-2">
-              <Label className="flex items-center gap-2">Professional Bio & Message to Koharians</Label>
-              <Textarea name="bio" defaultValue={profile.bio || ""} placeholder="A short bio about yourself, or leave a legacy message/advice for other Koharians here!" rows={4} className="rounded-xl bg-slate-50 border-slate-200 resize-none" />
+              <Label>Profile Picture / Avatar URL</Label>
+              <Input name="profile_photo_url" defaultValue={profile.profile_photo_url || ""} placeholder="https://example.com/your-photo.jpg" className="rounded-xl bg-slate-50" />
+              <p className="text-xs text-slate-500">Paste a direct link to an image (e.g., from LinkedIn or an image host).</p>
+            </div>
+
+            {accountType === "Faculty" && (
+              <div className="space-y-2 sm:col-span-2">
+                <Label>Subjects Taught</Label>
+                <Input name="subjects_taught" defaultValue={defaultSubjects} placeholder="e.g. Physics, Mathematics (comma separated)" className="rounded-xl bg-slate-50 border-indigo-200 focus-visible:ring-indigo-500" />
+              </div>
+            )}
+
+            <div className="space-y-2 sm:col-span-2">
+              <Label>Professional Bio</Label>
+              <Textarea name="bio" defaultValue={profile.bio || ""} placeholder="A short bio about your current professional journey." rows={3} className="rounded-xl bg-slate-50 border-slate-200 resize-none" />
             </div>
             <div className="space-y-2 sm:col-span-2">
               <Label>Languages Spoken</Label>
@@ -153,10 +183,31 @@ export default function ProfileForm({ profile, answers, isVerified }: any) {
                 <option value="Self-Finance">Self-Finance</option>
               </select>
             </div>
+            <div className="space-y-2">
+              <Label>Student Type</Label>
+              <select name="student_type" defaultValue={profile.student_type || "Hostelite"} className="w-full h-10 px-3 rounded-xl border border-slate-200 text-sm bg-slate-50 font-medium">
+                <option value="Hostelite">Hostelite</option>
+                <option value="Day Scholar">Day Scholar</option>
+              </select>
+            </div>
+            <div className="space-y-2">
+              <Label>Favorite BRC Teacher(s)</Label>
+              <Input name="favorite_teacher" defaultValue={profile.favorite_teacher || ""} placeholder="Who inspired you the most?" className="rounded-xl bg-slate-50" />
+            </div>
+
+            <div className="space-y-2 sm:col-span-2">
+              <Label className="flex items-center gap-2"><Award className="w-4 h-4 text-amber-500"/> BRC Achievements</Label>
+              <Textarea name="achievements_brc" defaultValue={profile.achievements_brc || ""} placeholder="e.g. Debate Captain, Best Athlete, House Prefect..." rows={3} className="rounded-xl bg-slate-50 resize-none" />
+            </div>
             
             <div className="space-y-2 sm:col-span-2">
-              <Label className="flex items-center gap-2"><Award className="w-4 h-4 text-amber-500"/> Milestones & Memories</Label>
-              <Textarea name="achievements" defaultValue={profile.achievements || ""} placeholder="Who was your favorite teacher? Were you sports captain or debate winner? List your BRC and after-BRC achievements here!" rows={4} className="rounded-xl bg-slate-50 resize-none" />
+              <Label>Life After BRC (Achievements)</Label>
+              <Textarea name="achievements_after" defaultValue={profile.achievements_after || ""} placeholder="e.g. Fulbright Scholar, Founded a startup, Civil Service..." rows={3} className="rounded-xl bg-slate-50 resize-none" />
+            </div>
+
+            <div className="space-y-2 sm:col-span-2">
+              <Label>Message for Koharians</Label>
+              <Textarea name="message_for_koharians" defaultValue={profile.message_for_koharians || ""} placeholder="Leave a word of advice or a memory for the community." rows={2} className="rounded-xl bg-slate-50 resize-none" />
             </div>
           </CardContent>
         </Card>
@@ -239,44 +290,75 @@ export default function ProfileForm({ profile, answers, isVerified }: any) {
                      <Input placeholder="Company Name" value={job.company || ""} onChange={(e) => updateJob(i, "company", e.target.value)} className="bg-white" />
                      <Input placeholder="Job Title" value={job.title || ""} onChange={(e) => updateJob(i, "title", e.target.value)} className="bg-white" />
                      <div className="flex gap-2">
-                       <Input placeholder="Start Date/Year" value={job.start_date || ""} onChange={(e) => updateJob(i, "start_date", e.target.value)} className="bg-white" />
-                       <Input placeholder="End Date/Year" value={job.end_date || ""} onChange={(e) => updateJob(i, "end_date", e.target.value)} className="bg-white" />
+                       <Input placeholder="Start Year" value={job.start_date || ""} onChange={(e) => updateJob(i, "start_date", e.target.value)} className="bg-white" />
+                       <Input placeholder="End Year" value={job.end_date || ""} onChange={(e) => updateJob(i, "end_date", e.target.value)} className="bg-white" />
                      </div>
                    </div>
                  </div>
                ))}
             </div>
-
           </CardContent>
         </Card>
       )}
 
-      {/* STEP 4: LOCATION & CONTACT */}
+      {/* STEP 4: LOCATION & PRIVACY */}
       {step === 4 && (
         <div className="space-y-8 animate-in fade-in slide-in-from-right-8 duration-500">
           <Card className="rounded-3xl shadow-sm border-slate-200">
             <CardHeader className="bg-slate-50/50 border-b rounded-t-3xl pb-4">
-              <CardTitle className="flex items-center gap-2 text-lg"><MapPin className="w-5 h-5 text-primary" /> Step 4: Location & Contact</CardTitle>
+              <CardTitle className="flex items-center gap-2 text-lg"><MapPin className="w-5 h-5 text-primary" /> Step 4: Location & Privacy Settings</CardTitle>
             </CardHeader>
             <CardContent className="pt-6 grid gap-6 sm:grid-cols-2">
               <div className="space-y-2"><Label>Current City</Label><Input name="current_city" defaultValue={profile.current_city || ""} className="rounded-xl bg-slate-50" /></div>
               <div className="space-y-2"><Label>Current Country</Label><Input name="current_country" defaultValue={profile.current_country || ""} className="rounded-xl bg-slate-50" /></div>
-              <div className="space-y-2"><Label>Home City</Label><Input name="home_city" defaultValue={profile.home_city || ""} placeholder="e.g. Quetta" className="rounded-xl bg-slate-50" /></div>
-              <div className="space-y-2"><Label>Home District (Origin)</Label><Input name="home_district" defaultValue={profile.home_district || ""} placeholder="e.g. Loralai" className="rounded-xl bg-slate-50" /></div>
+              <div className="space-y-2"><Label>Home City (Originally from)</Label><Input name="home_city" defaultValue={profile.home_city || ""} placeholder="e.g. Quetta" className="rounded-xl bg-slate-50" /></div>
+              <div className="space-y-2"><Label>Home District</Label><Input name="home_district" defaultValue={profile.home_district || ""} placeholder="e.g. Loralai" className="rounded-xl bg-slate-50" /></div>
               
               <div className="space-y-2"><Label>Phone Number</Label><Input name="phone_number" defaultValue={profile.phone || profile.phone_number || ""} type="tel" className="rounded-xl bg-slate-50" /></div>
-              <div className="space-y-2"><Label>LinkedIn URL</Label><Input name="linkedin_url" defaultValue={profile.linkedin_url || ""} type="url" className="rounded-xl bg-slate-50" /></div>
+              <div className="space-y-2"><Label>LinkedIn URL</Label><Input name="linkedin_url" defaultValue={profile.linkedin_url || ""} type="url" placeholder="https://linkedin.com/in/..." className="rounded-xl bg-slate-50" /></div>
+              <div className="space-y-2"><Label>Twitter/X URL</Label><Input name="twitter_url" defaultValue={profile.twitter_url || ""} type="url" placeholder="https://twitter.com/..." className="rounded-xl bg-slate-50" /></div>
+              <div className="space-y-2"><Label>Personal Website</Label><Input name="website_url" defaultValue={profile.website_url || ""} type="url" placeholder="https://..." className="rounded-xl bg-slate-50" /></div>
               
-              <div className="sm:col-span-2 flex flex-col gap-3 mt-4">
-                 <div className="flex items-center space-x-3 bg-slate-50 p-4 rounded-xl border border-slate-200">
-                    <Checkbox id="show_phone" name="show_phone" defaultChecked={profile.show_phone_publicly} />
-                    <Label htmlFor="show_phone" className="font-semibold text-slate-700 cursor-pointer">Make Phone Number visible to verified alumni</Label>
-                 </div>
-                 <div className="flex items-center space-x-3 bg-emerald-50 p-4 rounded-xl border border-emerald-200">
-                    <Checkbox id="available_for_mentoring" name="available_for_mentoring" defaultChecked={profile.available_for_mentoring} />
-                    <Label htmlFor="available_for_mentoring" className="font-bold text-emerald-900 cursor-pointer">I am available to mentor junior alumni</Label>
-                 </div>
-                 <p className="text-xs text-slate-500 mt-2">Note: Your Email and LinkedIn are automatically visible to verified alumni to facilitate networking.</p>
+              <div className="sm:col-span-2 border-t pt-6 mt-2 space-y-4">
+                 <Label className="text-base font-extrabold flex items-center gap-2"><ShieldCheck className="w-5 h-5 text-primary"/> Privacy & Directory Settings</Label>
+                 
+                 <label className="flex items-center gap-3 p-4 rounded-xl border border-slate-200 bg-slate-50 cursor-pointer hover:bg-slate-100 transition-colors">
+                    <input type="checkbox" checked={showInDir} onChange={(e) => setShowInDir(e.target.checked)} className="w-5 h-5 rounded text-primary focus:ring-primary border-slate-300" />
+                    <div>
+                      <div className="font-bold text-slate-900">Show my profile in the Alumni Directory</div>
+                      <div className="text-xs text-slate-500">Uncheck to hide your account completely from public search.</div>
+                    </div>
+                 </label>
+
+                 <label className="flex items-center gap-3 p-4 rounded-xl border border-slate-200 bg-slate-50 cursor-pointer hover:bg-slate-100 transition-colors">
+                    <input type="checkbox" checked={showEmail} onChange={(e) => setShowEmail(e.target.checked)} className="w-5 h-5 rounded text-primary focus:ring-primary border-slate-300" />
+                    <div>
+                      <div className="font-bold text-slate-900">Make Email visible to Verified Members</div>
+                      <div className="text-xs text-slate-500">Uncheck to hide your email. Unverified users can NEVER see it.</div>
+                    </div>
+                 </label>
+
+                 <label className="flex items-center gap-3 p-4 rounded-xl border border-slate-200 bg-slate-50 cursor-pointer hover:bg-slate-100 transition-colors">
+                    <input type="checkbox" checked={showLinkedIn} onChange={(e) => setShowLinkedIn(e.target.checked)} className="w-5 h-5 rounded text-primary focus:ring-primary border-slate-300" />
+                    <div>
+                      <div className="font-bold text-slate-900">Make LinkedIn visible to Verified Members</div>
+                    </div>
+                 </label>
+
+                 <label className="flex items-center gap-3 p-4 rounded-xl border border-slate-200 bg-slate-50 cursor-pointer hover:bg-slate-100 transition-colors">
+                    <input type="checkbox" checked={showPhone} onChange={(e) => setShowPhone(e.target.checked)} className="w-5 h-5 rounded text-primary focus:ring-primary border-slate-300" />
+                    <div>
+                      <div className="font-bold text-slate-900">Make Phone Number visible to Verified Members</div>
+                    </div>
+                 </label>
+
+                 <label className="flex items-center gap-3 p-4 rounded-xl border border-emerald-200 bg-emerald-50 cursor-pointer hover:bg-emerald-100 transition-colors mt-6">
+                    <input type="checkbox" checked={mentor} onChange={(e) => setMentor(e.target.checked)} className="w-5 h-5 rounded text-emerald-600 focus:ring-emerald-600 border-emerald-300" />
+                    <div>
+                      <div className="font-bold text-emerald-900">I am available to mentor junior alumni</div>
+                      <div className="text-xs text-emerald-700/80">Adds a badge to your profile so students can reach out.</div>
+                    </div>
+                 </label>
               </div>
             </CardContent>
           </Card>
@@ -306,9 +388,17 @@ export default function ProfileForm({ profile, answers, isVerified }: any) {
         </Button>
         
         {step < totalSteps ? (
-          <Button type="button" onClick={nextStep} disabled={isSaving} className="rounded-xl px-8 h-12 font-bold gap-2 bg-primary text-white hover:bg-blue-900 shadow-md">
-            Next Step <ArrowRight className="w-4 h-4" />
-          </Button>
+          <div className="flex gap-3">
+            {/* Show Quick Save if editing to prevent forced 4-step wizard */}
+            {profile.is_profile_complete && (
+               <Button type="submit" disabled={isSaving} className="rounded-xl px-6 h-12 font-bold bg-slate-200 text-slate-800 hover:bg-slate-300">
+                  Quick Save
+               </Button>
+            )}
+            <Button type="button" onClick={nextStep} disabled={isSaving} className="rounded-xl px-8 h-12 font-bold gap-2 bg-primary text-white hover:bg-blue-900 shadow-md">
+              Next Step <ArrowRight className="w-4 h-4" />
+            </Button>
+          </div>
         ) : (
           <Button type="submit" disabled={isSaving} className="rounded-xl px-10 h-12 font-extrabold bg-emerald-600 text-white hover:bg-emerald-700 shadow-xl hover:scale-105 transition-all">
             {isSaving ? <><Loader2 className="w-5 h-5 animate-spin mr-2" /> Saving...</> : "Save Profile"}

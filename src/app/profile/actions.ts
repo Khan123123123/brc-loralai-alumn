@@ -57,22 +57,31 @@ export async function updateProfile(formData: FormData) {
       console.error("Failed to parse higher education");
     }
 
-    // Parse Languages array safely
+    // Parse Languages and Subjects taught safely
     const languagesRaw = getString("languages");
     const languages = languagesRaw ? languagesRaw.split(',').map(s => s.trim()).filter(Boolean) : null;
+    
+    const subjectsRaw = getString("subjects_taught");
+    const subjects_taught = subjectsRaw ? subjectsRaw.split(',').map(s => s.trim()).filter(Boolean) : null;
 
     // The updates object ONLY contains fields that physically exist in your DB schema
     const updates: any = {
       full_name: getString("full_name"),
       bio: getString("bio"),
-      achievements: getString("achievements"),
       account_type: getString("account_type"),
+      profile_photo_url: getString("profile_photo_url"),
       
-      // BRC Details
+      // BRC Details & Missing Fields
       entry_year: getInt("entry_year"),
       graduation_year: getInt("graduation_year"),
       roll_number: getString("roll_number"),
       regular_self_finance: getString("regular_self_finance"),
+      student_type: getString("student_type"),
+      favorite_teacher: getString("favorite_teacher"),
+      message_for_koharians: getString("message_for_koharians"),
+      achievements_brc: getString("achievements_brc"),
+      achievements_after: getString("achievements_after"),
+      subjects_taught: subjects_taught,
       
       // Location
       current_city: getString("current_city"),
@@ -96,12 +105,14 @@ export async function updateProfile(formData: FormData) {
       // Contact & Socials
       phone: getString("phone_number"), 
       linkedin_url: getString("linkedin_url"),
+      twitter_url: getString("twitter_url"),
+      website_url: getString("website_url"),
       
-      // Preferences
-      show_phone_publicly: formData.get("show_phone") === "on",
-      show_email_publicly: true,
-      show_linkedin_publicly: true,
-      show_in_directory: true, 
+      // PRIVACY PREFERENCES & SETTINGS (Strictly mapped from safe hidden inputs)
+      show_phone_publicly: formData.get("show_phone_publicly") === "on",
+      show_email_publicly: formData.get("show_email_publicly") === "on",
+      show_linkedin_publicly: formData.get("show_linkedin_publicly") === "on",
+      show_in_directory: formData.get("show_in_directory") === "on", 
       available_for_mentoring: formData.get("available_for_mentoring") === "on",
       
       is_profile_complete: true,
@@ -148,11 +159,9 @@ export async function deleteMyAccount() {
   }
 
   try {
-    // Delete profile data (Service Client overrides RLS if needed, ensuring complete wiping)
     const { error: dbError } = await serviceClient.from("profiles").delete().eq("id", user.id);
     if (dbError) throw new Error(dbError.message);
 
-    // Delete authentication account
     const { error: authError } = await serviceClient.auth.admin.deleteUser(user.id);
     if (authError) throw new Error(authError.message);
 

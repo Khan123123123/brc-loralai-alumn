@@ -48,6 +48,22 @@ export default async function RootLayout({
 
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        {/* Anti-FOUC Dark Mode Script */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              try {
+                if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                  document.documentElement.classList.add('dark');
+                } else {
+                  document.documentElement.classList.remove('dark');
+                }
+              } catch (_) {}
+            `,
+          }}
+        />
+      </head>
       <body className={`${inter.variable} font-sans min-h-screen flex flex-col`}>
         
         <header className="relative lg:sticky top-0 z-50 border-b border-border bg-white/80 dark:bg-slate-950/80 backdrop-blur-md shadow-sm">
@@ -140,7 +156,6 @@ export default async function RootLayout({
               </div>
               <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Connecting Koharians worldwide.</p>
             </div>
-            {/* Removed the Official Platform text here */}
           </div>
         </footer>
       </body>
