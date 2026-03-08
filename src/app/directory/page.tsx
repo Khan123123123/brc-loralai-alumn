@@ -44,12 +44,11 @@ export default async function DirectoryPage({
   const from = page * PAGE_SIZE;
   const to = from + PAGE_SIZE - 1;
 
-  // By using .not('show_in_directory', 'eq', false), we include profiles where it is true OR null.
-  // This completely fixes the 0 members bug.
+  // FIX: Explicitly allow true OR null to prevent SQL dropping null values
   let query = supabase.from("profiles")
     .select("*", { count: "exact" })
     .neq("id", user.id)
-    .not("show_in_directory", "eq", false)
+    .or("show_in_directory.eq.true,show_in_directory.is.null")
     .order("graduation_year", { ascending: false })
     .order("full_name", { ascending: true });
 
@@ -71,11 +70,11 @@ export default async function DirectoryPage({
   const { data: rawProfiles, count } = await query;
   const profiles = rawProfiles || [];
 
-  // Fetch unique fields for Dropdowns and Statistics
+  // FIX: Applied the same true OR null logic to the stats fetcher
   const { data: filterProfiles } = await supabase
     .from("profiles")
     .select("graduation_year, entry_year, current_country, current_city, industry, account_type")
-    .not("show_in_directory", "eq", false);
+    .or("show_in_directory.eq.true,show_in_directory.is.null");
   
   const years = Array.from(new Set(filterProfiles?.map((p) => p.graduation_year).filter((v): v is number => typeof v === "number"))).sort((a, b) => b - a);
   const entryYears = Array.from(new Set(filterProfiles?.map((p) => p.entry_year).filter((v): v is number => typeof v === "number"))).sort((a, b) => b - a);
