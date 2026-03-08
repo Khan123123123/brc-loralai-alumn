@@ -41,7 +41,11 @@ export default async function DirectoryPage({
 
   let query = supabase.from("profiles").select("*", { count: "exact" }).neq("id", user.id).eq("show_in_directory", true).order("graduation_year", { ascending: false }).order("full_name", { ascending: true });
 
-  if (search) query = query.ilike("deep_search_text", `%${search}%`);
+  // Safe search using ONLY columns that exist in the database
+  if (search) {
+    query = query.or(`full_name.ilike.%${search}%,profession.ilike.%${search}%,current_organization.ilike.%${search}%,industry.ilike.%${search}%,current_city.ilike.%${search}%`);
+  }
+  
   if (yearFilter !== "all") query = query.eq("graduation_year", parseInt(yearFilter));
   if (entryYearFilter !== "all") query = query.eq("entry_year", parseInt(entryYearFilter));
   if (accountTypeFilter !== "all") query = query.eq("account_type", accountTypeFilter);
@@ -55,7 +59,6 @@ export default async function DirectoryPage({
   const { data: rawProfiles, count } = await query;
   const profiles = rawProfiles || [];
 
-  // Fetch unique fields for Dropdowns and Statistics
   const { data: filterProfiles } = await supabase.from("profiles").select("graduation_year, entry_year, current_country, current_city, industry, account_type").eq("show_in_directory", true);
   
   const years = Array.from(new Set(filterProfiles?.map((p) => p.graduation_year).filter((v): v is number => typeof v === "number"))).sort((a, b) => b - a);
@@ -67,7 +70,6 @@ export default async function DirectoryPage({
 
   const { data: announcements } = await supabase.from("announcements").select("*").eq("is_active", true).order("created_at", { ascending: false });
 
-  // Compute stats
   const totalAlumni = filterProfiles?.length || 0;
   const statCountries = countries.length;
   const statCities = cities.length;
@@ -164,7 +166,7 @@ export default async function DirectoryPage({
           <form className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
             <div className="md:col-span-2 lg:col-span-5 relative">
               <Search className="absolute left-4 top-3.5 h-5 w-5 text-slate-400" />
-              <Input name="search" defaultValue={search} placeholder="Search by name, physics teacher, batch, or company..." className="pl-12 h-12 rounded-2xl border-slate-200 shadow-inner bg-slate-50/50" />
+              <Input name="search" defaultValue={search} placeholder="Search by name, profession, or company..." className="pl-12 h-12 rounded-2xl border-slate-200 shadow-inner bg-slate-50/50" />
             </div>
             
             <select name="year" defaultValue={yearFilter} className="h-11 rounded-xl border border-slate-200 px-3 text-sm shadow-sm font-bold bg-white cursor-pointer"><option value="all">Graduation Batch</option>{years.map((year) => (<option key={year} value={String(year)}>Class of {year}</option>))}</select>
@@ -254,9 +256,6 @@ export default async function DirectoryPage({
                   {/* CONDITIONAL DETAILS */}
                   {isVerified ? (
                     <div className="space-y-3.5 text-sm text-slate-600 border-t pt-4 mt-auto">
-                      {isFaculty && profile.subjects_taught && profile.subjects_taught.length > 0 && (
-                        <div className="flex items-start gap-3"><BookOpen className="w-4 h-4 text-indigo-500 mt-0.5 shrink-0" /><span className="font-bold text-indigo-900 leading-tight">Taught: {profile.subjects_taught.join(", ")}</span></div>
-                      )}
                       <div className="flex items-start gap-3"><Briefcase className={`w-4 h-4 mt-0.5 shrink-0 ${isFaculty ? 'text-indigo-400' : 'text-slate-400'}`} /><span className="font-semibold text-slate-800 leading-tight">{profile.current_position || (isFaculty ? "Faculty Member" : "Alumnus")}</span></div>
                       <div className="flex items-start gap-3"><Building className="w-4 h-4 text-slate-400 mt-0.5 shrink-0" /><span className="truncate leading-tight">{profile.current_organization || "Organization not set"}</span></div>
                       <div className="flex items-start gap-3"><MapPin className="w-4 h-4 text-secondary mt-0.5 shrink-0" /><span className="leading-tight font-medium">{profile.current_city}{profile.current_country ? `, ${profile.current_country}` : ""}</span></div>

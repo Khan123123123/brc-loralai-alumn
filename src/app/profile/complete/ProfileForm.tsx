@@ -62,7 +62,7 @@ export default function ProfileForm({ profile, answers, isVerified }: any) {
           <CardContent className="pt-6 grid gap-6 sm:grid-cols-2">
             <div className="space-y-2">
               <Label>Full Name</Label>
-              <Input name="full_name" defaultValue={profile.full_name || ""} required className="rounded-xl bg-slate-50" />
+              <Input name="full_name" defaultValue={profile.full_name || ""} required className="rounded-xl bg-slate-50 border-slate-200" />
             </div>
             <div className="space-y-2">
               <Label>Account Type</Label>
@@ -73,8 +73,8 @@ export default function ProfileForm({ profile, answers, isVerified }: any) {
               </select>
             </div>
             <div className="space-y-2 sm:col-span-2">
-              <Label>Professional Bio</Label>
-              <Textarea name="bio" defaultValue={profile.bio || ""} placeholder="A short bio about yourself..." rows={3} className="rounded-xl bg-slate-50 resize-none" />
+              <Label className="flex items-center gap-2">Professional Bio & Message to Koharians</Label>
+              <Textarea name="bio" defaultValue={profile.bio || ""} placeholder="A short bio about yourself, or leave a legacy message/advice for other Koharians here!" rows={4} className="rounded-xl bg-slate-50 border-slate-200 resize-none" />
             </div>
             <div className="space-y-2 sm:col-span-2">
               <Label>Languages Spoken</Label>
@@ -110,17 +110,10 @@ export default function ProfileForm({ profile, answers, isVerified }: any) {
                 <option value="Self-Finance">Self-Finance</option>
               </select>
             </div>
+            
             <div className="space-y-2 sm:col-span-2">
-              <Label className="flex items-center gap-2"><Heart className="w-4 h-4 text-rose-500"/> Favorite Teacher at BRC</Label>
-              <Input name="favorite_teacher" defaultValue={profile.favorite_teacher || ""} placeholder="Who inspired you?" className="rounded-xl bg-slate-50" />
-            </div>
-            <div className="space-y-2 sm:col-span-2">
-              <Label>Achievements during BRC</Label>
-              <Textarea name="achievements_brc" defaultValue={profile.achievements_brc || ""} placeholder="Sports captain, debate winner..." rows={2} className="rounded-xl bg-slate-50 resize-none" />
-            </div>
-            <div className="space-y-2 sm:col-span-2">
-              <Label className="flex items-center gap-2"><MessageSquare className="w-4 h-4 text-blue-500"/> Message for other Koharians</Label>
-              <Textarea name="message_for_koharians" defaultValue={profile.message_for_koharians || ""} placeholder="Leave a legacy message..." rows={2} className="rounded-xl bg-slate-50 resize-none" />
+              <Label className="flex items-center gap-2"><Award className="w-4 h-4 text-amber-500"/> Milestones & Memories</Label>
+              <Textarea name="achievements" defaultValue={profile.achievements || ""} placeholder="Who was your favorite teacher? Were you sports captain or debate winner? List your BRC and after-BRC achievements here!" rows={4} className="rounded-xl bg-slate-50 resize-none" />
             </div>
           </CardContent>
         </Card>
@@ -211,11 +204,6 @@ export default function ProfileForm({ profile, answers, isVerified }: any) {
                ))}
             </div>
 
-            <div className="border-t pt-6 space-y-2">
-              <Label>Other Achievements after BRC</Label>
-              <Textarea name="achievements_after" defaultValue={profile.achievements_after || ""} placeholder="Awards, certifications..." rows={2} className="rounded-xl bg-slate-50 resize-none" />
-            </div>
-
           </CardContent>
         </Card>
       )}
@@ -230,15 +218,14 @@ export default function ProfileForm({ profile, answers, isVerified }: any) {
             <CardContent className="pt-6 grid gap-6 sm:grid-cols-2">
               <div className="space-y-2"><Label>Current City</Label><Input name="current_city" defaultValue={profile.current_city || ""} className="rounded-xl bg-slate-50" /></div>
               <div className="space-y-2"><Label>Current Country</Label><Input name="current_country" defaultValue={profile.current_country || ""} className="rounded-xl bg-slate-50" /></div>
-              <div className="space-y-2"><Label>Home City</Label><Input name="home_city" defaultValue={profile.home_city || ""} className="rounded-xl bg-slate-50" /></div>
-              <div className="space-y-2"><Label>Home District</Label><Input name="home_district" defaultValue={profile.home_district || ""} className="rounded-xl bg-slate-50" /></div>
+              <div className="space-y-2"><Label>Home District (Origin)</Label><Input name="home_district" defaultValue={profile.home_district || ""} placeholder="e.g. Loralai" className="rounded-xl bg-slate-50" /></div>
               
-              <div className="space-y-2"><Label>Phone Number</Label><Input name="phone_number" defaultValue={profile.phone_number || profile.phone || ""} type="tel" className="rounded-xl bg-slate-50" /></div>
-              <div className="space-y-2"><Label>LinkedIn URL</Label><Input name="linkedin_url" defaultValue={profile.linkedin_url || ""} type="url" className="rounded-xl bg-slate-50" /></div>
+              <div className="space-y-2"><Label>Phone Number</Label><Input name="phone_number" defaultValue={profile.phone || ""} type="tel" className="rounded-xl bg-slate-50" /></div>
+              <div className="space-y-2 sm:col-span-2"><Label>LinkedIn URL</Label><Input name="linkedin_url" defaultValue={profile.linkedin_url || ""} type="url" className="rounded-xl bg-slate-50" /></div>
               
               <div className="sm:col-span-2 flex flex-col gap-3 mt-4">
                  <div className="flex items-center space-x-3 bg-slate-50 p-4 rounded-xl border border-slate-200">
-                    <Checkbox id="show_phone" name="show_phone" defaultChecked={profile.show_phone || profile.show_phone_publicly} />
+                    <Checkbox id="show_phone" name="show_phone" defaultChecked={profile.show_phone_publicly} />
                     <Label htmlFor="show_phone" className="font-semibold text-slate-700 cursor-pointer">Make Phone Number visible to verified alumni</Label>
                  </div>
                  <div className="flex items-center space-x-3 bg-emerald-50 p-4 rounded-xl border border-emerald-200">
@@ -257,11 +244,11 @@ export default function ProfileForm({ profile, answers, isVerified }: any) {
                 <CardDescription className="text-amber-800 font-medium">Please answer at least two to help us verify you.</CardDescription>
               </CardHeader>
               <CardContent className="pt-6 grid gap-5 sm:grid-cols-2">
-                <div className="space-y-2"><Label className="text-amber-900">House</Label><Input name="verify_houses" defaultValue={answers?.houses || ""} className="rounded-xl bg-white" /></div>
-                <div className="space-y-2"><Label className="text-amber-900">Two Teachers</Label><Input name="verify_teachers" defaultValue={answers?.teachers || ""} className="rounded-xl bg-white" /></div>
-                <div className="space-y-2"><Label className="text-amber-900">Hostel Staff</Label><Input name="verify_staff" defaultValue={answers?.staff || ""} className="rounded-xl bg-white" /></div>
-                <div className="space-y-2"><Label className="text-amber-900">Principal</Label><Input name="verify_principal" defaultValue={answers?.principal || ""} className="rounded-xl bg-white" /></div>
-                <div className="space-y-2 sm:col-span-2"><Label className="text-amber-900">BRC Est. Year</Label><Input name="verify_established_year" defaultValue={answers?.established_year || ""} className="rounded-xl bg-white" /></div>
+                <div className="space-y-2"><Label className="text-amber-900">House</Label><Input name="verify_houses" defaultValue={answers?.houses || ""} className="rounded-xl bg-white border-amber-200" /></div>
+                <div className="space-y-2"><Label className="text-amber-900">Two Teachers</Label><Input name="verify_teachers" defaultValue={answers?.teachers || ""} className="rounded-xl bg-white border-amber-200" /></div>
+                <div className="space-y-2"><Label className="text-amber-900">Hostel Staff</Label><Input name="verify_staff" defaultValue={answers?.staff || ""} className="rounded-xl bg-white border-amber-200" /></div>
+                <div className="space-y-2"><Label className="text-amber-900">Principal</Label><Input name="verify_principal" defaultValue={answers?.principal || ""} className="rounded-xl bg-white border-amber-200" /></div>
+                <div className="space-y-2 sm:col-span-2"><Label className="text-amber-900">BRC Est. Year</Label><Input name="verify_established_year" defaultValue={answers?.established_year || ""} className="rounded-xl bg-white border-amber-200" /></div>
               </CardContent>
             </Card>
           )}
