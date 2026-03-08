@@ -3,7 +3,7 @@ import { AdminApprovalActions } from "@/components/admin/AdminApprovalActions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { redirect } from "next/navigation";
-import { Search, ExternalLink } from "lucide-react";
+import { Search, ExternalLink, LogOut } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import Link from "next/link";
 
@@ -50,7 +50,16 @@ export default async function AdminPage({
   return (
     <div className="min-h-screen bg-slate-50 py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
-        <h1 className="text-3xl font-bold text-slate-900 tracking-tight mb-8">Admin Control Center</h1>
+        
+        {/* HEADER WITH LOGOUT BUTTON */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+          <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Admin Control Center</h1>
+          <form action="/auth/signout" method="post">
+            <button type="submit" className="inline-flex items-center gap-2 px-5 py-2 bg-white border border-slate-200 text-slate-700 hover:bg-red-50 hover:text-red-700 hover:border-red-200 rounded-xl text-sm font-bold shadow-sm transition-all">
+              <LogOut className="w-4 h-4" /> Sign Out
+            </button>
+          </form>
+        </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
           <Card className="border-0 shadow-sm"><CardContent className="p-4 flex justify-between items-center"><span className="text-slate-600 font-semibold">Total Users</span><span className="text-2xl font-bold text-primary">{stats.total}</span></CardContent></Card>
