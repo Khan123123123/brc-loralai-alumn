@@ -187,6 +187,25 @@ export default function CompleteProfilePage() {
         </div>
       </div>
 
+      {/* GAMIFICATION: PROFILE STRENGTH BAR */}
+      <div className="mb-8 space-y-2 animate-in fade-in slide-in-from-top-4 duration-700 bg-white dark:bg-slate-900 p-6 rounded-3xl border shadow-sm">
+        <div className="flex justify-between text-sm font-bold">
+          <span className="text-slate-600 dark:text-slate-400 flex items-center gap-2">
+            <Settings className="w-4 h-4" /> Profile Strength
+          </span>
+          <span className={score >= 70 ? "text-emerald-500" : "text-amber-500"}>{score}%</span>
+        </div>
+        <div className="h-3 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden shadow-inner">
+          <div 
+            className="h-full bg-gradient-to-r from-primary to-secondary transition-all duration-1000 ease-out" 
+            style={{ width: `${score}%` }}
+          />
+        </div>
+        <p className="text-[11px] text-slate-500 italic mt-2">
+          * Aim for 70% or higher to qualify for Full Access verification. Current level mapping: <strong className="uppercase">{computedAccessLevel}</strong> ACCESS.
+        </p>
+      </div>
+
       {banner && <div className={`mb-6 rounded-2xl border px-5 py-4 text-sm font-medium shadow-sm ${banner.type === "success" ? "border-emerald-200 bg-emerald-50 text-emerald-800" : "border-red-200 bg-red-50 text-red-800"}`}>{banner.text}</div>}
 
       <Card className="rounded-[2rem] border border-slate-200/60 dark:border-slate-800 shadow-xl bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl mb-8 overflow-hidden">
@@ -284,6 +303,15 @@ export default function CompleteProfilePage() {
                   Keep my phone number strictly private (hidden from other alumni)
                 </label>
               </div>
+              
+              <div className="md:col-span-2 space-y-2 p-4 bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-900/50 rounded-2xl shadow-sm">
+                <label className="flex items-center gap-3 cursor-pointer font-bold text-emerald-800 dark:text-emerald-300">
+                  <Checkbox checked={formData.available_for_mentoring} onCheckedChange={(c) => setField("available_for_mentoring", Boolean(c))} />
+                  I am available to Mentor fellow Koharians
+                </label>
+                <p className="text-xs text-emerald-700/80 dark:text-emerald-400/80 ml-7">By checking this, you will appear in the "Mentors Only" directory filter.</p>
+              </div>
+
               <div className="md:col-span-2 space-y-2"><Label className="text-slate-600 dark:text-slate-400 font-semibold">LinkedIn URL</Label><Input className="bg-white dark:bg-slate-950 rounded-xl" value={formData.linkedin_url} onChange={(e) => setField("linkedin_url", e.target.value)} /></div>
               <div className="md:col-span-2 space-y-2"><Label className="text-slate-600 dark:text-slate-400 font-semibold">Professional Bio</Label><Textarea className="bg-white dark:bg-slate-950 rounded-xl resize-none" value={formData.bio} onChange={(e) => setField("bio", e.target.value)} rows={4} placeholder="Write a short summary of your background..." /></div>
             </div>
