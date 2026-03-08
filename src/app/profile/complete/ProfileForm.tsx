@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { updateProfile } from "../actions";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -8,10 +9,12 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
-import { UserCircle2, Briefcase, MapPin, GraduationCap, Lock, Heart, MessageSquare, Plus, Trash2, ArrowRight, ArrowLeft, CheckCircle2, Award } from "lucide-react";
+import { UserCircle2, Briefcase, MapPin, GraduationCap, Lock, Heart, MessageSquare, Plus, Trash2, ArrowRight, ArrowLeft, CheckCircle2, Award, Loader2 } from "lucide-react";
 
 export default function ProfileForm({ profile, answers, isVerified }: any) {
+  const router = useRouter();
   const [step, setStep] = useState(1);
+  const [isSaving, setIsSaving] = useState(false);
   const totalSteps = 4;
 
   const [jobs, setJobs] = useState<any[]>(profile.job_history || []);
@@ -36,8 +39,26 @@ export default function ProfileForm({ profile, answers, isVerified }: any) {
   const nextStep = () => setStep((s) => Math.min(s + 1, totalSteps));
   const prevStep = () => setStep((s) => Math.max(s - 1, 1));
 
+  // SAFE SUBMISSION HANDLER
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setIsSaving(true);
+    
+    const formData = new FormData(e.currentTarget);
+    
+    const res = await updateProfile(formData);
+    
+    if (res?.error) {
+      alert("Error saving profile: " + res.error);
+      setIsSaving(false);
+    } else {
+      router.push("/profile/me");
+    }
+  };
+
   return (
-    <form action={updateProfile} className="space-y-8 relative">
+    <form onSubmit={handleSubmit} className="space-y-8 relative">
+      {/* Hidden inputs allow FormData to pick up dynamic array structures automatically */}
       <input type="hidden" name="job_history" value={JSON.stringify(jobs)} />
       <input type="hidden" name="higher_education" value={JSON.stringify(edu)} />
 
@@ -258,17 +279,17 @@ export default function ProfileForm({ profile, answers, isVerified }: any) {
 
       {/* NAVIGATION BUTTONS */}
       <div className="flex items-center justify-between pt-6 border-t border-slate-200">
-        <Button type="button" variant="outline" onClick={prevStep} disabled={step === 1} className="rounded-xl px-6 h-12 font-bold gap-2">
+        <Button type="button" variant="outline" onClick={prevStep} disabled={step === 1 || isSaving} className="rounded-xl px-6 h-12 font-bold gap-2">
           <ArrowLeft className="w-4 h-4" /> Back
         </Button>
         
         {step < totalSteps ? (
-          <Button type="button" onClick={nextStep} className="rounded-xl px-8 h-12 font-bold gap-2 bg-primary text-white hover:bg-blue-900 shadow-md">
+          <Button type="button" onClick={nextStep} disabled={isSaving} className="rounded-xl px-8 h-12 font-bold gap-2 bg-primary text-white hover:bg-blue-900 shadow-md">
             Next Step <ArrowRight className="w-4 h-4" />
           </Button>
         ) : (
-          <Button type="submit" className="rounded-xl px-10 h-12 font-extrabold bg-emerald-600 text-white hover:bg-emerald-700 shadow-xl hover:scale-105 transition-all">
-            Save Profile
+          <Button type="submit" disabled={isSaving} className="rounded-xl px-10 h-12 font-extrabold bg-emerald-600 text-white hover:bg-emerald-700 shadow-xl hover:scale-105 transition-all">
+            {isSaving ? <><Loader2 className="w-5 h-5 animate-spin mr-2" /> Saving...</> : "Save Profile"}
           </Button>
         )}
       </div>

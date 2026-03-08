@@ -5,6 +5,7 @@ import { hasFullAccess } from "@/lib/utils/access";
 import { getAvatarFallback, getVisibleContactFields } from "@/lib/utils/profile";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ReportProfileButton } from "@/components/ReportProfileButton"; // <-- Imported Component
 import {
   Award, BookOpen, Briefcase, Building, GraduationCap, Linkedin, Phone,
   Lock, Mail, MapPin, ShieldCheck, Globe, Home, Star
@@ -44,10 +45,13 @@ export default async function DirectoryMemberPage({ params }: { params: { slug: 
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
-      <div className="mb-8">
+      <div className="mb-8 flex items-center justify-between">
         <Link href="/directory" className="text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors">
           ← Back to directory
         </Link>
+        
+        {/* ADDED REPORT BUTTON */}
+        <ReportProfileButton memberName={member.full_name} memberId={member.id} />
       </div>
 
       {/* HEADER HERO AREA */}
