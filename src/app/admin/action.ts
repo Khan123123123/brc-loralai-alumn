@@ -96,7 +96,6 @@ export async function createAnnouncement(formData: FormData) {
   
   revalidatePath("/admin/announcements");
   revalidatePath("/directory");
-  return { success: true };
 }
 
 export async function deleteAnnouncement(id: string) {
