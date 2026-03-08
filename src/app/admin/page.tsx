@@ -1,42 +1,64 @@
-import { createClient } from "@/lib/supabase/server";
+"use client";
+
+import { useEffect, useState } from "react";
+import { createClient } from "@/lib/supabase/client";
 import { AdminApprovalActions } from "@/components/admin/AdminApprovalActions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { redirect } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { Search, ExternalLink, LogOut } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import Link from "next/link";
 
-export default async function AdminPage({
+export default function AdminPage({
   searchParams,
 }: {
   searchParams: { search?: string };
 }) {
   const supabase = createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL?.toLowerCase();
+  const router = useRouter();
   
-  if (user?.email?.toLowerCase() !== adminEmail && user?.email !== "qaisrani12116@gmail.com") {
-    redirect("/directory");
-  }
+  const [allProfiles, setAllProfiles] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
   const searchQuery = searchParams.search || "";
 
-  let query = supabase
-    .from("profiles")
-    .select("*")
-    .order("created_at", { ascending: false });
+  useEffect(() => {
+    const loadAdminData = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL?.toLowerCase() || "qaisrani12116@gmail.com";
+      
+      if (!user || (user.email?.toLowerCase() !== adminEmail && user.email !== "qaisrani12116@gmail.com")) {
+        router.push("/directory");
+        return;
+      }
 
-  if (searchQuery) {
-    query = query.or(`full_name.ilike.%${searchQuery}%,email.ilike.%${searchQuery}%,profession.ilike.%${searchQuery}%`);
-  }
+      let query = supabase
+        .from("profiles")
+        .select("*")
+        .order("created_at", { ascending: false });
 
-  const { data: allProfiles } = await query;
+      if (searchQuery) {
+        query = query.or(`full_name.ilike.%${searchQuery}%,email.ilike.%${searchQuery}%,profession.ilike.%${searchQuery}%`);
+      }
+
+      const { data } = await query;
+      setAllProfiles(data || []);
+      setLoading(false);
+    };
+
+    loadAdminData();
+  }, [supabase, router, searchQuery]);
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    router.push("/auth/login");
+  };
 
   const stats = {
-    total: allProfiles?.length || 0,
-    unverified: allProfiles?.filter((p) => p.verification_status !== "full").length || 0,
-    verified: allProfiles?.filter((p) => p.verification_status === "full").length || 0,
+    total: allProfiles.length || 0,
+    unverified: allProfiles.filter((p) => p.verification_status !== "full").length || 0,
+    verified: allProfiles.filter((p) => p.verification_status === "full").length || 0,
   };
 
   const getStatusBadge = (status: string) => {
@@ -47,6 +69,10 @@ export default async function AdminPage({
     }
   };
 
+  if (loading) {
+    return <div className="p-10 text-center text-slate-500">Loading Admin Dashboard...</div>;
+  }
+
   return (
     <div className="min-h-screen bg-slate-50 py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
@@ -54,11 +80,12 @@ export default async function AdminPage({
         {/* HEADER WITH LOGOUT BUTTON */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
           <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Admin Control Center</h1>
-          <form action="/auth/signout" method="post">
-            <button type="submit" className="inline-flex items-center gap-2 px-5 py-2 bg-white border border-slate-200 text-slate-700 hover:bg-red-50 hover:text-red-700 hover:border-red-200 rounded-xl text-sm font-bold shadow-sm transition-all">
-              <LogOut className="w-4 h-4" /> Sign Out
-            </button>
-          </form>
+          <button 
+            onClick={handleSignOut}
+            className="inline-flex items-center gap-2 px-5 py-2 bg-white border border-slate-200 text-slate-700 hover:bg-red-50 hover:text-red-700 hover:border-red-200 rounded-xl text-sm font-bold shadow-sm transition-all"
+          >
+            <LogOut className="w-4 h-4" /> Sign Out
+          </button>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
@@ -88,7 +115,7 @@ export default async function AdminPage({
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 bg-white">
-                  {!allProfiles || allProfiles.length === 0 ? (
+                  {allProfiles.length === 0 ? (
                     <tr><td colSpan={3} className="text-center py-8 text-slate-500">No members found</td></tr>
                   ) : (
                     allProfiles.map((profile) => (
