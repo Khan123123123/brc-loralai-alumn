@@ -9,7 +9,22 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
-import { UserCircle2, Briefcase, MapPin, GraduationCap, Lock, Heart, MessageSquare, Plus, Trash2, ArrowRight, ArrowLeft, CheckCircle2, Award, Loader2 } from "lucide-react";
+import { UserCircle2, Briefcase, MapPin, GraduationCap, Lock, Plus, Trash2, ArrowRight, ArrowLeft, CheckCircle2, Award, Loader2 } from "lucide-react";
+
+// DEFENSIVE PARSING: Prevents page crashes if DB returns strings instead of arrays
+const safeParseArray = (data: any) => {
+  if (!data) return [];
+  if (Array.isArray(data)) return data;
+  if (typeof data === "string") {
+    try {
+      const parsed = JSON.parse(data);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch (e) {
+      return [];
+    }
+  }
+  return [];
+};
 
 export default function ProfileForm({ profile, answers, isVerified }: any) {
   const router = useRouter();
@@ -17,8 +32,17 @@ export default function ProfileForm({ profile, answers, isVerified }: any) {
   const [isSaving, setIsSaving] = useState(false);
   const totalSteps = 4;
 
-  const [jobs, setJobs] = useState<any[]>(profile.job_history || []);
-  const [edu, setEdu] = useState<any[]>(profile.higher_education || []);
+  // Safely initialize arrays to prevent .map() crashes
+  const [jobs, setJobs] = useState<any[]>(safeParseArray(profile.job_history));
+  const [edu, setEdu] = useState<any[]>(safeParseArray(profile.higher_education));
+
+  // Safely handle languages which might be a string or array
+  let defaultLanguages = "";
+  if (Array.isArray(profile.languages)) {
+    defaultLanguages = profile.languages.join(", ");
+  } else if (typeof profile.languages === "string") {
+    defaultLanguages = profile.languages;
+  }
 
   const addJob = () => setJobs([...jobs, { company: "", title: "", start_date: "", end_date: "", is_current: false }]);
   const removeJob = (index: number) => setJobs(jobs.filter((_, i) => i !== index));
@@ -45,7 +69,6 @@ export default function ProfileForm({ profile, answers, isVerified }: any) {
     setIsSaving(true);
     
     const formData = new FormData(e.currentTarget);
-    
     const res = await updateProfile(formData);
     
     if (res?.error) {
@@ -58,7 +81,6 @@ export default function ProfileForm({ profile, answers, isVerified }: any) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-8 relative">
-      {/* Hidden inputs allow FormData to pick up dynamic array structures automatically */}
       <input type="hidden" name="job_history" value={JSON.stringify(jobs)} />
       <input type="hidden" name="higher_education" value={JSON.stringify(edu)} />
 
@@ -99,7 +121,7 @@ export default function ProfileForm({ profile, answers, isVerified }: any) {
             </div>
             <div className="space-y-2 sm:col-span-2">
               <Label>Languages Spoken</Label>
-              <Input name="languages" defaultValue={profile.languages?.join(", ") || ""} placeholder="e.g. English, Urdu, Pashto (comma separated)" className="rounded-xl bg-slate-50" />
+              <Input name="languages" defaultValue={defaultLanguages} placeholder="e.g. English, Urdu, Pashto (comma separated)" className="rounded-xl bg-slate-50" />
             </div>
           </CardContent>
         </Card>
@@ -192,12 +214,12 @@ export default function ProfileForm({ profile, answers, isVerified }: any) {
                  <div key={i} className="p-4 bg-slate-50 rounded-2xl border border-slate-100 mb-4 relative">
                    <button type="button" onClick={() => removeEdu(i)} className="absolute top-4 right-4 text-red-400 hover:text-red-600"><Trash2 className="w-4 h-4"/></button>
                    <div className="grid gap-4 sm:grid-cols-2 mt-2">
-                     <Input placeholder="Institution Name" value={ed.institution} onChange={(e) => updateEdu(i, "institution", e.target.value)} className="bg-white" />
-                     <Input placeholder="Degree (e.g. BS, Masters)" value={ed.degree} onChange={(e) => updateEdu(i, "degree", e.target.value)} className="bg-white" />
-                     <Input placeholder="Field of Study" value={ed.field} onChange={(e) => updateEdu(i, "field", e.target.value)} className="bg-white" />
+                     <Input placeholder="Institution Name" value={ed.institution || ""} onChange={(e) => updateEdu(i, "institution", e.target.value)} className="bg-white" />
+                     <Input placeholder="Degree (e.g. BS, Masters)" value={ed.degree || ""} onChange={(e) => updateEdu(i, "degree", e.target.value)} className="bg-white" />
+                     <Input placeholder="Field of Study" value={ed.field || ""} onChange={(e) => updateEdu(i, "field", e.target.value)} className="bg-white" />
                      <div className="flex gap-2">
-                       <Input placeholder="Start Year" value={ed.start_date} onChange={(e) => updateEdu(i, "start_date", e.target.value)} className="bg-white" />
-                       <Input placeholder="End Year" value={ed.end_date} onChange={(e) => updateEdu(i, "end_date", e.target.value)} className="bg-white" />
+                       <Input placeholder="Start Year" value={ed.start_date || ""} onChange={(e) => updateEdu(i, "start_date", e.target.value)} className="bg-white" />
+                       <Input placeholder="End Year" value={ed.end_date || ""} onChange={(e) => updateEdu(i, "end_date", e.target.value)} className="bg-white" />
                      </div>
                    </div>
                  </div>
@@ -214,11 +236,11 @@ export default function ProfileForm({ profile, answers, isVerified }: any) {
                  <div key={i} className="p-4 bg-slate-50 rounded-2xl border border-slate-100 mb-4 relative">
                    <button type="button" onClick={() => removeJob(i)} className="absolute top-4 right-4 text-red-400 hover:text-red-600"><Trash2 className="w-4 h-4"/></button>
                    <div className="grid gap-4 sm:grid-cols-2 mt-2">
-                     <Input placeholder="Company Name" value={job.company} onChange={(e) => updateJob(i, "company", e.target.value)} className="bg-white" />
-                     <Input placeholder="Job Title" value={job.title} onChange={(e) => updateJob(i, "title", e.target.value)} className="bg-white" />
+                     <Input placeholder="Company Name" value={job.company || ""} onChange={(e) => updateJob(i, "company", e.target.value)} className="bg-white" />
+                     <Input placeholder="Job Title" value={job.title || ""} onChange={(e) => updateJob(i, "title", e.target.value)} className="bg-white" />
                      <div className="flex gap-2">
-                       <Input placeholder="Start Date/Year" value={job.start_date} onChange={(e) => updateJob(i, "start_date", e.target.value)} className="bg-white" />
-                       <Input placeholder="End Date/Year" value={job.end_date} onChange={(e) => updateJob(i, "end_date", e.target.value)} className="bg-white" />
+                       <Input placeholder="Start Date/Year" value={job.start_date || ""} onChange={(e) => updateJob(i, "start_date", e.target.value)} className="bg-white" />
+                       <Input placeholder="End Date/Year" value={job.end_date || ""} onChange={(e) => updateJob(i, "end_date", e.target.value)} className="bg-white" />
                      </div>
                    </div>
                  </div>
@@ -242,7 +264,7 @@ export default function ProfileForm({ profile, answers, isVerified }: any) {
               <div className="space-y-2"><Label>Home City</Label><Input name="home_city" defaultValue={profile.home_city || ""} placeholder="e.g. Quetta" className="rounded-xl bg-slate-50" /></div>
               <div className="space-y-2"><Label>Home District (Origin)</Label><Input name="home_district" defaultValue={profile.home_district || ""} placeholder="e.g. Loralai" className="rounded-xl bg-slate-50" /></div>
               
-              <div className="space-y-2"><Label>Phone Number</Label><Input name="phone_number" defaultValue={profile.phone || ""} type="tel" className="rounded-xl bg-slate-50" /></div>
+              <div className="space-y-2"><Label>Phone Number</Label><Input name="phone_number" defaultValue={profile.phone || profile.phone_number || ""} type="tel" className="rounded-xl bg-slate-50" /></div>
               <div className="space-y-2"><Label>LinkedIn URL</Label><Input name="linkedin_url" defaultValue={profile.linkedin_url || ""} type="url" className="rounded-xl bg-slate-50" /></div>
               
               <div className="sm:col-span-2 flex flex-col gap-3 mt-4">
