@@ -44,7 +44,7 @@ export default async function DirectoryPage({
   const orgFilter = (searchParams.organization as string) || "all";
   const mentorsOnly = searchParams.mentors === "true";
 
-  // ANTI-SCRAPING PAGINATION LOGIC
+  // HIDDEN FEATURE: ANTI-SCRAPING PAGINATION LOGIC
   const PAGE_SIZE = 24;
   const page = parseInt((searchParams.page as string) || "0");
   const from = page * PAGE_SIZE;
@@ -52,9 +52,10 @@ export default async function DirectoryPage({
 
   let query = supabase.from("profiles").select("*", { count: "exact" }).neq("id", user.id).eq("show_in_directory", true).order("graduation_year", { ascending: false }).order("full_name", { ascending: true });
 
-  // DEEP SEARCH LOGIC
+ // DEEP SEARCH LOGIC (Using Supabase Generated Column)
   if (search) {
-    query = query.or(`full_name.ilike.%${search}%,profession.ilike.%${search}%,current_city.ilike.%${search}%,current_country.ilike.%${search}%,current_organization.ilike.%${search}%,current_position.ilike.%${search}%,bio.ilike.%${search}%,achievements.ilike.%${search}%`);
+    // We wrap the search term in % to match text anywhere in the string
+    query = query.ilike("deep_search_text", `%${search}%`);
   }
   
   if (yearFilter !== "all") query = query.eq("graduation_year", parseInt(yearFilter));
@@ -135,23 +136,17 @@ export default async function DirectoryPage({
       </div>
 
       {/* GLOBAL REACH STATS */}
-      <div className="mb-8 p-6 bg-slate-900 rounded-[2.5rem] text-white shadow-xl flex flex-col md:flex-row md:items-center gap-6 justify-between animate-in fade-in duration-700">
-        <div>
-          <h3 className="flex items-center gap-2 font-bold mb-3 text-slate-300 text-sm tracking-widest uppercase">
-            <Globe className="w-4 h-4 text-blue-400" /> Koharians Global Presence
-          </h3>
-          <div className="flex flex-wrap gap-3">
-            {topCountries.map(([country, cnt]) => (
-              <div key={country} className="bg-white/5 px-4 py-2 rounded-2xl border border-white/10 hover:bg-white/10 transition-colors">
-                <span className="font-bold text-sm">{country}</span>
-                <span className="ml-2 text-primary font-extrabold text-xs">{cnt as number}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-        <div className="bg-amber-500/10 border border-amber-500/20 p-4 rounded-2xl max-w-xs shrink-0">
-           <p className="text-[10px] font-bold text-amber-400 uppercase tracking-widest mb-1">Anti-Scraping Active</p>
-           <p className="text-xs text-amber-100/70">Only {PAGE_SIZE} results loaded per page to protect directory data.</p>
+      <div className="mb-8 p-6 bg-slate-900 rounded-[2.5rem] text-white shadow-xl animate-in fade-in duration-700">
+        <h3 className="flex items-center gap-2 font-bold mb-3 text-slate-300 text-sm tracking-widest uppercase">
+          <Globe className="w-4 h-4 text-blue-400" /> Koharians Global Presence
+        </h3>
+        <div className="flex flex-wrap gap-3">
+          {topCountries.map(([country, cnt]) => (
+            <div key={country} className="bg-white/5 px-4 py-2 rounded-2xl border border-white/10 hover:bg-white/10 transition-colors">
+              <span className="font-bold text-sm">{country}</span>
+              <span className="ml-2 text-primary font-extrabold text-xs">{cnt as number}</span>
+            </div>
+          ))}
         </div>
       </div>
 
