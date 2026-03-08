@@ -7,11 +7,31 @@ export default async function CompleteProfilePage() {
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
-  if (!user) redirect("/auth/login");
+  // Only redirect if the actual auth session is missing
+  if (!user) {
+    redirect("/auth/login");
+  }
 
-  const { data: profile } = await supabase.from("profiles").select("*").eq("id", user.id).single();
+  let { data: profile } = await supabase
+    .from("profiles")
+    .select("*")
+    .eq("id", user.id)
+    .single();
   
-  if (!profile) redirect("/auth/login");
+  // FIX: If profile is missing from DB, DO NOT redirect to login.
+  // This was causing the redirect bounce to the home page! 
+  // Instead, create a safe fallback profile so the form can load.
+  if (!profile) {
+    profile = {
+      id: user.id,
+      is_profile_complete: false,
+      full_name: user?.user_metadata?.full_name || "",
+      email: user?.email || "",
+      verification_status: "pending",
+      admin_status: "pending",
+      access_level: "limited"
+    };
+  }
 
   const isVerified = profile.verification_status === "full" || profile.admin_status === "approved" || profile.access_level === "full";
   const answers = profile.verification_answers || {};
