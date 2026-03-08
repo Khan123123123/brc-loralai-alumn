@@ -54,8 +54,10 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL?.toLowerCase() || "";
-  const isAdmin = user.email?.toLowerCase() === adminEmail;
+  // BULLETPROOF ADMIN CHECK (Bypasses Vercel env cache issues)
+  const adminEnvEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL?.toLowerCase() || "";
+  const userEmail = user.email?.toLowerCase() || "";
+  const isAdmin = userEmail === adminEnvEmail || userEmail === "brcloralai123@gmail.com";
 
   if (pathname.startsWith("/admin") && !isAdmin) {
     return NextResponse.redirect(new URL("/directory", request.url));

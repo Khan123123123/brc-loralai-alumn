@@ -10,7 +10,7 @@ import { ContactBox } from "@/components/ContactBox";
 import {
   Briefcase, Building, GraduationCap, MapPin, Search, ShieldCheck,
   UserCircle2, Users, Lock, AlertTriangle, Globe, Mail, Linkedin,
-  Calendar, Megaphone, BookOpen
+  Calendar, Megaphone, BookOpen, LayoutDashboard
 } from "lucide-react";
 
 export default async function DirectoryPage({
@@ -26,9 +26,10 @@ export default async function DirectoryPage({
   const { data: viewerProfile } = await supabase.from("profiles").select("id, full_name, access_level, admin_status, verification_status, is_profile_complete").eq("id", user.id).single();
   const isVerified = hasFullAccess(viewerProfile);
   
-  // UPDATED: New Admin Email
-  const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL || "brcloralai123@gmail.com";
-  const isAdmin = user.email?.toLowerCase() === adminEmail.toLowerCase();
+  // BULLETPROOF ADMIN CHECK
+  const adminEnvEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL?.toLowerCase() || "";
+  const userEmail = user.email?.toLowerCase() || "";
+  const isAdmin = userEmail === adminEnvEmail || userEmail === "brcloralai123@gmail.com";
 
   const search = (searchParams.search as string) || "";
   const yearFilter = (searchParams.year as string) || "all";
@@ -102,7 +103,7 @@ export default async function DirectoryPage({
         
         <div className="relative flex flex-col gap-6 md:flex-row md:items-end md:justify-between z-10">
           <div>
-            <div className="mb-5 flex flex-wrap items-center gap-2">
+            <div className="mb-5 flex flex-wrap items-center gap-3">
               <div className="inline-flex items-center gap-2 rounded-2xl bg-black/30 backdrop-blur-md border border-white/20 px-4 py-2 shadow-inner">
                 <UserCircle2 className="h-5 w-5 text-white/80" />
                 <span className="text-sm sm:text-base font-bold text-white">
@@ -114,12 +115,20 @@ export default async function DirectoryPage({
                   <span className="inline-flex items-center gap-1 bg-amber-500/20 border border-amber-400/40 text-amber-300 px-2 py-0.5 rounded uppercase tracking-wider text-[10px] font-extrabold ml-1 shadow-sm"><Lock className="h-3 w-3" /> Unverified</span>
                 )}
               </div>
+              
+              {/* ADMIN BUTTONS */}
               {isAdmin && (
-                <Link href="/admin/announcements" className="inline-flex items-center gap-2 rounded-2xl bg-amber-500 text-amber-950 font-bold px-4 py-2 text-sm shadow-md hover:bg-amber-400 transition-colors">
-                  <Megaphone className="w-4 h-4" /> Post Announcement
-                </Link>
+                <div className="flex flex-wrap gap-2">
+                  <Link href="/admin" className="inline-flex items-center gap-2 rounded-2xl bg-white text-slate-900 font-bold px-4 py-2 text-sm shadow-md hover:bg-slate-200 transition-colors">
+                    <LayoutDashboard className="w-4 h-4 text-emerald-600" /> Admin Panel
+                  </Link>
+                  <Link href="/admin/announcements" className="inline-flex items-center gap-2 rounded-2xl bg-amber-500 text-amber-950 font-bold px-4 py-2 text-sm shadow-md hover:bg-amber-400 transition-colors">
+                    <Megaphone className="w-4 h-4" /> Announcements
+                  </Link>
+                </div>
               )}
             </div>
+            
             <h1 className="text-4xl font-extrabold tracking-tight md:text-5xl text-white drop-shadow-sm">Koharian Alumni Directory</h1>
             <p className="mt-4 max-w-2xl text-white/90 text-lg leading-relaxed">Search for fellow alumni, faculty, and current events.</p>
           </div>
