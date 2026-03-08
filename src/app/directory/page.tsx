@@ -24,7 +24,7 @@ export default async function DirectoryPage({
 
   const { data: viewerProfile } = await supabase.from("profiles").select("id, full_name, access_level, admin_status, verification_status, is_profile_complete").eq("id", user.id).single();
   const isVerified = hasFullAccess(viewerProfile);
-  const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL || "qaisrani12116@gmail.com";
+  const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL || "brcloralai123@gmail.com";
   const isAdmin = user.email?.toLowerCase() === adminEmail.toLowerCase();
 
   const search = (searchParams.search as string) || "";

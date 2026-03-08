@@ -26,9 +26,9 @@ export default function AdminPage({
   useEffect(() => {
     const loadAdminData = async () => {
       const { data: { user } } = await supabase.auth.getUser();
-      const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL?.toLowerCase() || "qaisrani12116@gmail.com";
+      const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL?.toLowerCase() || "brcloralai123@gmail.com";
       
-      if (!user || (user.email?.toLowerCase() !== adminEmail && user.email !== "qaisrani12116@gmail.com")) {
+      if (!user || (user.email?.toLowerCase() !== adminEmail && user.email !== "brcloralai123@gmail.com")) {
         window.location.replace("/directory");
         return;
       }
