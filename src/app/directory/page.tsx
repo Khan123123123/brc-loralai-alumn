@@ -138,7 +138,7 @@ export default async function DirectoryPage({
       {/* GLOBAL REACH STATS */}
       <div className="mb-8 p-6 bg-slate-900 rounded-[2.5rem] text-white shadow-xl animate-in fade-in duration-700">
         <h3 className="flex items-center gap-2 font-bold mb-3 text-slate-300 text-sm tracking-widest uppercase">
-          <Globe className="w-4 h-4 text-blue-400" /> Koharians Global Presence
+          <Globe className="w-4 h-4 text-blue-400" /> Koharians Around the World
         </h3>
         <div className="flex flex-wrap gap-3">
           {topCountries.map(([country, cnt]) => (
