@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { hasFullAccess } from "@/lib/utils/access";
 import { getAvatarFallback } from "@/lib/utils/profile";
+import { ContactBox } from "@/components/ContactBox";
 import {
   Briefcase, Building, GraduationCap, MapPin, Search, ShieldCheck,
   UserCircle2, Users, Lock, AlertTriangle, Globe, Mail, Linkedin,
@@ -24,6 +25,8 @@ export default async function DirectoryPage({
 
   const { data: viewerProfile } = await supabase.from("profiles").select("id, full_name, access_level, admin_status, verification_status, is_profile_complete").eq("id", user.id).single();
   const isVerified = hasFullAccess(viewerProfile);
+  
+  // UPDATED: New Admin Email
   const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL || "brcloralai123@gmail.com";
   const isAdmin = user.email?.toLowerCase() === adminEmail.toLowerCase();
 
@@ -45,7 +48,7 @@ export default async function DirectoryPage({
 
   let query = supabase.from("profiles").select("*", { count: "exact" }).neq("id", user.id).eq("show_in_directory", true).order("graduation_year", { ascending: false }).order("full_name", { ascending: true });
 
-  // DEEP SEARCH LOGIC (Using the new Database Trigger column)
+  // DEEP SEARCH LOGIC
   if (search) {
     query = query.ilike("deep_search_text", `%${search}%`);
   }
@@ -212,7 +215,7 @@ export default async function DirectoryPage({
           <form className="grid gap-4 md:grid-cols-3 lg:grid-cols-6">
             <div className="md:col-span-3 lg:col-span-6 relative">
               <Search className="absolute left-4 top-3.5 h-5 w-5 text-slate-400" />
-              <Input name="search" defaultValue={search} placeholder="Deep search by name, bio, physics teacher, company, or city..." className="pl-12 h-12 rounded-2xl bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800 focus:ring-primary text-base shadow-sm" />
+              <Input name="search" defaultValue={search} placeholder="Deep search by name, bio, skills, company, or city..." className="pl-12 h-12 rounded-2xl bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800 focus:ring-primary text-base shadow-sm" />
             </div>
             <select name="location" defaultValue={locationFilter} className="h-11 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-3 text-sm shadow-sm focus:ring-2 focus:ring-primary"><option value="all">All Locations</option>{locations.map((loc) => (<option key={loc} value={loc}>{loc}</option>))}</select>
             <select name="organization" defaultValue={orgFilter} className="h-11 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-3 text-sm shadow-sm focus:ring-2 focus:ring-primary"><option value="all">All Organizations</option>{orgs.map((org) => (<option key={org} value={org}>{org}</option>))}</select>
@@ -227,7 +230,7 @@ export default async function DirectoryPage({
                 <label className="text-sm font-bold text-slate-700 dark:text-slate-300 cursor-pointer">Available for Mentoring Only</label>
               </div>
 
-              {/* NEW FACULTY FILTER */}
+              {/* FACULTY FILTER */}
               <div className="flex items-center space-y-0 gap-3 h-11 px-4 border rounded-xl bg-indigo-50/50 dark:bg-indigo-950/20 shadow-sm border-indigo-100 dark:border-indigo-900/50">
                 <input type="checkbox" name="faculty" value="true" defaultChecked={facultyOnly} className="w-4 h-4 rounded border-indigo-300 text-indigo-600 focus:ring-indigo-600 cursor-pointer" />
                 <label className="text-sm font-bold text-indigo-900 dark:text-indigo-300 cursor-pointer flex items-center gap-2">
@@ -371,22 +374,8 @@ export default async function DirectoryPage({
         </div>
       )}
 
-      {/* Directory Integrity Banner */}
-      <div className="mb-12 rounded-2xl bg-red-50/80 dark:bg-red-950/20 border border-red-200 dark:border-red-900/50 p-6 flex flex-col sm:flex-row items-center gap-5 text-red-800 dark:text-red-300 shadow-inner">
-        <div className="flex items-center justify-center bg-red-100 dark:bg-red-900/50 p-3 rounded-full shrink-0">
-          <AlertTriangle className="h-6 w-6 text-secondary dark:text-red-400" />
-        </div>
-        <div className="text-sm text-center sm:text-left flex-1">
-          <strong className="font-extrabold text-red-900 dark:text-red-200 block text-base mb-1">Directory Integrity</strong> 
-          If you find anyone in this directory who is not a true Koharian, please let us know immediately so we can remove them.
-        </div>
-        <a 
-          href={`mailto:${adminEmail}?subject=Network%20Integrity%20Report&body=I%20would%20like%20to%20report%20a%20profile%20that%20does%20not%20belong%20to%20a%20Koharian.%0A%0AProfile%20Name:%20`} 
-          className="w-full sm:w-auto text-center shrink-0 bg-secondary hover:bg-red-800 text-white text-sm font-bold px-6 py-3 rounded-full transition-transform hover:scale-105 shadow-md"
-        >
-          Report Profile
-        </a>
-      </div>
+      {/* IN-APP CONTACT REPORTING SYSTEM */}
+      <ContactBox userEmail={user.email || ""} />
 
     </div>
   );
