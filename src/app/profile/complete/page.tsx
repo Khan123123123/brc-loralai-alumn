@@ -164,7 +164,7 @@ export default function CompleteProfilePage() {
     } catch (e: any) { alert("Error deleting account: " + e.message); setAuthLoading(false); }
   };
 
-  // FIX: This ensures the 404 Vercel error never happens.
+  // FIX: This ensures the 404 Vercel error never happens.---
   const handleLogout = async () => {
     await supabase.auth.signOut();
     window.location.replace("/auth/login");
