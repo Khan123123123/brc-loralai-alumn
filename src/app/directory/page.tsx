@@ -9,7 +9,7 @@ import { getAvatarFallback } from "@/lib/utils/profile";
 import {
   Briefcase, Building, GraduationCap, MapPin, Search, ShieldCheck,
   UserCircle2, Users, Lock, AlertTriangle, Globe, Mail, Linkedin,
-  Calendar, Megaphone
+  Calendar, Megaphone, BookOpen
 } from "lucide-react";
 
 export default async function DirectoryPage({
@@ -35,6 +35,7 @@ export default async function DirectoryPage({
   const rankFilter = (searchParams.rank as string) || "all";
   const orgFilter = (searchParams.organization as string) || "all";
   const mentorsOnly = searchParams.mentors === "true";
+  const facultyOnly = searchParams.faculty === "true";
 
   // ANTI-SCRAPING PAGINATION LOGIC
   const PAGE_SIZE = 24;
@@ -44,7 +45,7 @@ export default async function DirectoryPage({
 
   let query = supabase.from("profiles").select("*", { count: "exact" }).neq("id", user.id).eq("show_in_directory", true).order("graduation_year", { ascending: false }).order("full_name", { ascending: true });
 
-  // DEEP SEARCH LOGIC (Using Supabase Generated Column)
+  // DEEP SEARCH LOGIC (Using the new Database Trigger column)
   if (search) {
     query = query.ilike("deep_search_text", `%${search}%`);
   }
@@ -56,6 +57,7 @@ export default async function DirectoryPage({
   if (rankFilter !== "all") query = query.ilike("current_position", `%${rankFilter}%`);
   if (orgFilter !== "all") query = query.ilike("current_organization", `%${orgFilter}%`);
   if (mentorsOnly) query = query.eq("available_for_mentoring", true);
+  if (facultyOnly) query = query.eq("account_type", "Faculty");
 
   query = query.range(from, to);
 
@@ -116,7 +118,7 @@ export default async function DirectoryPage({
               )}
             </div>
             <h1 className="text-4xl font-extrabold tracking-tight md:text-5xl text-white drop-shadow-sm">Koharian Alumni Directory</h1>
-            <p className="mt-4 max-w-2xl text-white/90 text-lg leading-relaxed">Search for fellow alumni by location, profession, organization, and graduation year.</p>
+            <p className="mt-4 max-w-2xl text-white/90 text-lg leading-relaxed">Search for fellow alumni, faculty, and current events.</p>
           </div>
 
           <div className="flex flex-wrap gap-4">
@@ -126,7 +128,7 @@ export default async function DirectoryPage({
         </div>
       </div>
 
-      {/* NEW FEATURE: ANNOUNCEMENT BOARD */}
+      {/* ANNOUNCEMENT BOARD */}
       {announcements && announcements.length > 0 && (
         <div className="mb-8 space-y-4 animate-in fade-in duration-700">
           {announcements.map((ann) => (
@@ -210,7 +212,7 @@ export default async function DirectoryPage({
           <form className="grid gap-4 md:grid-cols-3 lg:grid-cols-6">
             <div className="md:col-span-3 lg:col-span-6 relative">
               <Search className="absolute left-4 top-3.5 h-5 w-5 text-slate-400" />
-              <Input name="search" defaultValue={search} placeholder="Deep search by name, bio, skills, company, or city..." className="pl-12 h-12 rounded-2xl bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800 focus:ring-primary text-base shadow-sm" />
+              <Input name="search" defaultValue={search} placeholder="Deep search by name, bio, physics teacher, company, or city..." className="pl-12 h-12 rounded-2xl bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800 focus:ring-primary text-base shadow-sm" />
             </div>
             <select name="location" defaultValue={locationFilter} className="h-11 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-3 text-sm shadow-sm focus:ring-2 focus:ring-primary"><option value="all">All Locations</option>{locations.map((loc) => (<option key={loc} value={loc}>{loc}</option>))}</select>
             <select name="organization" defaultValue={orgFilter} className="h-11 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-3 text-sm shadow-sm focus:ring-2 focus:ring-primary"><option value="all">All Organizations</option>{orgs.map((org) => (<option key={org} value={org}>{org}</option>))}</select>
@@ -219,9 +221,19 @@ export default async function DirectoryPage({
             <select name="district" defaultValue={districtFilter} className="h-11 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-3 text-sm shadow-sm focus:ring-2 focus:ring-primary"><option value="all">All Districts</option>{districts.map((district) => (<option key={district} value={district}>{district}</option>))}</select>
             <select name="industry" defaultValue={industryFilter} className="h-11 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-3 text-sm shadow-sm focus:ring-2 focus:ring-primary"><option value="all">All Industries</option>{industries.map((industry) => (<option key={industry} value={industry}>{industry}</option>))}</select>
             
-            <div className="flex items-center space-y-0 gap-3 h-11 px-4 border rounded-xl bg-white dark:bg-slate-950 shadow-sm border-slate-200 dark:border-slate-800 md:col-span-3 lg:col-span-6">
-              <input type="checkbox" name="mentors" value="true" defaultChecked={mentorsOnly} className="w-4 h-4 rounded border-slate-300 text-primary focus:ring-primary cursor-pointer" />
-              <label className="text-sm font-bold text-slate-700 dark:text-slate-300 cursor-pointer">Available for Mentoring Only</label>
+            <div className="flex flex-wrap items-center gap-4 md:col-span-3 lg:col-span-6 border-t border-slate-100 dark:border-slate-800 pt-4">
+              <div className="flex items-center space-y-0 gap-3 h-11 px-4 border rounded-xl bg-white dark:bg-slate-950 shadow-sm border-slate-200 dark:border-slate-800">
+                <input type="checkbox" name="mentors" value="true" defaultChecked={mentorsOnly} className="w-4 h-4 rounded border-slate-300 text-primary focus:ring-primary cursor-pointer" />
+                <label className="text-sm font-bold text-slate-700 dark:text-slate-300 cursor-pointer">Available for Mentoring Only</label>
+              </div>
+
+              {/* NEW FACULTY FILTER */}
+              <div className="flex items-center space-y-0 gap-3 h-11 px-4 border rounded-xl bg-indigo-50/50 dark:bg-indigo-950/20 shadow-sm border-indigo-100 dark:border-indigo-900/50">
+                <input type="checkbox" name="faculty" value="true" defaultChecked={facultyOnly} className="w-4 h-4 rounded border-indigo-300 text-indigo-600 focus:ring-indigo-600 cursor-pointer" />
+                <label className="text-sm font-bold text-indigo-900 dark:text-indigo-300 cursor-pointer flex items-center gap-2">
+                  <BookOpen className="w-4 h-4"/> Faculty Only
+                </label>
+              </div>
             </div>
 
             <div className="md:col-span-3 lg:col-span-6 flex gap-3 pt-4 border-t border-slate-100 dark:border-slate-800 mt-2">
@@ -252,41 +264,55 @@ export default async function DirectoryPage({
           {profiles.map((profile, index) => {
             const memberUrl = `/directory/${profile.slug || profile.id}`;
             const delay = `${Math.min(index * 30, 400)}ms`;
+            const isFaculty = profile.account_type === "Faculty";
 
             return (
               <div key={profile.id} className="animate-in fade-in slide-in-from-bottom-4 duration-500 fill-mode-both" style={{ animationDelay: delay }}>
                 <Link href={memberUrl} className="group block h-full">
                   <Card className="h-full rounded-3xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl hover:border-primary/30 dark:hover:border-primary/50 relative overflow-hidden">
                     
-                    <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-primary to-secondary opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                    <div className={`absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r opacity-0 group-hover:opacity-100 transition-opacity ${isFaculty ? 'from-indigo-500 to-purple-500' : 'from-primary to-secondary'}`}></div>
                     
                     <CardContent className="p-6 flex flex-col h-full">
                       <div className="mb-5 flex items-start gap-4 flex-1">
-                        <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-secondary text-xl font-bold text-white shadow-md group-hover:from-secondary group-hover:to-primary transition-all duration-300">
+                        <div className={`flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl text-xl font-bold text-white shadow-md transition-all duration-300 ${isFaculty ? 'bg-gradient-to-br from-indigo-500 to-purple-600 group-hover:from-purple-600 group-hover:to-indigo-500' : 'bg-gradient-to-br from-primary to-secondary group-hover:from-secondary group-hover:to-primary'}`}>
                           {getAvatarFallback(profile)}
                         </div>
                         <div className="min-w-0 flex-1">
-                          <h3 className="truncate text-xl font-extrabold text-slate-900 dark:text-white group-hover:text-primary transition-colors">{profile.full_name}</h3>
+                          <h3 className={`truncate text-xl font-extrabold text-slate-900 dark:text-white transition-colors ${isFaculty ? 'group-hover:text-indigo-600' : 'group-hover:text-primary'}`}>{profile.full_name}</h3>
                           <div className="mt-1.5 flex flex-wrap gap-2 text-[11px] font-bold uppercase tracking-wider">
-                            {profile.entry_year && <span className="inline-flex items-center bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 px-2 py-1 rounded-md">Entry: {profile.entry_year}</span>}
-                            {profile.graduation_year && <span className="inline-flex items-center bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 px-2 py-1 rounded-md"><GraduationCap className="h-3.5 w-3.5 text-secondary mr-1" /> Batch '{profile.graduation_year}</span>}
+                            
+                            {/* DYNAMIC BADGE LOGIC */}
+                            {isFaculty ? (
+                               <span className="inline-flex items-center bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 px-2 py-1 rounded-md border border-indigo-200 dark:border-indigo-800/50">
+                                 <BookOpen className="h-3 w-3 mr-1" /> Faculty Member
+                               </span>
+                            ) : (
+                              <>
+                                {profile.entry_year && <span className="inline-flex items-center bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 px-2 py-1 rounded-md">Entry: {profile.entry_year}</span>}
+                                {profile.graduation_year && <span className="inline-flex items-center bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 px-2 py-1 rounded-md"><GraduationCap className="h-3.5 w-3.5 text-secondary mr-1" /> Batch '{profile.graduation_year}</span>}
+                              </>
+                            )}
                           </div>
                         </div>
                       </div>
                       
                       <div className="space-y-3.5 text-sm text-slate-600 dark:text-slate-400">
-                        {profile.home_district && (
+                        {profile.home_district && !isFaculty && (
                           <div className="flex items-start gap-3"><UserCircle2 className="mt-0.5 h-4 w-4 text-slate-400 shrink-0" /><span className="font-semibold text-slate-800 dark:text-slate-200">District: {profile.home_district}</span></div>
                         )}
 
                         {isVerified ? (
                           <>
-                            {profile.current_position && <div className="flex items-start gap-3"><Briefcase className="mt-0.5 h-4 w-4 text-primary shrink-0" /><span className="font-semibold text-slate-800 dark:text-slate-200">{profile.current_position}</span></div>}
+                            {isFaculty && profile.subjects_taught && profile.subjects_taught.length > 0 && (
+                               <div className="flex items-start gap-3"><BookOpen className="mt-0.5 h-4 w-4 text-indigo-500 shrink-0" /><span className="font-semibold text-indigo-900 dark:text-indigo-300">Taught: {profile.subjects_taught.join(", ")}</span></div>
+                            )}
+                            {profile.current_position && <div className="flex items-start gap-3"><Briefcase className={`mt-0.5 h-4 w-4 shrink-0 ${isFaculty ? 'text-indigo-400' : 'text-primary'}`} /><span className="font-semibold text-slate-800 dark:text-slate-200">{profile.current_position}</span></div>}
                             {profile.current_organization && <div className="flex items-start gap-3"><Building className="mt-0.5 h-4 w-4 text-slate-400 shrink-0" /><span className="truncate">{profile.current_organization}</span></div>}
                             {(profile.current_city || profile.current_country) && <div className="flex items-start gap-3"><MapPin className="mt-0.5 h-4 w-4 text-secondary shrink-0" /><span>{profile.current_city || "Unknown city"}{profile.current_country ? `, ${profile.current_country}` : ""}</span></div>}
                             
                             <div className="mt-5 pt-4 border-t border-slate-100 dark:border-slate-800 flex gap-2">
-                                <span className="flex-1 flex items-center justify-center gap-2 bg-slate-50 dark:bg-slate-800 group-hover:bg-primary group-hover:text-white dark:group-hover:bg-primary transition-all py-2 rounded-xl text-[10px] font-extrabold uppercase tracking-widest text-slate-600 dark:text-slate-300 border border-slate-100 dark:border-slate-700">
+                                <span className={`flex-1 flex items-center justify-center gap-2 bg-slate-50 dark:bg-slate-800 transition-all py-2 rounded-xl text-[10px] font-extrabold uppercase tracking-widest text-slate-600 dark:text-slate-300 border border-slate-100 dark:border-slate-700 ${isFaculty ? 'group-hover:bg-indigo-600 group-hover:text-white group-hover:border-indigo-600' : 'group-hover:bg-primary group-hover:text-white dark:group-hover:bg-primary'}`}>
                                   <Mail className="w-3.5 h-3.5" /> Direct Email
                                 </span>
                                 {profile.linkedin_url && (
@@ -307,7 +333,7 @@ export default async function DirectoryPage({
                       <div className="mt-6 pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                         <span className="flex items-center gap-1.5">{isVerified ? <><ShieldCheck className="h-4 w-4 text-emerald-500" /> Verified</> : <><Lock className="h-4 w-4 text-amber-500" /> Locked</>}</span>
                         {profile.available_for_mentoring && <span className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-2.5 py-1 rounded text-[10px] border border-emerald-500/20">Mentor</span>}
-                        <span className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1 text-primary">View Profile &rarr;</span>
+                        <span className={`opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1 ${isFaculty ? 'text-indigo-600' : 'text-primary'}`}>View Profile &rarr;</span>
                       </div>
                     </CardContent>
                   </Card>
@@ -323,7 +349,7 @@ export default async function DirectoryPage({
         <div className="flex flex-col sm:flex-row justify-center items-center gap-4 border-t border-slate-100 dark:border-slate-800 pt-8 mb-12">
           {page > 0 && (
             <Link 
-              href={`/directory?search=${search}&year=${yearFilter}&district=${districtFilter}&industry=${industryFilter}&location=${locationFilter}&rank=${rankFilter}&organization=${orgFilter}&mentors=${mentorsOnly}&page=${page - 1}`} 
+              href={`/directory?search=${search}&year=${yearFilter}&district=${districtFilter}&industry=${industryFilter}&location=${locationFilter}&rank=${rankFilter}&organization=${orgFilter}&mentors=${mentorsOnly}&faculty=${facultyOnly}&page=${page - 1}`} 
               className="w-full sm:w-auto text-center rounded-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-8 py-3 text-sm font-bold hover:bg-slate-50 dark:hover:bg-slate-800 transition-all shadow-sm"
             >
               Previous Page
@@ -336,7 +362,7 @@ export default async function DirectoryPage({
 
           {(page + 1) * PAGE_SIZE < count && (
             <Link 
-              href={`/directory?search=${search}&year=${yearFilter}&district=${districtFilter}&industry=${industryFilter}&location=${locationFilter}&rank=${rankFilter}&organization=${orgFilter}&mentors=${mentorsOnly}&page=${page + 1}`} 
+              href={`/directory?search=${search}&year=${yearFilter}&district=${districtFilter}&industry=${industryFilter}&location=${locationFilter}&rank=${rankFilter}&organization=${orgFilter}&mentors=${mentorsOnly}&faculty=${facultyOnly}&page=${page + 1}`} 
               className="w-full sm:w-auto text-center rounded-full bg-primary text-white px-8 py-3 text-sm font-bold hover:bg-blue-900 transition-all shadow-md"
             >
               Next Page

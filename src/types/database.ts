@@ -47,6 +47,9 @@ export interface Profile {
   slug?: string | null;
   profile_photo_url?: string | null;
 
+  account_type?: string | null;
+  subjects_taught?: string[] | null;
+
   entry_year?: number | null;
   graduation_year?: number | null;
   regular_self_finance?: FinanceType | null;
@@ -110,6 +113,7 @@ export interface VerificationLog {
   notes?: string | null;
   created_at: string;
 }
+
 export type Announcement = {
   id: string;
   title: string;

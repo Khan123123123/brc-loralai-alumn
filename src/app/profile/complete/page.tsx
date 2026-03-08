@@ -13,7 +13,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { Education, Job } from "@/types/database";
 import { deleteMyAccount } from "@/app/profile/actions";
-import { ArrowLeft, ArrowRight, Plus, Trash2, Save, ShieldCheck, Lock, Settings, AlertTriangle, ChevronDown, ChevronUp } from "lucide-react";
+import { ArrowLeft, ArrowRight, Plus, Trash2, Save, ShieldCheck, Lock, Settings, AlertTriangle, ChevronDown, ChevronUp, LogOut } from "lucide-react";
 
 const districts = ["Awaran", "Barkhan", "Chagai", "Chaman", "Dera Bugti", "Duki", "Gwadar", "Harnai", "Hub", "Jafarabad", "Jhal Magsi", "Kachhi (Bolan)", "Kalat", "Kech (Turbat)", "Kharan", "Khuzdar", "Killa Abdullah", "Killa Saifullah", "Kohlu", "Lasbela", "Loralai", "Mastung", "Musakhel", "Naseerabad", "Nushki", "Panjgur", "Pishin", "Quetta", "Sherani", "Sibi", "Sohbatpur", "Surab", "Usta Muhammad", "Washuk", "Zhob", "Ziarat", "Other"];
 const studentTypes = ["Hostelite", "Day Scholar"];
@@ -21,6 +21,7 @@ const employmentStatuses = ["Employed", "Self-Employed", "Business Owner", "Stud
 const industries = ["Healthcare/Medical", "IT/Software/Technology", "Education/Teaching", "Government/Public Sector", "Business/Trade", "Banking/Finance", "Engineering", "Law/Legal", "Media/Journalism", "Agriculture", "Military/Defense", "Real Estate", "Transportation", "Construction", "Mining", "Other"];
 
 type FormDataType = {
+  account_type: "Alumnus" | "Faculty"; subjects_taught: string;
   full_name: string; entry_year: string; graduation_year: string; home_district: string; student_type: string; regular_self_finance: string; roll_number: string;
   current_country: string; current_city: string; current_position: string; profession: string; current_organization: string; industry: string; experience_years: string; employment_status: string;
   higher_education: Education[]; job_history: Job[];
@@ -31,6 +32,7 @@ type FormDataType = {
 };
 
 const emptyForm: FormDataType = {
+  account_type: "Alumnus", subjects_taught: "",
   full_name: "", entry_year: "", graduation_year: "", home_district: "", student_type: "", regular_self_finance: "", roll_number: "",
   current_country: "Pakistan", current_city: "", current_position: "", profession: "", current_organization: "", industry: "", experience_years: "", employment_status: "",
   higher_education: [], job_history: [],
@@ -70,6 +72,8 @@ export default function CompleteProfilePage() {
         setIsAlreadyApproved(approved);
 
         setFormData({
+          account_type: (profile.account_type as "Alumnus" | "Faculty") || "Alumnus",
+          subjects_taught: profile.subjects_taught ? profile.subjects_taught.join(", ") : "",
           full_name: profile.full_name || "", entry_year: profile.entry_year?.toString() || "", graduation_year: profile.graduation_year?.toString() || "", home_district: profile.home_district || "", student_type: profile.student_type || "", regular_self_finance: profile.regular_self_finance || "", roll_number: profile.roll_number || "",
           current_country: profile.current_country || "Pakistan", current_city: profile.current_city || "", current_position: profile.current_position || "", profession: profile.profession || "", current_organization: profile.current_organization || "", industry: profile.industry || "", experience_years: profile.experience_years?.toString() || "", employment_status: profile.employment_status || "",
           higher_education: profile.higher_education || [], job_history: profile.job_history || [],
@@ -116,7 +120,8 @@ export default function CompleteProfilePage() {
 
       const payload = {
         id: user.id, email: user.email, full_name: formData.full_name || null, slug: computedSlug,
-        entry_year: formData.entry_year ? parseInt(formData.entry_year) : null, graduation_year: formData.graduation_year ? parseInt(formData.graduation_year) : null, home_district: formData.home_district || null, student_type: formData.student_type || null, regular_self_finance: formData.regular_self_finance || null, roll_number: formData.roll_number || null,
+        account_type: formData.account_type, subjects_taught: formData.subjects_taught ? formData.subjects_taught.split(",").map(s => s.trim()) : null,
+        entry_year: formData.entry_year ? parseInt(formData.entry_year) : null, graduation_year: formData.graduation_year ? parseInt(formData.graduation_year) : null, home_district: formData.account_type === "Faculty" ? null : (formData.home_district || null), student_type: formData.account_type === "Faculty" ? null : (formData.student_type || null), regular_self_finance: formData.regular_self_finance || null, roll_number: formData.account_type === "Faculty" ? null : (formData.roll_number || null),
         current_country: formData.current_country || "Pakistan", current_city: formData.current_city || null, current_position: formData.current_position || null, profession: formData.profession || null, current_organization: formData.current_organization || null, industry: formData.industry || null, experience_years: formData.experience_years ? parseInt(formData.experience_years) : null, employment_status: formData.employment_status || null,
         higher_education: formData.higher_education, job_history: formData.job_history,
         phone: formData.phone || null, linkedin_url: formData.linkedin_url || null, languages: formData.languages, bio: formData.bio || null, achievements: formData.achievements || null,
@@ -157,6 +162,11 @@ export default function CompleteProfilePage() {
       await deleteMyAccount();
       window.location.href = "/auth/login";
     } catch (e: any) { alert("Error deleting account: " + e.message); setAuthLoading(false); }
+  };
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    router.push("/auth/login");
   };
 
   if (bootLoading) return <div className="text-center p-10 mt-20 text-slate-500">Loading your profile...</div>;
@@ -213,30 +223,58 @@ export default function CompleteProfilePage() {
         <CardHeader className="border-b border-slate-100 dark:border-slate-800/50 bg-slate-50/50 dark:bg-slate-900/50 pb-6 pt-8">
           <CardTitle className="text-2xl font-bold text-slate-800 dark:text-slate-100">Step {step} of 4</CardTitle>
           <CardDescription className="text-base mt-1">
-            {step === 1 && "BRC and batch details"}
+            {step === 1 && "Identity & BRC details"}
             {step === 2 && "Education and Experience"}
             {step === 3 && "Contact Details & Bio"}
-            {step === 4 && "Verification Questions (Admin Only)"}
+            {step === 4 && "Verification Questions"}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-8 p-8">
           
           {step === 1 && (
             <div className="grid gap-6 md:grid-cols-2 animate-in fade-in duration-300">
-              <div className="md:col-span-2">
-                {isAlreadyApproved && (
-                  <div className="bg-emerald-50 dark:bg-emerald-900/20 text-emerald-800 dark:text-emerald-300 p-4 rounded-xl text-sm border border-emerald-200 dark:border-emerald-800/30 flex items-start gap-3 shadow-sm">
-                    <Lock className="w-5 h-5 shrink-0 mt-0.5" /> 
-                    <p>Your account is verified. Core identity fields (Name and Years) are now locked to protect directory integrity.</p>
-                  </div>
-                )}
+              
+              <div className="md:col-span-2 space-y-3 p-4 bg-slate-50 dark:bg-slate-950 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-inner">
+                <Label className="text-slate-700 dark:text-slate-300 font-extrabold text-base mb-2 block">I am registering as an:</Label>
+                <div className="flex gap-6">
+                  <label className="flex items-center gap-2 cursor-pointer font-bold text-slate-700 dark:text-slate-300">
+                    <input type="radio" checked={formData.account_type === "Alumnus"} onChange={() => setField("account_type", "Alumnus")} disabled={isAlreadyApproved} className="w-4 h-4 text-primary focus:ring-primary" />
+                    Alumnus (Student)
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer font-bold text-slate-700 dark:text-slate-300">
+                    <input type="radio" checked={formData.account_type === "Faculty"} onChange={() => setField("account_type", "Faculty")} disabled={isAlreadyApproved} className="w-4 h-4 text-primary focus:ring-primary" />
+                    Faculty / Teacher
+                  </label>
+                </div>
               </div>
+
               <div className="space-y-2"><Label className="text-slate-600 dark:text-slate-400 font-semibold">Full name *</Label><Input className="bg-white dark:bg-slate-950 rounded-xl" value={formData.full_name} onChange={(e) => setField("full_name", e.target.value)} disabled={isAlreadyApproved} /></div>
-              <div className="space-y-2"><Label className="text-slate-600 dark:text-slate-400 font-semibold">Roll number</Label><Input className="bg-white dark:bg-slate-950 rounded-xl" value={formData.roll_number} onChange={(e) => setField("roll_number", e.target.value)} /></div>
-              <div className="space-y-2"><Label className="text-slate-600 dark:text-slate-400 font-semibold">Entry year *</Label><select className={`h-11 w-full rounded-xl border border-input bg-white dark:bg-slate-950 px-3 text-sm focus:ring-2 focus:ring-primary ${isAlreadyApproved ? "opacity-60 cursor-not-allowed" : ""}`} value={formData.entry_year} onChange={(e) => setField("entry_year", e.target.value)} disabled={isAlreadyApproved}><option value="">Select year</option>{Array.from({ length: 50 }, (_, i) => 1980 + i).map(y => <option key={y} value={y}>{y}</option>)}</select></div>
-              <div className="space-y-2"><Label className="text-slate-600 dark:text-slate-400 font-semibold">Graduation year *</Label><select className={`h-11 w-full rounded-xl border border-input bg-white dark:bg-slate-950 px-3 text-sm focus:ring-2 focus:ring-primary ${isAlreadyApproved ? "opacity-60 cursor-not-allowed" : ""}`} value={formData.graduation_year} onChange={(e) => setField("graduation_year", e.target.value)} disabled={isAlreadyApproved}><option value="">Select year</option>{Array.from({ length: 50 }, (_, i) => 1984 + i).map(y => <option key={y} value={y}>{y}</option>)}</select></div>
-              <div className="space-y-2"><Label className="text-slate-600 dark:text-slate-400 font-semibold">Student type</Label><select className="h-11 w-full rounded-xl border border-input bg-white dark:bg-slate-950 px-3 text-sm focus:ring-2 focus:ring-primary" value={formData.student_type} onChange={(e) => setField("student_type", e.target.value)}><option value="">Select</option>{studentTypes.map(i => <option key={i} value={i}>{i}</option>)}</select></div>
-              <div className="space-y-2"><Label className="text-slate-600 dark:text-slate-400 font-semibold">Home district *</Label><select className="h-11 w-full rounded-xl border border-input bg-white dark:bg-slate-950 px-3 text-sm focus:ring-2 focus:ring-primary" value={formData.home_district} onChange={(e) => setField("home_district", e.target.value)}><option value="">Select</option>{districts.map(i => <option key={i} value={i}>{i}</option>)}</select></div>
+              
+              {formData.account_type === "Alumnus" && (
+                <div className="space-y-2"><Label className="text-slate-600 dark:text-slate-400 font-semibold">Roll number</Label><Input className="bg-white dark:bg-slate-950 rounded-xl" value={formData.roll_number} onChange={(e) => setField("roll_number", e.target.value)} /></div>
+              )}
+
+              <div className="space-y-2">
+                <Label className="text-slate-600 dark:text-slate-400 font-semibold">{formData.account_type === "Faculty" ? "Year Joined BRC *" : "Entry year *"}</Label>
+                <select className={`h-11 w-full rounded-xl border border-input bg-white dark:bg-slate-950 px-3 text-sm focus:ring-2 focus:ring-primary ${isAlreadyApproved ? "opacity-60 cursor-not-allowed" : ""}`} value={formData.entry_year} onChange={(e) => setField("entry_year", e.target.value)} disabled={isAlreadyApproved}><option value="">Select year</option>{Array.from({ length: 50 }, (_, i) => 1980 + i).map(y => <option key={y} value={y}>{y}</option>)}</select>
+              </div>
+              
+              <div className="space-y-2">
+                <Label className="text-slate-600 dark:text-slate-400 font-semibold">{formData.account_type === "Faculty" ? "Year Left BRC" : "Graduation year *"}</Label>
+                <select className={`h-11 w-full rounded-xl border border-input bg-white dark:bg-slate-950 px-3 text-sm focus:ring-2 focus:ring-primary ${isAlreadyApproved ? "opacity-60 cursor-not-allowed" : ""}`} value={formData.graduation_year} onChange={(e) => setField("graduation_year", e.target.value)} disabled={isAlreadyApproved}><option value="">Select year</option>{Array.from({ length: 50 }, (_, i) => 1980 + i).map(y => <option key={y} value={y}>{y}</option>)}</select>
+              </div>
+
+              {formData.account_type === "Faculty" ? (
+                <div className="md:col-span-2 space-y-2">
+                  <Label className="text-slate-600 dark:text-slate-400 font-semibold">Subjects Taught at BRC</Label>
+                  <Input className="bg-white dark:bg-slate-950 rounded-xl" placeholder="e.g., Physics, Mathematics, English" value={formData.subjects_taught} onChange={(e) => setField("subjects_taught", e.target.value)} />
+                </div>
+              ) : (
+                <>
+                  <div className="space-y-2"><Label className="text-slate-600 dark:text-slate-400 font-semibold">Student type</Label><select className="h-11 w-full rounded-xl border border-input bg-white dark:bg-slate-950 px-3 text-sm focus:ring-2 focus:ring-primary" value={formData.student_type} onChange={(e) => setField("student_type", e.target.value)}><option value="">Select</option>{studentTypes.map(i => <option key={i} value={i}>{i}</option>)}</select></div>
+                  <div className="space-y-2"><Label className="text-slate-600 dark:text-slate-400 font-semibold">Home district *</Label><select className="h-11 w-full rounded-xl border border-input bg-white dark:bg-slate-950 px-3 text-sm focus:ring-2 focus:ring-primary" value={formData.home_district} onChange={(e) => setField("home_district", e.target.value)}><option value="">Select</option>{districts.map(i => <option key={i} value={i}>{i}</option>)}</select></div>
+                </>
+              )}
             </div>
           )}
 
@@ -323,11 +361,19 @@ export default function CompleteProfilePage() {
                 <ShieldCheck className="w-6 h-6 shrink-0 mt-0.5 text-amber-600 dark:text-amber-500" />
                 <p><strong>Security Verification:</strong> The answers below are strictly confidential. Only platform administrators can view them to confirm your authentic identity.</p>
               </div>
-              <div className="space-y-2"><Label className="font-semibold text-slate-700 dark:text-slate-300">House names or hostel references</Label><Input className="bg-white dark:bg-slate-950 rounded-xl" value={formData.verification_answers.houses} onChange={(e) => setVerificationField("houses", e.target.value)} /></div>
-              <div className="space-y-2"><Label className="font-semibold text-slate-700 dark:text-slate-300">Teachers you remember</Label><Input className="bg-white dark:bg-slate-950 rounded-xl" value={formData.verification_answers.teachers} onChange={(e) => setVerificationField("teachers", e.target.value)} /></div>
-              <div className="space-y-2"><Label className="font-semibold text-slate-700 dark:text-slate-300">Staff/Guards (e.g. Ghulam Nabi)</Label><Input className="bg-white dark:bg-slate-950 rounded-xl" value={formData.verification_answers.staff} onChange={(e) => setVerificationField("staff", e.target.value)} /></div>
-              <div className="space-y-2"><Label className="font-semibold text-slate-700 dark:text-slate-300">Principal name you remember</Label><Input className="bg-white dark:bg-slate-950 rounded-xl" value={formData.verification_answers.principal} onChange={(e) => setVerificationField("principal", e.target.value)} /></div>
-              <div className="space-y-2"><Label className="font-semibold text-slate-700 dark:text-slate-300">College established year</Label><Input className="bg-white dark:bg-slate-950 rounded-xl" value={formData.verification_answers.established_year} onChange={(e) => setVerificationField("established_year", e.target.value)} /></div>
+              {formData.account_type === "Faculty" ? (
+                <>
+                  <div className="space-y-2 md:col-span-2"><Label className="font-semibold text-slate-700 dark:text-slate-300">Names of other teachers you worked with</Label><Input className="bg-white dark:bg-slate-950 rounded-xl" value={formData.verification_answers.teachers} onChange={(e) => setVerificationField("teachers", e.target.value)} /></div>
+                  <div className="space-y-2 md:col-span-2"><Label className="font-semibold text-slate-700 dark:text-slate-300">Principal during your tenure</Label><Input className="bg-white dark:bg-slate-950 rounded-xl" value={formData.verification_answers.principal} onChange={(e) => setVerificationField("principal", e.target.value)} /></div>
+                </>
+              ) : (
+                <>
+                  <div className="space-y-2"><Label className="font-semibold text-slate-700 dark:text-slate-300">House names or hostel references</Label><Input className="bg-white dark:bg-slate-950 rounded-xl" value={formData.verification_answers.houses} onChange={(e) => setVerificationField("houses", e.target.value)} /></div>
+                  <div className="space-y-2"><Label className="font-semibold text-slate-700 dark:text-slate-300">Teachers you remember</Label><Input className="bg-white dark:bg-slate-950 rounded-xl" value={formData.verification_answers.teachers} onChange={(e) => setVerificationField("teachers", e.target.value)} /></div>
+                  <div className="space-y-2"><Label className="font-semibold text-slate-700 dark:text-slate-300">Staff/Guards (e.g. Ghulam Nabi)</Label><Input className="bg-white dark:bg-slate-950 rounded-xl" value={formData.verification_answers.staff} onChange={(e) => setVerificationField("staff", e.target.value)} /></div>
+                  <div className="space-y-2"><Label className="font-semibold text-slate-700 dark:text-slate-300">Principal name you remember</Label><Input className="bg-white dark:bg-slate-950 rounded-xl" value={formData.verification_answers.principal} onChange={(e) => setVerificationField("principal", e.target.value)} /></div>
+                </>
+              )}
             </div>
           )}
 
@@ -343,7 +389,7 @@ export default function CompleteProfilePage() {
       </Card>
 
       {/* Advanced Security Settings - Hidden by Button */}
-      <div className="flex flex-col items-center mt-12 mb-20">
+      <div className="flex flex-col items-center mt-12 mb-20 gap-4">
         <Button 
           variant="ghost" 
           onClick={() => setShowSecuritySettings(!showSecuritySettings)}
@@ -352,6 +398,15 @@ export default function CompleteProfilePage() {
           <Settings className="w-4 h-4 mr-2"/> 
           {showSecuritySettings ? "Hide Security Settings" : "Account Security Settings"} 
           {showSecuritySettings ? <ChevronUp className="w-4 h-4 ml-2"/> : <ChevronDown className="w-4 h-4 ml-2"/>}
+        </Button>
+        
+        {/* NEW FEATURE: LOGOUT BUTTON ADDED HERE */}
+        <Button 
+          variant="outline" 
+          onClick={handleLogout}
+          className="text-red-500 border-red-200 hover:bg-red-50 hover:text-red-700 dark:border-red-900 dark:hover:bg-red-950 rounded-full shadow-sm"
+        >
+          <LogOut className="w-4 h-4 mr-2"/> Logout
         </Button>
 
         {showSecuritySettings && (
