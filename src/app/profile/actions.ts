@@ -20,9 +20,16 @@ export async function updateProfile(formData: FormData) {
 
   const isVerified = currentProfile?.verification_status === "full";
 
-  // Helper for strings and ints
-  const getString = (key: string) => (formData.get(key) as string) || null;
-  const getInt = (key: string) => formData.get(key) ? parseInt(formData.get(key) as string) : null;
+  // Extremely safe extraction helpers to prevent crashes
+  const getString = (key: string) => {
+    const val = formData.get(key);
+    return val ? String(val).trim() : null;
+  };
+  
+  const getInt = (key: string) => {
+    const val = formData.get(key);
+    return val ? parseInt(String(val), 10) : null;
+  };
 
   // Safely parse JSON arrays for Jobs and Education
   let job_history = [];
@@ -38,14 +45,15 @@ export async function updateProfile(formData: FormData) {
     console.error("Failed to parse higher education");
   }
 
-  // Parse Languages array
+  // Parse Languages array safely
   const languagesRaw = getString("languages");
   const languages = languagesRaw ? languagesRaw.split(',').map(s => s.trim()).filter(Boolean) : null;
 
+  // The updates object ONLY contains fields that physically exist in your DB schema
   const updates: any = {
     full_name: getString("full_name"),
-    bio: getString("bio"), // Now contains message to Koharians & Bio
-    achievements: getString("achievements"), // Now contains BRC & After achievements
+    bio: getString("bio"),
+    achievements: getString("achievements"),
     account_type: getString("account_type"),
     
     // BRC Details
@@ -73,13 +81,14 @@ export async function updateProfile(formData: FormData) {
     languages,
     
     // Contact & Socials
-    phone: getString("phone_number"), // Maps the form field to your DB's 'phone' column
+    phone: getString("phone_number"), // Maps to the actual 'phone' column in DB
     linkedin_url: getString("linkedin_url"),
     
-    // Preferences (Matching your exact DB columns)
+    // Preferences - These perfectly match your database columns
     show_phone_publicly: formData.get("show_phone") === "on",
-    show_email_publicly: true, // Always visible to verified users
-    show_linkedin_publicly: true, // Always visible to verified users
+    show_email_publicly: true,
+    show_linkedin_publicly: true,
+    show_in_directory: true, // EXPLICITLY SET TO TRUE SO THEY SHOW IN DIRECTORY
     available_for_mentoring: formData.get("available_for_mentoring") === "on",
     
     is_profile_complete: true,

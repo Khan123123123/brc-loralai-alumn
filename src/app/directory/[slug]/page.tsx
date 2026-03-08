@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Award, BookOpen, Briefcase, Building, GraduationCap, Linkedin, Phone,
-  Lock, Mail, MapPin, ShieldCheck, Heart, MessageSquare, Globe, Home, Star
+  Lock, Mail, MapPin, ShieldCheck, Globe, Home, Star
 } from "lucide-react";
 import { Job, Education } from "@/types/database";
 
@@ -133,32 +133,20 @@ export default async function DirectoryMemberPage({ params }: { params: { slug: 
           
           <div className="space-y-6 lg:col-span-2">
             
-            {(member.bio || member.message_for_koharians || member.languages?.length) && (
+            {(member.bio || member.languages?.length) && (
                <Card className="rounded-3xl border-0 shadow-md bg-white">
                  <CardHeader className="pb-4 bg-slate-50 border-b border-slate-100">
                    <CardTitle className="text-lg">About & Legacy</CardTitle>
                  </CardHeader>
                  <CardContent className="p-6 space-y-6 text-sm text-slate-700">
-                   {member.bio && <p className="leading-relaxed text-base">{member.bio}</p>}
-                   
-                   {member.message_for_koharians && (
-                     <div className="bg-blue-50 border border-blue-100 rounded-2xl p-5 relative">
-                        <MessageSquare className="absolute top-4 right-4 w-8 h-8 text-blue-200 opacity-50" />
-                        <h3 className="mb-2 font-bold text-blue-900 flex items-center gap-2">
-                          <MessageSquare className="w-4 h-4" /> Message for Koharians
-                        </h3>
-                        <p className="leading-relaxed text-blue-800 italic font-medium whitespace-pre-wrap">
-                          "{member.message_for_koharians}"
-                        </p>
-                     </div>
-                   )}
+                   {member.bio && <p className="leading-relaxed text-base whitespace-pre-wrap">{member.bio}</p>}
                    
                    {member.languages && member.languages.length > 0 && (
                      <div className="flex flex-wrap gap-2 items-center">
                        <Globe className="w-5 h-5 text-slate-400 mr-1"/>
                        <span className="font-semibold text-slate-900 mr-2">Languages:</span>
                        {member.languages.map((lang: string, i: number) => (
-                         <Badge key={i} variant="secondary" className="bg-slate-100">{lang}</Badge>
+                         <Badge key={i} variant="secondary" className="bg-slate-100 text-slate-700">{lang}</Badge>
                        ))}
                      </div>
                    )}
@@ -232,7 +220,7 @@ export default async function DirectoryMemberPage({ params }: { params: { slug: 
               </Card>
             )}
 
-            {(member.achievements_brc || member.achievements_after || member.favorite_teacher) && (
+            {member.achievements && (
                <Card className="rounded-3xl border-0 shadow-md bg-white">
                  <CardHeader className="pb-4 bg-slate-50 border-b border-slate-100">
                    <CardTitle className="text-lg flex items-center gap-2">
@@ -240,26 +228,7 @@ export default async function DirectoryMemberPage({ params }: { params: { slug: 
                    </CardTitle>
                  </CardHeader>
                  <CardContent className="p-6 space-y-6">
-                    {member.favorite_teacher && (
-                      <div>
-                        <h4 className="font-bold text-slate-900 flex items-center gap-2 mb-1.5">
-                          <Heart className="w-4 h-4 text-rose-500" /> Favorite BRC Teacher
-                        </h4>
-                        <p className="text-slate-600 bg-slate-50 p-3 rounded-xl">{member.favorite_teacher}</p>
-                      </div>
-                    )}
-                    {member.achievements_brc && (
-                      <div>
-                        <h4 className="font-bold text-slate-900 mb-1.5">BRC Achievements</h4>
-                        <p className="text-slate-600 bg-slate-50 p-3 rounded-xl">{member.achievements_brc}</p>
-                      </div>
-                    )}
-                    {member.achievements_after && (
-                      <div>
-                        <h4 className="font-bold text-slate-900 mb-1.5">Later Achievements</h4>
-                        <p className="text-slate-600 bg-slate-50 p-3 rounded-xl">{member.achievements_after}</p>
-                      </div>
-                    )}
+                    <p className="leading-relaxed text-base whitespace-pre-wrap">{member.achievements}</p>
                  </CardContent>
                </Card>
             )}
