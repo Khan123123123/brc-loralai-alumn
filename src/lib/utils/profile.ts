@@ -44,7 +44,7 @@ export function getSafeDirectoryCardData(
     featured_in_presentation: viewerHasFullAccess
       ? profile.featured_in_presentation
       : false,
-    profile_photo_url: profile.profile_photo_url,
+    profile_photo_url: profile.profile_photo_url || profile.avatar_url,
   };
 }
 
@@ -54,12 +54,16 @@ export function getVisibleContactFields(
 ) {
   const viewerHasFullAccess = hasFullAccess(viewerProfile);
 
+  // Checks both the new show_email flag and the old show_email_publicly flag
+  const isEmailVisible = profile.show_email ?? profile.show_email_publicly;
+  const isPhoneVisible = profile.show_phone ?? profile.show_phone_publicly;
+
   return {
-    email: canViewPublicContactField(profile.show_email_publicly, viewerHasFullAccess)
+    email: canViewPublicContactField(isEmailVisible, viewerHasFullAccess)
       ? profile.email
       : null,
-    phone: canViewPublicContactField(profile.show_phone_publicly, viewerHasFullAccess)
-      ? profile.phone
+    phone: canViewPublicContactField(isPhoneVisible, viewerHasFullAccess)
+      ? (profile.phone || profile.phone_number)
       : null,
     linkedin_url: canViewPublicContactField(
       profile.show_linkedin_publicly,
