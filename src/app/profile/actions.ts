@@ -65,6 +65,7 @@ export async function updateProfile(formData: FormData) {
     // Location
     current_city: getString("current_city"),
     current_country: getString("current_country"),
+    home_city: getString("home_city"), // FIXED: Added missing field
     home_district: getString("home_district"),
     
     // Professional

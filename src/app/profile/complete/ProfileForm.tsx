@@ -218,10 +218,11 @@ export default function ProfileForm({ profile, answers, isVerified }: any) {
             <CardContent className="pt-6 grid gap-6 sm:grid-cols-2">
               <div className="space-y-2"><Label>Current City</Label><Input name="current_city" defaultValue={profile.current_city || ""} className="rounded-xl bg-slate-50" /></div>
               <div className="space-y-2"><Label>Current Country</Label><Input name="current_country" defaultValue={profile.current_country || ""} className="rounded-xl bg-slate-50" /></div>
+              <div className="space-y-2"><Label>Home City</Label><Input name="home_city" defaultValue={profile.home_city || ""} placeholder="e.g. Quetta" className="rounded-xl bg-slate-50" /></div>
               <div className="space-y-2"><Label>Home District (Origin)</Label><Input name="home_district" defaultValue={profile.home_district || ""} placeholder="e.g. Loralai" className="rounded-xl bg-slate-50" /></div>
               
               <div className="space-y-2"><Label>Phone Number</Label><Input name="phone_number" defaultValue={profile.phone || ""} type="tel" className="rounded-xl bg-slate-50" /></div>
-              <div className="space-y-2 sm:col-span-2"><Label>LinkedIn URL</Label><Input name="linkedin_url" defaultValue={profile.linkedin_url || ""} type="url" className="rounded-xl bg-slate-50" /></div>
+              <div className="space-y-2"><Label>LinkedIn URL</Label><Input name="linkedin_url" defaultValue={profile.linkedin_url || ""} type="url" className="rounded-xl bg-slate-50" /></div>
               
               <div className="sm:col-span-2 flex flex-col gap-3 mt-4">
                  <div className="flex items-center space-x-3 bg-slate-50 p-4 rounded-xl border border-slate-200">
