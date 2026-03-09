@@ -18,12 +18,11 @@ export async function updateProfile(formData: FormData) {
   }
 
   try {
-    const { data: currentProfile } = await supabase
+   const { data: currentProfile } = await supabase
       .from("profiles")
-      .select("verification_status")
+      .select("verification_status, full_name")
       .eq("id", user.id)
       .single();
-
     const isVerified = currentProfile?.verification_status === "full";
 
     const getString = (key: string) => {
@@ -57,8 +56,7 @@ export async function updateProfile(formData: FormData) {
     const updates: any = {
       id: user.id, 
       email: user.email, 
-      full_name: getString("full_name"),
-      bio: getString("bio"),
+full_name: getString("full_name") || currentProfile?.full_name || user.user_metadata?.full_name || "Koharian",      bio: getString("bio"),
       account_type: accountType,
       profile_photo_url: getString("profile_photo_url"),
       
