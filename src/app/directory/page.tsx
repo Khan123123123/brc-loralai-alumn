@@ -278,10 +278,14 @@ export default async function DirectoryPage({
                       <div className="flex items-start gap-3"><MapPin className="w-4 h-4 text-secondary mt-0.5 shrink-0" /><span className="leading-tight font-medium">{profile.current_city}{profile.current_country ? `, ${profile.current_country}` : ""}</span></div>
                     </div>
                   ) : (
-                    <div className="mt-auto border-t pt-4">
-                      <div className="p-4 bg-slate-50/80 backdrop-blur-sm rounded-xl flex flex-col items-center justify-center text-center gap-2 border border-slate-200 border-dashed">
-                         <Lock className="w-5 h-5 text-slate-400" />
-                         <span className="text-[11px] font-bold text-slate-500 leading-relaxed uppercase tracking-wider">Details Locked<br/>Verified Users Only</span>
+                    <div className="space-y-3.5 text-sm text-slate-600 border-t pt-4 mt-auto">
+                      {/* Half Profile view for unverified users */}
+                      <div className="flex items-start gap-3"><Briefcase className={`w-4 h-4 mt-0.5 shrink-0 ${isFaculty ? 'text-indigo-400' : 'text-slate-400'}`} /><span className="font-semibold text-slate-800 leading-tight">{profile.current_position || (isFaculty ? "Faculty Member" : "Alumnus")}</span></div>
+                      <div className="flex items-start gap-3"><MapPin className="w-4 h-4 text-secondary mt-0.5 shrink-0" /><span className="leading-tight font-medium">{profile.current_city}{profile.current_country ? `, ${profile.current_country}` : ""}</span></div>
+                      
+                      <div className="mt-2 p-3 bg-slate-50/80 backdrop-blur-sm rounded-xl flex items-center justify-center text-center gap-2 border border-slate-200 border-dashed">
+                         <Lock className="w-4 h-4 text-slate-400" />
+                         <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Org & Contact Locked</span>
                       </div>
                     </div>
                   )}
