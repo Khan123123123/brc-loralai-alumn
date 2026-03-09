@@ -53,10 +53,10 @@ export async function updateProfile(formData: FormData) {
 
     const accountType = getString("account_type") || "Alumni";
 
-    // Build the core updates payload
+    // Clean, direct mapping to your guaranteed database columns!
     const updates: any = {
-      id: user.id, // Mandatory for Upsert
-      email: user.email, // Mandatory for Upsert
+      id: user.id, 
+      email: user.email, 
       full_name: getString("full_name"),
       bio: getString("bio"),
       account_type: accountType,
@@ -85,16 +85,13 @@ export async function updateProfile(formData: FormData) {
       higher_education,
       languages,
       
-      phone: getString("phone_number"), 
-      phone_number: getString("phone_number"), // Saving to both to be safe with your DB schema
+      phone_number: getString("phone_number"), 
       linkedin_url: getString("linkedin_url"),
       twitter_url: getString("twitter_url"),
       website_url: getString("website_url"),
       
-      // PRIVACY SETTINGS: Phone is toggleable, everything else visible
-      show_phone: formData.get("show_phone") === "on",
+      // Removed the redundant "show_email" and "show_phone" to stop the schema crashes
       show_phone_publicly: formData.get("show_phone") === "on",
-      show_email: true,
       show_email_publicly: true,
       show_linkedin_publicly: true,
       show_in_directory: true, 
@@ -130,8 +127,7 @@ export async function updateProfile(formData: FormData) {
       }
     }
 
-    // FIX: Use UPSERT. If the profile row was missing, this forces it to be created.
-    // If it exists, it safely updates it. This prevents the silent saving failures!
+    // Bulletproof Upsert
     const { error } = await supabase.from("profiles").upsert(updates, { onConflict: "id" });
 
     if (error) {
