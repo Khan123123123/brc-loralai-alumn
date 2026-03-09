@@ -54,10 +54,11 @@ export function calculateProfileScore(data: ProfileScoreInput): number {
 
   const answers = data.verification_answers || {};
   if (clean(answers.houses).length >= 2) score += 4;
-  if (clean(answers.teachers).length >= 2) score += 4;
-  if (clean(answers.staff).length >= 2) score += 4;
+  if (clean(answers.teachers_with_subjects).length >= 2) score += 4;
+  if (clean(answers.staff_member).length >= 2) score += 4;
   if (clean(answers.principal).length >= 2) score += 4;
-  if (clean(answers.established_year).length >= 2) score += 4;
+  if (clean(answers.hostel_after_principal).length >= 2) score += 4;
+  if (clean(answers.other_proof).length >= 2) score += 4;
 
   return Math.min(score, 100);
 }
