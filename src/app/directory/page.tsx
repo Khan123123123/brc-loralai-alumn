@@ -279,7 +279,7 @@ export default async function DirectoryPage({
                     </div>
                   ) : (
                     <div className="space-y-3.5 text-sm text-slate-600 border-t pt-4 mt-auto">
-                      {/* Half Profile view for unverified users */}
+                      {/* Half-profile view: show position and location, but lock organization */}
                       <div className="flex items-start gap-3"><Briefcase className={`w-4 h-4 mt-0.5 shrink-0 ${isFaculty ? 'text-indigo-400' : 'text-slate-400'}`} /><span className="font-semibold text-slate-800 leading-tight">{profile.current_position || (isFaculty ? "Faculty Member" : "Alumnus")}</span></div>
                       <div className="flex items-start gap-3"><MapPin className="w-4 h-4 text-secondary mt-0.5 shrink-0" /><span className="leading-tight font-medium">{profile.current_city}{profile.current_country ? `, ${profile.current_country}` : ""}</span></div>
                       
