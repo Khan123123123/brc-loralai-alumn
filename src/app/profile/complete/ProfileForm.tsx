@@ -95,7 +95,15 @@ export default function ProfileForm({ profile, answers, isVerified }: ProfileFor
   const jumpToStep = (s: number) => {
     if (profile.is_profile_complete) setStep(s);
   };
-  const nextStep = () => setStep((s) => Math.min(s + 1, totalSteps));
+  const nextStep = () => {
+    // Validate current step before moving to next
+    const currentForm = document.querySelector('form');
+    if (currentForm && !currentForm.checkValidity()) {
+      currentForm.reportValidity();
+      return;
+    }
+    setStep((s) => Math.min(s + 1, totalSteps));
+  };
   const prevStep = () => setStep((s) => Math.max(s - 1, 1));
 
   const compressImage = (file: File): Promise<File> => {
@@ -204,7 +212,7 @@ export default function ProfileForm({ profile, answers, isVerified }: ProfileFor
             </CardHeader>
             <CardContent className="pt-6 grid gap-6 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label>Full Name</Label>
+                <Label>Full Name *</Label>
                 <Input name="full_name" defaultValue={profile.full_name || ""} onKeyDown={handleKeyDown} required className="rounded-xl bg-slate-50" />
               </div>
               <div className="space-y-2">
@@ -260,13 +268,13 @@ export default function ProfileForm({ profile, answers, isVerified }: ProfileFor
             <CardContent className="pt-6 grid gap-6 sm:grid-cols-2">
               
               <div className="space-y-2">
-                <Label>{isFaculty ? "Year Joined BRC as Faculty" : "Entry Year (Admission)"}</Label>
-                <Input name="entry_year" type="number" defaultValue={profile.entry_year || ""} onKeyDown={handleKeyDown} placeholder="e.g. 2005" className="rounded-xl bg-slate-50" />
+                <Label>{isFaculty ? "Year Joined BRC as Faculty *" : "Entry Year (Admission) *"}</Label>
+                <Input name="entry_year" type="number" defaultValue={profile.entry_year || ""} onKeyDown={handleKeyDown} placeholder="e.g. 2005" className="rounded-xl bg-slate-50" required />
               </div>
               
               <div className="space-y-2">
-                <Label>{isFaculty ? "Year Left BRC (Leave blank if current)" : "Graduation / Passing Year"}</Label>
-                <Input name="graduation_year" type="number" defaultValue={profile.graduation_year || ""} onKeyDown={handleKeyDown} placeholder="e.g. 2010" className="rounded-xl bg-slate-50" />
+                <Label>{isFaculty ? "Year Left BRC (Leave blank if current) *" : "Graduation / Passing Year *"}</Label>
+                <Input name="graduation_year" type="number" defaultValue={profile.graduation_year || ""} onKeyDown={handleKeyDown} placeholder="e.g. 2010" className="rounded-xl bg-slate-50" required />
               </div>
 
               {!isFaculty && (
@@ -342,8 +350,8 @@ export default function ProfileForm({ profile, answers, isVerified }: ProfileFor
             <CardContent className="pt-6 space-y-8">
               <div className="grid gap-6 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <Label>Employment Status</Label>
-                  <select name="employment_status" defaultValue={profile.employment_status || "Employed"} className="w-full h-10 px-3 rounded-xl border border-slate-200 text-sm bg-slate-50 font-medium">
+                  <Label>Employment Status *</Label>
+                  <select name="employment_status" defaultValue={profile.employment_status || "Employed"} className="w-full h-10 px-3 rounded-xl border border-slate-200 text-sm bg-slate-50 font-medium" required>
                     <option value="Employed">Employed</option>
                     <option value="Self-Employed">Self-Employed</option>
                     <option value="Business Owner">Business Owner</option>
@@ -353,20 +361,21 @@ export default function ProfileForm({ profile, answers, isVerified }: ProfileFor
                   </select>
                 </div>
                 <div className="space-y-2"><Label>Years of Experience</Label><Input name="experience_years" type="number" defaultValue={profile.experience_years || ""} onKeyDown={handleKeyDown} className="rounded-xl bg-slate-50" /></div>
-                <div className="space-y-2"><Label>Current Position / Job Title</Label><Input name="current_position" defaultValue={profile.current_position || ""} onKeyDown={handleKeyDown} className="rounded-xl bg-slate-50" /></div>
-                <div className="space-y-2"><Label>Company / Organization</Label><Input name="current_organization" defaultValue={profile.current_organization || ""} onKeyDown={handleKeyDown} className="rounded-xl bg-slate-50" /></div>
+                
+                <div className="space-y-2"><Label>Current Position / Job Title *</Label><Input name="current_position" defaultValue={profile.current_position || ""} onKeyDown={handleKeyDown} className="rounded-xl bg-slate-50" required /></div>
+                <div className="space-y-2"><Label>Company / Organization *</Label><Input name="current_organization" defaultValue={profile.current_organization || ""} onKeyDown={handleKeyDown} className="rounded-xl bg-slate-50" required /></div>
                 
                 <div className="space-y-2">
-                  <Label>Profession</Label>
-                  <select name="profession" defaultValue={profile.profession || ""} className="w-full h-10 px-3 rounded-xl border border-slate-200 text-sm bg-slate-50 font-medium">
+                  <Label>Profession *</Label>
+                  <select name="profession" defaultValue={profile.profession || ""} className="w-full h-10 px-3 rounded-xl border border-slate-200 text-sm bg-slate-50 font-medium" required>
                      <option value="">Select Profession...</option>
                      {PROFESSIONS.map(p => <option key={p} value={p}>{p}</option>)}
                   </select>
                 </div>
                 
                 <div className="space-y-2">
-                  <Label>Industry</Label>
-                  <select name="industry" defaultValue={profile.industry || ""} className="w-full h-10 px-3 rounded-xl border border-slate-200 text-sm bg-slate-50 font-medium">
+                  <Label>Industry *</Label>
+                  <select name="industry" defaultValue={profile.industry || ""} className="w-full h-10 px-3 rounded-xl border border-slate-200 text-sm bg-slate-50 font-medium" required>
                      <option value="">Select Industry...</option>
                      {INDUSTRIES.map(i => <option key={i} value={i}>{i}</option>)}
                   </select>
@@ -424,9 +433,10 @@ export default function ProfileForm({ profile, answers, isVerified }: ProfileFor
               <CardTitle className="flex items-center gap-2 text-lg"><MapPin className="w-5 h-5 text-primary" /> Step 4: Location & Contact Settings</CardTitle>
             </CardHeader>
             <CardContent className="pt-6 grid gap-6 sm:grid-cols-2">
-              <div className="space-y-2"><Label>Current City</Label><Input name="current_city" defaultValue={profile.current_city || ""} onKeyDown={handleKeyDown} className="rounded-xl bg-slate-50" /></div>
+              <div className="space-y-2"><Label>Current City *</Label><Input name="current_city" defaultValue={profile.current_city || ""} onKeyDown={handleKeyDown} className="rounded-xl bg-slate-50" required /></div>
               <div className="space-y-2"><Label>Current Country</Label><Input name="current_country" defaultValue={profile.current_country || ""} onKeyDown={handleKeyDown} className="rounded-xl bg-slate-50" /></div>
-              <div className="space-y-2"><Label>Home City</Label><Input name="home_city" defaultValue={profile.home_city || ""} onKeyDown={handleKeyDown} className="rounded-xl bg-slate-50" /></div>
+              
+              <div className="space-y-2"><Label>Home City *</Label><Input name="home_city" defaultValue={profile.home_city || ""} onKeyDown={handleKeyDown} className="rounded-xl bg-slate-50" required /></div>
               
               <div className="space-y-2">
                 <Label>Home District (Origin)</Label>
@@ -436,7 +446,7 @@ export default function ProfileForm({ profile, answers, isVerified }: ProfileFor
                 </select>
               </div>
               
-              <div className="space-y-2"><Label>Phone Number</Label><Input name="phone_number" defaultValue={profile.phone || profile.phone_number || ""} onKeyDown={handleKeyDown} type="tel" className="rounded-xl bg-slate-50" /></div>
+              <div className="space-y-2"><Label>Phone Number *</Label><Input name="phone_number" defaultValue={profile.phone || profile.phone_number || ""} onKeyDown={handleKeyDown} type="tel" className="rounded-xl bg-slate-50" required /></div>
               <div className="space-y-2"><Label>LinkedIn URL</Label><Input name="linkedin_url" defaultValue={profile.linkedin_url || ""} type="url" onKeyDown={handleKeyDown} className="rounded-xl bg-slate-50" /></div>
               <div className="space-y-2"><Label>Twitter/X URL</Label><Input name="twitter_url" defaultValue={profile.twitter_url || ""} type="url" onKeyDown={handleKeyDown} className="rounded-xl bg-slate-50" /></div>
               <div className="space-y-2"><Label>Personal Website</Label><Input name="website_url" defaultValue={profile.website_url || ""} type="url" onKeyDown={handleKeyDown} className="rounded-xl bg-slate-50" /></div>
@@ -463,7 +473,7 @@ export default function ProfileForm({ profile, answers, isVerified }: ProfileFor
             </CardContent>
           </Card>
 
-          {/* UPDATED VERIFICATION QUESTIONS WITH NEW FIELDS AND BETTER ENGLISH */}
+          {/* VERIFICATION QUESTIONS */}
           {!isVerified && (
             <Card className="rounded-3xl shadow-sm border-amber-200 bg-amber-50/30 mt-8">
               <CardHeader className="border-b border-amber-100 pb-4">
@@ -471,10 +481,10 @@ export default function ProfileForm({ profile, answers, isVerified }: ProfileFor
                 <CardDescription className="text-amber-800 font-medium">Please answer the following questions to help us verify your identity. Providing detailed and accurate answers will speed up the verification process.</CardDescription>
               </CardHeader>
               <CardContent className="pt-6 grid gap-5 sm:grid-cols-2">
-                <div className="space-y-2"><Label className="text-amber-900">Names of Houses/Hostels at BRC</Label><Input name="verify_houses" defaultValue={answers?.houses || ""} onKeyDown={handleKeyDown} className="rounded-xl bg-white border-amber-200" /></div>
-                <div className="space-y-2"><Label className="text-amber-900">Name Two Teachers with their Subjects</Label><Input name="verify_teachers_with_subjects" defaultValue={answers?.teachers_with_subjects || ""} onKeyDown={handleKeyDown} className="rounded-xl bg-white border-amber-200" /></div>
-                <div className="space-y-2"><Label className="text-amber-900">Name any famous or long-serving staff member</Label><Input name="verify_staff_member" defaultValue={answers?.staff_member || ""} onKeyDown={handleKeyDown} className="rounded-xl bg-white border-amber-200" /></div>
-                <div className="space-y-2"><Label className="text-amber-900">Name a Current or Past Principal</Label><Input name="verify_principal" defaultValue={answers?.principal || ""} onKeyDown={handleKeyDown} className="rounded-xl bg-white border-amber-200" /></div>
+                <div className="space-y-2"><Label className="text-amber-900">Names of Houses/Hostels at BRC *</Label><Input name="verify_houses" defaultValue={answers?.houses || ""} onKeyDown={handleKeyDown} className="rounded-xl bg-white border-amber-200" required /></div>
+                <div className="space-y-2"><Label className="text-amber-900">Name Two Teachers with their Subjects *</Label><Input name="verify_teachers_with_subjects" defaultValue={answers?.teachers_with_subjects || ""} onKeyDown={handleKeyDown} className="rounded-xl bg-white border-amber-200" required /></div>
+                <div className="space-y-2"><Label className="text-amber-900">Name any famous or long-serving staff member *</Label><Input name="verify_staff_member" defaultValue={answers?.staff_member || ""} onKeyDown={handleKeyDown} className="rounded-xl bg-white border-amber-200" required /></div>
+                <div className="space-y-2"><Label className="text-amber-900">Name a Current or Past Principal *</Label><Input name="verify_principal" defaultValue={answers?.principal || ""} onKeyDown={handleKeyDown} className="rounded-xl bg-white border-amber-200" required /></div>
                 <div className="space-y-2 sm:col-span-2"><Label className="text-amber-900">Name the Hostel named after a former Principal</Label><Input name="verify_hostel_after_principal" defaultValue={answers?.hostel_after_principal || ""} onKeyDown={handleKeyDown} className="rounded-xl bg-white border-amber-200" /></div>
                 <div className="space-y-2 sm:col-span-2"><Label className="text-amber-900">Any other information proving you are a REAL Koharian</Label><Textarea name="verify_other_proof" defaultValue={answers?.other_proof || ""} rows={2} className="rounded-xl bg-white border-amber-200 resize-none" /></div>
               </CardContent>
