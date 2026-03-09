@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import { AdminApprovalActions } from "@/components/admin/AdminApprovalActions"; 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Search, ExternalLink, LogOut, Megaphone, Star } from "lucide-react";
+import { Search, ExternalLink, LogOut, Megaphone, Star, MessageSquare, Mail, AlertTriangle } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import Link from "next/link";
 import { toggleFeaturedStatus } from "./action";
@@ -34,6 +34,7 @@ export default function AdminPage({
         return;
       }
 
+      // Fetch Profiles
       let query = supabase.from("profiles").select("*").order("created_at", { ascending: false });
       
       if (searchQuery) {
@@ -43,6 +44,7 @@ export default function AdminPage({
       const { data: profilesData } = await query;
       setAllProfiles(profilesData || []);
 
+      // Fetch Contact Messages
       const { data: msgsData } = await supabase
         .from("contact_messages")
         .select("*")
@@ -68,6 +70,7 @@ export default function AdminPage({
     <div className="min-h-screen bg-slate-50 py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
         
+        {/* HEADER CONTROLS */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
           <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Admin Control Center</h1>
           <div className="flex items-center gap-3">
@@ -80,6 +83,48 @@ export default function AdminPage({
           </div>
         </div>
 
+        {/* INBOX & REPORTS SECTION (NEWLY ADDED UI) */}
+        <Card className="border-0 shadow-md mb-8">
+          <CardHeader className="border-b bg-slate-900 text-white rounded-t-xl pb-4">
+            <CardTitle className="text-xl flex items-center gap-2">
+              <MessageSquare className="w-5 h-5" /> Inbox & Profile Reports
+              <Badge className="ml-2 bg-rose-500 hover:bg-rose-600 text-white border-0">{messages.length} Total</Badge>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-0 max-h-[400px] overflow-y-auto">
+            {messages.length === 0 ? (
+              <div className="p-8 text-center text-slate-500 font-medium">No messages or reports yet.</div>
+            ) : (
+              <div className="divide-y divide-slate-100">
+                {messages.map((msg) => (
+                  <div key={msg.id} className="p-6 hover:bg-slate-50 transition-colors">
+                    <div className="flex justify-between items-start mb-2">
+                      <div className="flex items-center gap-2">
+                        {msg.subject.includes("Report") ? (
+                          <AlertTriangle className="w-5 h-5 text-rose-500" />
+                        ) : (
+                          <Mail className="w-5 h-5 text-blue-500" />
+                        )}
+                        <h4 className="font-bold text-slate-900 text-lg">{msg.subject}</h4>
+                      </div>
+                      <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                        {new Date(msg.created_at).toLocaleDateString()}
+                      </span>
+                    </div>
+                    <div className="text-sm font-semibold text-slate-600 mb-3 flex items-center gap-1">
+                      From: <a href={`mailto:${msg.sender_email}`} className="text-blue-600 hover:underline">{msg.sender_email}</a>
+                    </div>
+                    <div className="p-4 bg-slate-100/50 rounded-xl border border-slate-200 text-slate-700 text-sm whitespace-pre-wrap">
+                      {msg.message}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* USER DASHBOARD SECTION (ORIGINAL CODE) */}
         <Card className="border-0 shadow-md mb-12">
           <CardHeader className="border-b bg-white rounded-t-xl pb-4">
             <div className="flex flex-col md:flex-row justify-between gap-4">
