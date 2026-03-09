@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { AlertTriangle, MessageSquare } from "lucide-react";
+import { AlertTriangle } from "lucide-react";
 
 export function ReportProfileButton({ memberName, memberId }: { memberName: string, memberId: string }) {
   const handleReport = () => {
@@ -9,7 +9,7 @@ export function ReportProfileButton({ memberName, memberId }: { memberName: stri
       new CustomEvent("open-contact-form", {
         detail: {
           subject: "Report Fake Profile",
-          message: `I am contacting admin regarding the profile of ${memberName} (Profile ID: ${memberId}). \n\nReason for report/message:\n`,
+          message: `I am reporting the profile of ${memberName} (Profile ID: ${memberId}). \n\nReason for report:\n`,
         },
       })
     );
@@ -17,12 +17,13 @@ export function ReportProfileButton({ memberName, memberId }: { memberName: stri
 
   return (
     <Button 
-      variant="outline" 
+      variant="destructive" 
+      size="sm"
       onClick={handleReport}
-      className="gap-2 font-bold text-slate-700 hover:bg-slate-100 rounded-xl bg-white border-slate-200 shadow-sm"
+      className="gap-2 font-bold rounded-xl mt-4 w-full sm:w-auto shadow-sm"
     >
-      <AlertTriangle className="w-4 h-4 text-amber-500" />
-      Report / Message Admin about Profile
+      <AlertTriangle className="w-4 h-4" />
+      Report Profile to Admin
     </Button>
   );
 }

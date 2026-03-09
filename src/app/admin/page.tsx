@@ -2,10 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { AdminApprovalActions } from "@/components/admin/AdminApprovalActions"; // Corrected import path
+import { AdminApprovalActions } from "@/components/admin/AdminApprovalActions"; 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Search, ExternalLink, LogOut, MessageSquare, Megaphone, Star } from "lucide-react";
+import { Search, ExternalLink, LogOut, Megaphone, Star } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import Link from "next/link";
 import { toggleFeaturedStatus } from "./action";
@@ -58,11 +58,6 @@ export default function AdminPage({
   const handleSignOut = async () => {
     await supabase.auth.signOut();
     window.location.replace("/auth/login");
-  };
-
-  const deleteMessage = async (id: string) => {
-    await supabase.from("contact_messages").delete().eq("id", id);
-    setMessages(messages.filter(m => m.id !== id));
   };
 
   if (loading) {
@@ -118,7 +113,12 @@ export default function AdminPage({
                            )}
                         </div>
                         <div className="text-xs text-slate-500 mt-1">{profile.email}</div>
-                        <div className="text-xs text-slate-600 mt-2 mb-3">{profile.profession || "No Profession"}</div>
+                        <div className="flex items-center gap-2 mt-2 mb-3">
+                          <span className="text-xs text-slate-600">{profile.profession || "No Profession"}</span>
+                          {profile.wants_to_be_featured && !profile.featured_in_presentation && (
+                            <Badge variant="outline" className="bg-amber-50 text-amber-600 border-amber-200 text-[9px] uppercase tracking-wider">Feature Requested</Badge>
+                          )}
+                        </div>
                         <Link href={`/directory/${profile.slug || profile.id}`} target="_blank" className="inline-flex items-center gap-1 text-xs font-semibold text-blue-600 bg-blue-50 px-2 py-1 rounded">
                           <ExternalLink className="w-3 h-3" /> View Profile
                         </Link>

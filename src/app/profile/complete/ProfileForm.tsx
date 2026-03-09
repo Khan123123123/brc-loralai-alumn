@@ -3,12 +3,13 @@
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { updateProfile } from "../actions";
+import { createClient } from "@/lib/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { UserCircle2, Briefcase, MapPin, GraduationCap, Lock, Plus, Trash2, ArrowRight, ArrowLeft, CheckCircle2, Award, Loader2, ShieldCheck, BookOpen, EyeOff } from "lucide-react";
+import { UserCircle2, Briefcase, MapPin, GraduationCap, Lock, Plus, Trash2, ArrowRight, ArrowLeft, CheckCircle2, Award, Loader2, ShieldCheck, BookOpen, EyeOff, Star } from "lucide-react";
 
 const DISTRICTS = [
   "Quetta", "Loralai", "Zhob", "Musakhel", "Barkhan", "Kohlu", "Dera Bugti", "Sibi", 
@@ -55,8 +56,11 @@ interface ProfileFormProps {
 
 export default function ProfileForm({ profile, answers, isVerified }: ProfileFormProps) {
   const router = useRouter();
+  const supabase = createClient();
   const [step, setStep] = useState<number>(1);
   const [isSaving, setIsSaving] = useState<boolean>(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState(profile.profile_photo_url || "");
   const totalSteps = 4;
 
   const [accountType, setAccountType] = useState<string>(profile.account_type || "Alumni");
@@ -67,6 +71,7 @@ export default function ProfileForm({ profile, answers, isVerified }: ProfileFor
   const isPhoneHiddenInDB = profile.show_phone === false || profile.show_phone_publicly === false;
   const [hidePhone, setHidePhone] = useState<boolean>(isPhoneHiddenInDB);
   const [mentor, setMentor] = useState<boolean>(!!profile.available_for_mentoring);
+  const [wantsFeatured, setWantsFeatured] = useState<boolean>(!!profile.wants_to_be_featured);
 
   let defaultLanguages = Array.isArray(profile.languages) ? profile.languages.join(", ") : (profile.languages || "");
   let defaultSubjects = Array.isArray(profile.subjects_taught) ? profile.subjects_taught.join(", ") : (profile.subjects_taught || "");
@@ -92,6 +97,55 @@ export default function ProfileForm({ profile, answers, isVerified }: ProfileFor
   };
   const nextStep = () => setStep((s) => Math.min(s + 1, totalSteps));
   const prevStep = () => setStep((s) => Math.max(s - 1, 1));
+
+  const compressImage = (file: File): Promise<File> => {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = (event) => {
+        const img = new Image();
+        img.src = event.target?.result as string;
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const MAX_WIDTH = 400;
+          const scaleSize = MAX_WIDTH / img.width;
+          canvas.width = MAX_WIDTH;
+          canvas.height = img.height * scaleSize;
+          const ctx = canvas.getContext('2d');
+          ctx?.drawImage(img, 0, 0, canvas.width, canvas.height);
+          canvas.toBlob((blob) => {
+            if (blob) resolve(new File([blob], file.name, { type: 'image/jpeg' }));
+          }, 'image/jpeg', 0.8);
+        };
+      };
+    });
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    try {
+      setUploadingImage(true);
+      if (!e.target.files || e.target.files.length === 0) return;
+      const file = e.target.files[0];
+      
+      const compressedFile = await compressImage(file);
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Math.random()}.${fileExt}`;
+      const filePath = `${profile.id}/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(filePath, compressedFile, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      const { data } = supabase.storage.from('avatars').getPublicUrl(filePath);
+      setAvatarUrl(data.publicUrl);
+    } catch (error) {
+      alert('Error uploading image!');
+    } finally {
+      setUploadingImage(false);
+    }
+  };
 
   const handleSubmit = async (e: any) => {
     e.preventDefault();
@@ -122,6 +176,8 @@ export default function ProfileForm({ profile, answers, isVerified }: ProfileFor
         <input type="hidden" name="higher_education" value={JSON.stringify(edu)} />
         <input type="hidden" name="show_phone" value={hidePhone ? "off" : "on"} />
         <input type="hidden" name="available_for_mentoring" value={mentor ? "on" : "off"} />
+        <input type="hidden" name="wants_to_be_featured" value={wantsFeatured ? "on" : "off"} />
+        <input type="hidden" name="profile_photo_url" value={avatarUrl} />
 
         {/* STEP PROGRESS BAR */}
         <div className="flex items-center justify-between mb-8 relative">
@@ -159,9 +215,18 @@ export default function ProfileForm({ profile, answers, isVerified }: ProfileFor
                   <option value="Student">Current Student</option>
                 </select>
               </div>
+              
               <div className="space-y-2 sm:col-span-2">
-                <Label>Profile Picture URL</Label>
-                <Input name="profile_photo_url" defaultValue={profile.profile_photo_url || ""} onKeyDown={handleKeyDown} placeholder="https://..." className="rounded-xl bg-slate-50" />
+                <Label>Profile Picture</Label>
+                <div className="flex items-center gap-4">
+                  <div className="w-16 h-16 rounded-2xl bg-slate-100 border overflow-hidden shrink-0">
+                    {avatarUrl ? <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover"/> : <UserCircle2 className="w-full h-full text-slate-300 p-2" />}
+                  </div>
+                  <div className="flex-1">
+                    <Input type="file" accept="image/*" onChange={handleImageUpload} disabled={uploadingImage} className="bg-slate-50" />
+                    {uploadingImage && <span className="text-xs text-blue-600 mt-1 flex items-center gap-1"><Loader2 className="w-3 h-3 animate-spin"/> Uploading & Compressing...</span>}
+                  </div>
+                </div>
               </div>
 
               {isFaculty && (
@@ -237,8 +302,26 @@ export default function ProfileForm({ profile, answers, isVerified }: ProfileFor
               </div>
 
               <div className="space-y-2 sm:col-span-2">
-                <Label>{isFaculty ? "Life / Career After BRC" : "Life After BRC (Achievements)"}</Label>
+                <Label>{isFaculty ? "Life / Career After BRC" : "Life After BRC"}</Label>
                 <Textarea name="achievements_after" defaultValue={profile.achievements_after || ""} placeholder="What have you accomplished since?" rows={3} className="rounded-xl bg-slate-50 resize-none" />
+              </div>
+
+              {/* FEATURED ALUMNI NOMINATION SECTION */}
+              <div className="space-y-4 sm:col-span-2 pt-4 border-t border-slate-100">
+                <label className="flex items-center gap-3 p-4 rounded-xl border border-amber-200 bg-amber-50 cursor-pointer hover:bg-amber-100 transition-colors">
+                  <input type="checkbox" checked={wantsFeatured} onChange={(e) => setWantsFeatured(e.target.checked)} className="w-5 h-5 rounded text-amber-600 focus:ring-amber-600 border-amber-300" />
+                  <div>
+                    <div className="font-bold text-amber-900 flex items-center gap-2"><Star className="w-4 h-4"/> Nominate me for Featured Alumni</div>
+                    <div className="text-xs text-amber-700/80">Check this if you want your profile highlighted in the Featured tab. Provide details of all your achievements below.</div>
+                  </div>
+                </label>
+
+                {wantsFeatured && (
+                  <div className="space-y-2 animate-in fade-in zoom-in-95">
+                    <Label className="text-amber-900 font-bold">Detailed Achievements for Feature Consideration *</Label>
+                    <Textarea name="achievements" defaultValue={profile.achievements || ""} required={wantsFeatured} placeholder="Please list your major awards, career milestones, and contributions..." rows={4} className="rounded-xl bg-white border-amber-200 resize-none" />
+                  </div>
+                )}
               </div>
 
               <div className="space-y-2 sm:col-span-2">

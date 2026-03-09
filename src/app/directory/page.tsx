@@ -9,7 +9,7 @@ import { getAvatarFallback } from "@/lib/utils/profile";
 import { ContactBox } from "@/components/ContactBox";
 import {
   Briefcase, Building, GraduationCap, MapPin, Search, ShieldCheck,
-  UserCircle2, Users, Lock, AlertTriangle, Calendar, Megaphone, BookOpen, Globe2
+  UserCircle2, Users, Lock, AlertTriangle, Calendar, Megaphone, BookOpen, Globe2, Star
 } from "lucide-react";
 
 export default async function DirectoryPage({
@@ -31,6 +31,7 @@ export default async function DirectoryPage({
   const isVerified = hasFullAccess(viewerProfile);
   
   const search = (searchParams.search as string) || "";
+  const tabFilter = (searchParams.tab as string) || "all";
   const yearFilter = (searchParams.year as string) || "all";
   const entryYearFilter = (searchParams.entry_year as string) || "all";
   const accountTypeFilter = (searchParams.account_type as string) || "all";
@@ -41,11 +42,9 @@ export default async function DirectoryPage({
 
   const PAGE_SIZE = 24;
   const page = parseInt((searchParams.page as string) || "0");
-  const from = page * PAGE_SIZE;
-  const to = from + PAGE_SIZE - 1;
+  const from = 0; // Fixed: cumulative load from 0
+  const to = (page + 1) * PAGE_SIZE - 1;
 
-  // REMOVED THE DIRECTORY FILTER COMPLETELY.
-  // EVERYONE WHO SIGNS UP IS VISIBLE AS REQUESTED. Fixes 0 members instantly.
   let query = supabase.from("profiles")
     .select("*", { count: "exact" })
     .neq("id", user.id)
@@ -56,6 +55,7 @@ export default async function DirectoryPage({
     query = query.or(`full_name.ilike.%${search}%,profession.ilike.%${search}%,current_organization.ilike.%${search}%,industry.ilike.%${search}%,current_city.ilike.%${search}%`);
   }
   
+  if (tabFilter === "featured") query = query.eq("featured_in_presentation", true);
   if (yearFilter !== "all") query = query.eq("graduation_year", parseInt(yearFilter));
   if (entryYearFilter !== "all") query = query.eq("entry_year", parseInt(entryYearFilter));
   if (accountTypeFilter !== "all") query = query.eq("account_type", accountTypeFilter);
@@ -69,7 +69,6 @@ export default async function DirectoryPage({
   const { data: rawProfiles, count } = await query;
   const profiles = rawProfiles || [];
 
-  // Applied same logic to stat fetcher to guarantee exact numbers
   const { data: filterProfiles } = await supabase
     .from("profiles")
     .select("graduation_year, entry_year, current_country, current_city, industry, account_type");
@@ -173,10 +172,21 @@ export default async function DirectoryPage({
         </div>
       )}
 
+      {/* DIRECTORY TABS (NEW) */}
+      <div className="flex gap-6 mb-6 border-b border-slate-200 px-2">
+        <Link href={`/directory?tab=all`} className={`pb-3 text-sm font-bold border-b-2 transition-colors ${tabFilter !== 'featured' ? 'border-primary text-primary' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>
+          All Alumni
+        </Link>
+        <Link href={`/directory?tab=featured`} className={`pb-3 text-sm font-bold border-b-2 transition-colors ${tabFilter === 'featured' ? 'border-primary text-primary' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>
+          <span className="flex items-center gap-1.5"><Star className="w-4 h-4"/> Featured Koharians</span>
+        </Link>
+      </div>
+
       {/* SEARCH FILTERS */}
       <Card className="mb-8 rounded-[2rem] border border-slate-200 shadow-md overflow-hidden bg-white/80 backdrop-blur-sm">
         <CardContent className="pt-8">
           <form className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
+            <input type="hidden" name="tab" value={tabFilter} />
             <div className="md:col-span-2 lg:col-span-5 relative">
               <Search className="absolute left-4 top-3.5 h-5 w-5 text-slate-400" />
               <Input name="search" defaultValue={search} placeholder="Search by name, profession, or company..." className="pl-12 h-12 rounded-2xl border-slate-200 shadow-inner bg-slate-50/50" />
@@ -249,7 +259,7 @@ export default async function DirectoryPage({
                 <div className={`absolute top-0 left-0 w-full h-1.5 opacity-0 group-hover:opacity-100 transition-opacity ${isFaculty ? 'bg-indigo-500' : 'bg-primary'}`}></div>
                 <CardContent className="p-6 flex-1 flex flex-col">
                   
-                  {/* BASIC PUBLIC INFO (Always Visible) */}
+                  {/* BASIC PUBLIC INFO */}
                   <div className="flex gap-4 mb-4">
                     <div className={`flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl text-xl font-bold text-white shadow-md transition-transform group-hover:scale-105 overflow-hidden ${isFaculty ? 'bg-gradient-to-br from-indigo-500 to-purple-600' : 'bg-gradient-to-br from-primary to-secondary'}`}>
                       {profile.profile_photo_url ? (
@@ -259,7 +269,10 @@ export default async function DirectoryPage({
                       )}
                     </div>
                     <div className="min-w-0">
-                      <h3 className={`font-extrabold text-xl truncate transition-colors ${isFaculty ? 'group-hover:text-indigo-600' : 'group-hover:text-primary'}`}>{profile.full_name}</h3>
+                      <div className="flex items-center gap-1.5">
+                        <h3 className={`font-extrabold text-xl truncate transition-colors ${isFaculty ? 'group-hover:text-indigo-600' : 'group-hover:text-primary'}`}>{profile.full_name}</h3>
+                        {profile.featured_in_presentation && <Star className="w-4 h-4 fill-amber-300 text-amber-400 shrink-0" />}
+                      </div>
                       <div className="flex flex-wrap gap-2 mt-1">
                         {isFaculty ? (
                            <Badge variant="outline" className="bg-indigo-50 text-indigo-700 border-indigo-200 uppercase text-[9px] font-extrabold tracking-widest"><BookOpen className="w-3 h-3 mr-1"/> Faculty</Badge>
@@ -279,7 +292,6 @@ export default async function DirectoryPage({
                     </div>
                   ) : (
                     <div className="space-y-3.5 text-sm text-slate-600 border-t pt-4 mt-auto">
-                      {/* Half-profile view: show position and location, but lock organization */}
                       <div className="flex items-start gap-3"><Briefcase className={`w-4 h-4 mt-0.5 shrink-0 ${isFaculty ? 'text-indigo-400' : 'text-slate-400'}`} /><span className="font-semibold text-slate-800 leading-tight">{profile.current_position || (isFaculty ? "Faculty Member" : "Alumnus")}</span></div>
                       <div className="flex items-start gap-3"><MapPin className="w-4 h-4 text-secondary mt-0.5 shrink-0" /><span className="leading-tight font-medium">{profile.current_city}{profile.current_country ? `, ${profile.current_country}` : ""}</span></div>
                       
@@ -296,10 +308,10 @@ export default async function DirectoryPage({
         })}
       </div>
 
-      {/* PAGINATION */}
-      {count && count > PAGE_SIZE && (
+      {/* CUMULATIVE PAGINATION - KEEPS RESULTS AND ADDS MORE */}
+      {count && count > PAGE_SIZE && to < count && (
         <div className="flex justify-center border-t pt-8 mb-12 border-slate-100">
-           <Link href={`/directory?search=${search}&page=${page + 1}`} className="rounded-full bg-slate-900 text-white px-10 py-3.5 text-sm font-extrabold shadow-xl hover:scale-105 hover:bg-slate-800 transition-all">
+           <Link href={`/directory?search=${search}&tab=${tabFilter}&year=${yearFilter}&country=${countryFilter}&city=${cityFilter}&industry=${industryFilter}&page=${page + 1}`} className="rounded-full bg-slate-900 text-white px-10 py-3.5 text-sm font-extrabold shadow-xl hover:scale-105 hover:bg-slate-800 transition-all">
              Load More Results
            </Link>
         </div>

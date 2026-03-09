@@ -5,7 +5,7 @@ import { hasFullAccess } from "@/lib/utils/access";
 import { getAvatarFallback, getVisibleContactFields } from "@/lib/utils/profile";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ReportProfileButton } from "@/components/ReportProfileButton"; // <-- Imported Component
+import { ReportProfileButton } from "@/components/ReportProfileButton"; 
 import {
   Award, BookOpen, Briefcase, Building, GraduationCap, Linkedin, Phone,
   Lock, Mail, MapPin, ShieldCheck, Globe, Home, Star
@@ -49,9 +49,6 @@ export default async function DirectoryMemberPage({ params }: { params: { slug: 
         <Link href="/directory" className="text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors">
           ← Back to directory
         </Link>
-        
-        {/* ADDED REPORT BUTTON */}
-        <ReportProfileButton memberName={member.full_name} memberId={member.id} />
       </div>
 
       {/* HEADER HERO AREA */}
@@ -59,8 +56,12 @@ export default async function DirectoryMemberPage({ params }: { params: { slug: 
         <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl pointer-events-none"></div>
         <div className="relative flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
           <div className="flex items-start gap-5">
-            <div className="flex h-24 w-24 items-center justify-center rounded-3xl bg-white/10 backdrop-blur-sm text-3xl font-bold text-white shadow-inner border border-white/20">
-              {getAvatarFallback(member)}
+            <div className="flex h-24 w-24 items-center justify-center rounded-3xl bg-white/10 backdrop-blur-sm text-3xl font-bold text-white shadow-inner border border-white/20 overflow-hidden">
+              {member.profile_photo_url ? (
+                <img src={member.profile_photo_url} alt={member.full_name} className="w-full h-full object-cover" />
+              ) : (
+                getAvatarFallback(member)
+              )}
             </div>
             <div>
               <div className="flex items-center gap-3">
@@ -236,6 +237,13 @@ export default async function DirectoryMemberPage({ params }: { params: { slug: 
                  </CardContent>
                </Card>
             )}
+
+            {/* Profile Reporting Button */}
+            <div className="pt-4 border-t border-slate-200 mt-8">
+              <ReportProfileButton memberName={member.full_name} memberId={member.id} />
+              <p className="text-xs text-slate-500 mt-2">Reports are sent directly to the admin team and are kept strictly confidential.</p>
+            </div>
+            
           </div>
 
           <div className="space-y-6">

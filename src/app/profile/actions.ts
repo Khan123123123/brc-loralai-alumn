@@ -52,17 +52,18 @@ export async function updateProfile(formData: FormData) {
 
     const accountType = getString("account_type") || "Alumni";
 
-    // Clean, direct mapping to your guaranteed database columns!
     const updates: any = {
       id: user.id, 
       email: user.email, 
-full_name: getString("full_name") || currentProfile?.full_name || user.user_metadata?.full_name || "Koharian",      bio: getString("bio"),
+      full_name: getString("full_name") || currentProfile?.full_name || user.user_metadata?.full_name || "Koharian",      
+      bio: getString("bio"),
       account_type: accountType,
       profile_photo_url: getString("profile_photo_url"),
       
       entry_year: getInt("entry_year"),
       graduation_year: getInt("graduation_year"),
       
+      achievements: getString("achievements"),
       achievements_brc: getString("achievements_brc"),
       achievements_after: getString("achievements_after"),
       message_for_koharians: getString("message_for_koharians"),
@@ -88,12 +89,12 @@ full_name: getString("full_name") || currentProfile?.full_name || user.user_meta
       twitter_url: getString("twitter_url"),
       website_url: getString("website_url"),
       
-      // Removed the redundant "show_email" and "show_phone" to stop the schema crashes
       show_phone_publicly: formData.get("show_phone") === "on",
       show_email_publicly: true,
       show_linkedin_publicly: true,
       show_in_directory: true, 
       available_for_mentoring: formData.get("available_for_mentoring") === "on",
+      wants_to_be_featured: formData.get("wants_to_be_featured") === "on",
       
       is_profile_complete: true,
       updated_at: new Date().toISOString(),
@@ -125,7 +126,6 @@ full_name: getString("full_name") || currentProfile?.full_name || user.user_meta
       }
     }
 
-    // Bulletproof Upsert
     const { error } = await supabase.from("profiles").upsert(updates, { onConflict: "id" });
 
     if (error) {

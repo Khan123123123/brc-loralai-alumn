@@ -94,6 +94,7 @@ export interface Profile {
 
   // Settings & Preferences
   featured_in_presentation?: boolean | null;
+  wants_to_be_featured?: boolean | null;
   available_for_mentoring?: boolean | null;
   show_phone?: boolean | null;
   show_phone_publicly?: boolean | null;
