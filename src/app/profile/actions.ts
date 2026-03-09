@@ -53,29 +53,27 @@ export async function updateProfile(formData: FormData) {
 
     const accountType = getString("account_type") || "Alumni";
 
-    // Build the core updates payload matching database.ts exactly
+    // Build the core updates payload
     const updates: any = {
+      id: user.id, // Mandatory for Upsert
+      email: user.email, // Mandatory for Upsert
       full_name: getString("full_name"),
       bio: getString("bio"),
       account_type: accountType,
       profile_photo_url: getString("profile_photo_url"),
       
-      // Shared Timeframe Fields (Used as Joining/Leaving for Faculty)
       entry_year: getInt("entry_year"),
       graduation_year: getInt("graduation_year"),
       
-      // Engaging BRC Fields
       achievements_brc: getString("achievements_brc"),
       achievements_after: getString("achievements_after"),
       message_for_koharians: getString("message_for_koharians"),
       
-      // Location
       current_city: getString("current_city"),
       current_country: getString("current_country"),
       home_city: getString("home_city"),
       home_district: getString("home_district"),
       
-      // Professional
       profession: getString("profession"),
       industry: getString("industry"),
       current_position: getString("current_position"),
@@ -83,18 +81,17 @@ export async function updateProfile(formData: FormData) {
       employment_status: getString("employment_status"),
       experience_years: getInt("experience_years"),
       
-      // Arrays
       job_history,
       higher_education,
       languages,
       
-      // Contact & Social
       phone: getString("phone_number"), 
+      phone_number: getString("phone_number"), // Saving to both to be safe with your DB schema
       linkedin_url: getString("linkedin_url"),
       twitter_url: getString("twitter_url"),
       website_url: getString("website_url"),
       
-      // PRIVACY SETTINGS: Hardcoded to true as requested, only phone is toggleable
+      // PRIVACY SETTINGS: Phone is toggleable, everything else visible
       show_phone: formData.get("show_phone") === "on",
       show_phone_publicly: formData.get("show_phone") === "on",
       show_email: true,
@@ -107,13 +104,12 @@ export async function updateProfile(formData: FormData) {
       updated_at: new Date().toISOString(),
     };
 
-    // Only apply student-specific fields if they are NOT faculty
     if (accountType !== "Faculty") {
       updates.roll_number = getString("roll_number");
       updates.regular_self_finance = getString("regular_self_finance");
       updates.student_type = getString("student_type");
       updates.favorite_teacher = getString("favorite_teacher");
-      updates.subjects_taught = null; // Clear out subjects if they switched back to Student
+      updates.subjects_taught = null;
     } else {
       updates.subjects_taught = subjects_taught;
       updates.roll_number = null;
@@ -134,7 +130,9 @@ export async function updateProfile(formData: FormData) {
       }
     }
 
-    const { error } = await supabase.from("profiles").update(updates).eq("id", user.id);
+    // FIX: Use UPSERT. If the profile row was missing, this forces it to be created.
+    // If it exists, it safely updates it. This prevents the silent saving failures!
+    const { error } = await supabase.from("profiles").upsert(updates, { onConflict: "id" });
 
     if (error) {
       console.error("Supabase Error:", error.message);
