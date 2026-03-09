@@ -64,10 +64,8 @@ export default function ProfileForm({ profile, answers, isVerified }: ProfileFor
   const [jobs, setJobs] = useState<any[]>(safeParseArray(profile.job_history));
   const [edu, setEdu] = useState<any[]>(safeParseArray(profile.higher_education));
   
-  // Privacy State: Phone is VISIBLE by default. hidePhone = true means it gets hidden.
   const isPhoneHiddenInDB = profile.show_phone === false || profile.show_phone_publicly === false;
   const [hidePhone, setHidePhone] = useState<boolean>(isPhoneHiddenInDB);
-  
   const [mentor, setMentor] = useState<boolean>(!!profile.available_for_mentoring);
 
   let defaultLanguages = Array.isArray(profile.languages) ? profile.languages.join(", ") : (profile.languages || "");
@@ -95,7 +93,7 @@ export default function ProfileForm({ profile, answers, isVerified }: ProfileFor
   const nextStep = () => setStep((s) => Math.min(s + 1, totalSteps));
   const prevStep = () => setStep((s) => Math.max(s - 1, 1));
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: any) => {
     e.preventDefault();
     setIsSaving(true);
     const formData = new FormData(e.currentTarget);
@@ -109,7 +107,7 @@ export default function ProfileForm({ profile, answers, isVerified }: ProfileFor
     }
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+  const handleKeyDown = (e: any) => {
     if (e.key === 'Enter') {
       e.preventDefault();
     }
@@ -143,8 +141,8 @@ export default function ProfileForm({ profile, answers, isVerified }: ProfileFor
         </div>
 
         {/* STEP 1: BASIC INFO */}
-        {step === 1 && (
-          <Card className="rounded-3xl shadow-sm border-slate-200 animate-in fade-in slide-in-from-right-8 duration-500">
+        <div className={step === 1 ? "block animate-in fade-in slide-in-from-right-8 duration-500" : "hidden"}>
+          <Card className="rounded-3xl shadow-sm border-slate-200">
             <CardHeader className="bg-slate-50/50 border-b rounded-t-3xl pb-4">
               <CardTitle className="flex items-center gap-2 text-lg"><UserCircle2 className="w-5 h-5 text-primary" /> Step 1: Basic Information</CardTitle>
             </CardHeader>
@@ -183,11 +181,11 @@ export default function ProfileForm({ profile, answers, isVerified }: ProfileFor
               </div>
             </CardContent>
           </Card>
-        )}
+        </div>
 
         {/* STEP 2: DYNAMIC BRC DETAILS */}
-        {step === 2 && (
-          <Card className="rounded-3xl shadow-sm border-slate-200 animate-in fade-in slide-in-from-right-8 duration-500">
+        <div className={step === 2 ? "block animate-in fade-in slide-in-from-right-8 duration-500" : "hidden"}>
+          <Card className="rounded-3xl shadow-sm border-slate-200">
             <CardHeader className="bg-slate-50/50 border-b rounded-t-3xl pb-4">
               <CardTitle className="flex items-center gap-2 text-lg">
                 <GraduationCap className="w-5 h-5 text-primary" /> 
@@ -250,11 +248,11 @@ export default function ProfileForm({ profile, answers, isVerified }: ProfileFor
               
             </CardContent>
           </Card>
-        )}
+        </div>
 
         {/* STEP 3: PROFESSIONAL & DROPDOWNS */}
-        {step === 3 && (
-          <Card className="rounded-3xl shadow-sm border-slate-200 animate-in fade-in slide-in-from-right-8 duration-500">
+        <div className={step === 3 ? "block animate-in fade-in slide-in-from-right-8 duration-500" : "hidden"}>
+          <Card className="rounded-3xl shadow-sm border-slate-200">
             <CardHeader className="bg-slate-50/50 border-b rounded-t-3xl pb-4">
               <CardTitle className="flex items-center gap-2 text-lg"><Briefcase className="w-5 h-5 text-primary" /> Step 3: Professional & Education</CardTitle>
             </CardHeader>
@@ -334,72 +332,70 @@ export default function ProfileForm({ profile, answers, isVerified }: ProfileFor
               </div>
             </CardContent>
           </Card>
-        )}
+        </div>
 
         {/* STEP 4: CONTACT, LOCATION & PRIVACY */}
-        {step === 4 && (
-          <div className="space-y-8 animate-in fade-in slide-in-from-right-8 duration-500">
-            <Card className="rounded-3xl shadow-sm border-slate-200">
-              <CardHeader className="bg-slate-50/50 border-b rounded-t-3xl pb-4">
-                <CardTitle className="flex items-center gap-2 text-lg"><MapPin className="w-5 h-5 text-primary" /> Step 4: Location & Contact Settings</CardTitle>
+        <div className={step === 4 ? "block animate-in fade-in slide-in-from-right-8 duration-500" : "hidden"}>
+          <Card className="rounded-3xl shadow-sm border-slate-200">
+            <CardHeader className="bg-slate-50/50 border-b rounded-t-3xl pb-4">
+              <CardTitle className="flex items-center gap-2 text-lg"><MapPin className="w-5 h-5 text-primary" /> Step 4: Location & Contact Settings</CardTitle>
+            </CardHeader>
+            <CardContent className="pt-6 grid gap-6 sm:grid-cols-2">
+              <div className="space-y-2"><Label>Current City</Label><Input name="current_city" defaultValue={profile.current_city || ""} onKeyDown={handleKeyDown} className="rounded-xl bg-slate-50" /></div>
+              <div className="space-y-2"><Label>Current Country</Label><Input name="current_country" defaultValue={profile.current_country || ""} onKeyDown={handleKeyDown} className="rounded-xl bg-slate-50" /></div>
+              <div className="space-y-2"><Label>Home City</Label><Input name="home_city" defaultValue={profile.home_city || ""} onKeyDown={handleKeyDown} className="rounded-xl bg-slate-50" /></div>
+              
+              <div className="space-y-2">
+                <Label>Home District (Origin)</Label>
+                <select name="home_district" defaultValue={profile.home_district || ""} className="w-full h-10 px-3 rounded-xl border border-slate-200 text-sm bg-slate-50 font-medium">
+                   <option value="">Select District...</option>
+                   {DISTRICTS.map(d => <option key={d} value={d}>{d}</option>)}
+                </select>
+              </div>
+              
+              <div className="space-y-2"><Label>Phone Number</Label><Input name="phone_number" defaultValue={profile.phone || profile.phone_number || ""} onKeyDown={handleKeyDown} type="tel" className="rounded-xl bg-slate-50" /></div>
+              <div className="space-y-2"><Label>LinkedIn URL</Label><Input name="linkedin_url" defaultValue={profile.linkedin_url || ""} type="url" onKeyDown={handleKeyDown} className="rounded-xl bg-slate-50" /></div>
+              <div className="space-y-2"><Label>Twitter/X URL</Label><Input name="twitter_url" defaultValue={profile.twitter_url || ""} type="url" onKeyDown={handleKeyDown} className="rounded-xl bg-slate-50" /></div>
+              <div className="space-y-2"><Label>Personal Website</Label><Input name="website_url" defaultValue={profile.website_url || ""} type="url" onKeyDown={handleKeyDown} className="rounded-xl bg-slate-50" /></div>
+
+              <div className="sm:col-span-2 border-t pt-6 mt-2 space-y-4">
+                 <Label className="text-base font-extrabold flex items-center gap-2"><ShieldCheck className="w-5 h-5 text-primary"/> Privacy Settings</Label>
+                 
+                 <label className="flex items-center gap-3 p-4 rounded-xl border border-rose-200 bg-rose-50 cursor-pointer hover:bg-rose-100 transition-colors">
+                    <input type="checkbox" checked={hidePhone} onChange={(e) => setHidePhone(e.target.checked)} className="w-5 h-5 rounded text-rose-600 focus:ring-rose-600 border-rose-300" />
+                    <div>
+                      <div className="font-bold text-rose-900 flex items-center gap-2"><EyeOff className="w-4 h-4"/> Hide my Phone Number</div>
+                      <div className="text-xs text-rose-700/80 mt-0.5">Check this box to hide your phone number from the directory. By default, it is visible to verified members.</div>
+                    </div>
+                 </label>
+
+                 <label className="flex items-center gap-3 p-4 rounded-xl border border-emerald-200 bg-emerald-50 cursor-pointer hover:bg-emerald-100 transition-colors mt-4">
+                    <input type="checkbox" checked={mentor} onChange={(e) => setMentor(e.target.checked)} className="w-5 h-5 rounded text-emerald-600 focus:ring-emerald-600 border-emerald-300" />
+                    <div>
+                      <div className="font-bold text-emerald-900">I am available to mentor junior alumni</div>
+                      <div className="text-xs text-emerald-700/80">Adds a badge to your profile so students can reach out.</div>
+                    </div>
+                 </label>
+              </div>
+            </CardContent>
+          </Card>
+
+          {!isVerified && (
+            <Card className="rounded-3xl shadow-sm border-amber-200 bg-amber-50/30 mt-8">
+              <CardHeader className="border-b border-amber-100 pb-4">
+                <CardTitle className="flex items-center gap-2 text-lg text-amber-900"><Lock className="w-5 h-5" /> Verification Questions</CardTitle>
+                <CardDescription className="text-amber-800 font-medium">Please answer at least two to help us verify you.</CardDescription>
               </CardHeader>
-              <CardContent className="pt-6 grid gap-6 sm:grid-cols-2">
-                <div className="space-y-2"><Label>Current City</Label><Input name="current_city" defaultValue={profile.current_city || ""} onKeyDown={handleKeyDown} className="rounded-xl bg-slate-50" /></div>
-                <div className="space-y-2"><Label>Current Country</Label><Input name="current_country" defaultValue={profile.current_country || ""} onKeyDown={handleKeyDown} className="rounded-xl bg-slate-50" /></div>
-                <div className="space-y-2"><Label>Home City</Label><Input name="home_city" defaultValue={profile.home_city || ""} onKeyDown={handleKeyDown} className="rounded-xl bg-slate-50" /></div>
-                
-                <div className="space-y-2">
-                  <Label>Home District (Origin)</Label>
-                  <select name="home_district" defaultValue={profile.home_district || ""} className="w-full h-10 px-3 rounded-xl border border-slate-200 text-sm bg-slate-50 font-medium">
-                     <option value="">Select District...</option>
-                     {DISTRICTS.map(d => <option key={d} value={d}>{d}</option>)}
-                  </select>
-                </div>
-                
-                <div className="space-y-2"><Label>Phone Number</Label><Input name="phone_number" defaultValue={profile.phone || profile.phone_number || ""} onKeyDown={handleKeyDown} type="tel" className="rounded-xl bg-slate-50" /></div>
-                <div className="space-y-2"><Label>LinkedIn URL</Label><Input name="linkedin_url" defaultValue={profile.linkedin_url || ""} type="url" onKeyDown={handleKeyDown} className="rounded-xl bg-slate-50" /></div>
-                <div className="space-y-2"><Label>Twitter/X URL</Label><Input name="twitter_url" defaultValue={profile.twitter_url || ""} type="url" onKeyDown={handleKeyDown} className="rounded-xl bg-slate-50" /></div>
-                <div className="space-y-2"><Label>Personal Website</Label><Input name="website_url" defaultValue={profile.website_url || ""} type="url" onKeyDown={handleKeyDown} className="rounded-xl bg-slate-50" /></div>
-
-                <div className="sm:col-span-2 border-t pt-6 mt-2 space-y-4">
-                   <Label className="text-base font-extrabold flex items-center gap-2"><ShieldCheck className="w-5 h-5 text-primary"/> Privacy Settings</Label>
-                   
-                   <label className="flex items-center gap-3 p-4 rounded-xl border border-rose-200 bg-rose-50 cursor-pointer hover:bg-rose-100 transition-colors">
-                      <input type="checkbox" checked={hidePhone} onChange={(e) => setHidePhone(e.target.checked)} className="w-5 h-5 rounded text-rose-600 focus:ring-rose-600 border-rose-300" />
-                      <div>
-                        <div className="font-bold text-rose-900 flex items-center gap-2"><EyeOff className="w-4 h-4"/> Hide my Phone Number</div>
-                        <div className="text-xs text-rose-700/80 mt-0.5">Check this box to hide your phone number from the directory. By default, it is visible to verified members.</div>
-                      </div>
-                   </label>
-
-                   <label className="flex items-center gap-3 p-4 rounded-xl border border-emerald-200 bg-emerald-50 cursor-pointer hover:bg-emerald-100 transition-colors mt-4">
-                      <input type="checkbox" checked={mentor} onChange={(e) => setMentor(e.target.checked)} className="w-5 h-5 rounded text-emerald-600 focus:ring-emerald-600 border-emerald-300" />
-                      <div>
-                        <div className="font-bold text-emerald-900">I am available to mentor junior alumni</div>
-                        <div className="text-xs text-emerald-700/80">Adds a badge to your profile so students can reach out.</div>
-                      </div>
-                   </label>
-                </div>
+              <CardContent className="pt-6 grid gap-5 sm:grid-cols-2">
+                <div className="space-y-2"><Label className="text-amber-900">House</Label><Input name="verify_houses" defaultValue={answers?.houses || ""} onKeyDown={handleKeyDown} className="rounded-xl bg-white border-amber-200" /></div>
+                <div className="space-y-2"><Label className="text-amber-900">Two Teachers</Label><Input name="verify_teachers" defaultValue={answers?.teachers || ""} onKeyDown={handleKeyDown} className="rounded-xl bg-white border-amber-200" /></div>
+                <div className="space-y-2"><Label className="text-amber-900">Hostel Staff</Label><Input name="verify_staff" defaultValue={answers?.staff || ""} onKeyDown={handleKeyDown} className="rounded-xl bg-white border-amber-200" /></div>
+                <div className="space-y-2"><Label className="text-amber-900">Principal</Label><Input name="verify_principal" defaultValue={answers?.principal || ""} onKeyDown={handleKeyDown} className="rounded-xl bg-white border-amber-200" /></div>
+                <div className="space-y-2 sm:col-span-2"><Label className="text-amber-900">BRC Est. Year</Label><Input name="verify_established_year" defaultValue={answers?.established_year || ""} onKeyDown={handleKeyDown} className="rounded-xl bg-white border-amber-200" /></div>
               </CardContent>
             </Card>
-
-            {!isVerified && (
-              <Card className="rounded-3xl shadow-sm border-amber-200 bg-amber-50/30">
-                <CardHeader className="border-b border-amber-100 pb-4">
-                  <CardTitle className="flex items-center gap-2 text-lg text-amber-900"><Lock className="w-5 h-5" /> Verification Questions</CardTitle>
-                  <CardDescription className="text-amber-800 font-medium">Please answer at least two to help us verify you.</CardDescription>
-                </CardHeader>
-                <CardContent className="pt-6 grid gap-5 sm:grid-cols-2">
-                  <div className="space-y-2"><Label className="text-amber-900">House</Label><Input name="verify_houses" defaultValue={answers?.houses || ""} onKeyDown={handleKeyDown} className="rounded-xl bg-white border-amber-200" /></div>
-                  <div className="space-y-2"><Label className="text-amber-900">Two Teachers</Label><Input name="verify_teachers" defaultValue={answers?.teachers || ""} onKeyDown={handleKeyDown} className="rounded-xl bg-white border-amber-200" /></div>
-                  <div className="space-y-2"><Label className="text-amber-900">Hostel Staff</Label><Input name="verify_staff" defaultValue={answers?.staff || ""} onKeyDown={handleKeyDown} className="rounded-xl bg-white border-amber-200" /></div>
-                  <div className="space-y-2"><Label className="text-amber-900">Principal</Label><Input name="verify_principal" defaultValue={answers?.principal || ""} onKeyDown={handleKeyDown} className="rounded-xl bg-white border-amber-200" /></div>
-                  <div className="space-y-2 sm:col-span-2"><Label className="text-amber-900">BRC Est. Year</Label><Input name="verify_established_year" defaultValue={answers?.established_year || ""} onKeyDown={handleKeyDown} className="rounded-xl bg-white border-amber-200" /></div>
-                </CardContent>
-              </Card>
-            )}
-          </div>
-        )}
+          )}
+        </div>
 
         {/* NAVIGATION BUTTONS */}
         <div className="flex items-center justify-between pt-6 border-t border-slate-200">
