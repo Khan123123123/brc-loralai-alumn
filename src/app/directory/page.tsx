@@ -44,15 +44,14 @@ export default async function DirectoryPage({
   const from = page * PAGE_SIZE;
   const to = from + PAGE_SIZE - 1;
 
-  // FIX: Explicitly allow true OR null to prevent SQL dropping null values
+  // REMOVED THE DIRECTORY FILTER COMPLETELY.
+  // EVERYONE WHO SIGNS UP IS VISIBLE AS REQUESTED. Fixes 0 members instantly.
   let query = supabase.from("profiles")
     .select("*", { count: "exact" })
     .neq("id", user.id)
-    .or("show_in_directory.eq.true,show_in_directory.is.null")
     .order("graduation_year", { ascending: false })
     .order("full_name", { ascending: true });
 
-  // Safe search using ONLY columns that exist in your database schema
   if (search) {
     query = query.or(`full_name.ilike.%${search}%,profession.ilike.%${search}%,current_organization.ilike.%${search}%,industry.ilike.%${search}%,current_city.ilike.%${search}%`);
   }
@@ -70,11 +69,10 @@ export default async function DirectoryPage({
   const { data: rawProfiles, count } = await query;
   const profiles = rawProfiles || [];
 
-  // FIX: Applied the same true OR null logic to the stats fetcher
+  // Applied same logic to stat fetcher to guarantee exact numbers
   const { data: filterProfiles } = await supabase
     .from("profiles")
-    .select("graduation_year, entry_year, current_country, current_city, industry, account_type")
-    .or("show_in_directory.eq.true,show_in_directory.is.null");
+    .select("graduation_year, entry_year, current_country, current_city, industry, account_type");
   
   const years = Array.from(new Set(filterProfiles?.map((p) => p.graduation_year).filter((v): v is number => typeof v === "number"))).sort((a, b) => b - a);
   const entryYears = Array.from(new Set(filterProfiles?.map((p) => p.entry_year).filter((v): v is number => typeof v === "number"))).sort((a, b) => b - a);
@@ -253,8 +251,12 @@ export default async function DirectoryPage({
                   
                   {/* BASIC PUBLIC INFO (Always Visible) */}
                   <div className="flex gap-4 mb-4">
-                    <div className={`flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl text-xl font-bold text-white shadow-md transition-transform group-hover:scale-105 ${isFaculty ? 'bg-gradient-to-br from-indigo-500 to-purple-600' : 'bg-gradient-to-br from-primary to-secondary'}`}>
-                      {getAvatarFallback(profile)}
+                    <div className={`flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl text-xl font-bold text-white shadow-md transition-transform group-hover:scale-105 overflow-hidden ${isFaculty ? 'bg-gradient-to-br from-indigo-500 to-purple-600' : 'bg-gradient-to-br from-primary to-secondary'}`}>
+                      {profile.profile_photo_url ? (
+                        <img src={profile.profile_photo_url} alt={profile.full_name} className="w-full h-full object-cover" />
+                      ) : (
+                        getAvatarFallback(profile)
+                      )}
                     </div>
                     <div className="min-w-0">
                       <h3 className={`font-extrabold text-xl truncate transition-colors ${isFaculty ? 'group-hover:text-indigo-600' : 'group-hover:text-primary'}`}>{profile.full_name}</h3>

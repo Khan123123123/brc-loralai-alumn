@@ -4,10 +4,10 @@ import { createClient } from "@/lib/supabase/server";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { getAccessLabel } from "@/lib/utils/access";
-import { DeleteAccountButton } from "@/components/DeleteAccountButton"; // <-- Imported Component
+import { DeleteAccountButton } from "@/components/DeleteAccountButton"; 
 import {
-  Award, Briefcase, Building, Edit, Eye, EyeOff, Globe, GraduationCap,
-  Linkedin, Lock, Mail, MapPin, Phone, ShieldCheck, UserCircle2, AlertTriangle
+  Award, Briefcase, Building, Edit, Globe, GraduationCap,
+  Linkedin, Lock, Mail, MapPin, Phone, ShieldCheck, UserCircle2, AlertTriangle, Eye
 } from "lucide-react";
 
 export default async function MyProfilePage() {
@@ -35,8 +35,12 @@ export default async function MyProfilePage() {
         <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl pointer-events-none"></div>
         <div className="relative flex flex-col gap-5 md:flex-row md:items-start md:justify-between z-10">
           <div className="flex items-start gap-5">
-            <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-3xl bg-white/20 backdrop-blur-sm text-3xl font-extrabold text-white shadow-inner border border-white/10">
-              {profile.full_name?.charAt(0)?.toUpperCase() || "A"}
+            <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-3xl bg-white/20 backdrop-blur-sm text-3xl font-extrabold text-white shadow-inner border border-white/10 overflow-hidden">
+               {profile.profile_photo_url ? (
+                 <img src={profile.profile_photo_url} alt={profile.full_name} className="w-full h-full object-cover" />
+               ) : (
+                 profile.full_name?.charAt(0)?.toUpperCase() || "A"
+               )}
             </div>
 
             <div>
@@ -69,10 +73,6 @@ export default async function MyProfilePage() {
             Edit Profile
           </Link>
         </div>
-
-        <p className="mt-6 max-w-2xl text-white/90 text-sm leading-relaxed relative z-10">
-          This is your personal dashboard. View your active profile details, private contact settings, and current directory visibility.
-        </p>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
@@ -94,7 +94,7 @@ export default async function MyProfilePage() {
                 <div className="pt-4 border-t border-slate-100 dark:border-slate-800">
                   <h3 className="mb-3 flex items-center gap-2 font-bold text-slate-900 dark:text-white">
                     <Award className="h-5 w-5 text-secondary" />
-                    Achievements
+                    Milestones & Achievements
                   </h3>
                   <p className="leading-relaxed whitespace-pre-wrap">{profile.achievements}</p>
                 </div>
@@ -135,34 +135,25 @@ export default async function MyProfilePage() {
             </CardContent>
           </Card>
 
-          {/* Settings Card */}
+          {/* Privacy Profile Views */}
           <Card className="rounded-3xl border-0 shadow-md bg-white dark:bg-slate-900">
             <CardHeader className="border-b border-slate-100 dark:border-slate-800 pb-4">
-              <CardTitle className="text-lg">Directory & Privacy Settings</CardTitle>
+              <CardTitle className="text-lg">Profile Visibility</CardTitle>
             </CardHeader>
             <CardContent className="space-y-5 text-sm text-slate-700 dark:text-slate-300 pt-6">
-              <div className="rounded-2xl border border-slate-200 dark:border-slate-800 p-4 bg-slate-50/50 dark:bg-slate-950/50">
-                <div className="mb-2 flex items-center gap-2 font-bold text-slate-900 dark:text-white">
-                  {profile.show_in_directory ? <Eye className="h-4 w-4 text-emerald-500" /> : <EyeOff className="h-4 w-4 text-red-500" />}
-                  Directory Visibility
-                </div>
-                <div className="text-slate-600 dark:text-slate-400">
-                  {profile.show_in_directory ? "Your profile is visible in the alumni directory." : "Your profile is hidden from the alumni directory."}
-                </div>
+              
+              <div className="p-4 bg-emerald-50 rounded-2xl border border-emerald-100 text-emerald-800 font-medium flex items-center gap-3">
+                 <Eye className="w-5 h-5" /> Your Profile, Email, and LinkedIn are visible to verified network members so they can connect with you. 
               </div>
 
-              <div className="grid gap-4 sm:grid-cols-3">
+              <div className="grid gap-4 sm:grid-cols-2">
                 <div className="rounded-2xl border border-slate-200 dark:border-slate-800 p-4 bg-slate-50/50 dark:bg-slate-950/50">
-                  <div className="mb-2 flex items-center gap-2 font-bold text-slate-900 dark:text-white"><Phone className="h-4 w-4 text-slate-400" /> Phone</div>
-                  <div className="text-slate-600 dark:text-slate-400 font-medium text-xs">{profile.show_phone_publicly ? "Public to verified members" : "Hidden"}</div>
+                  <div className="mb-2 flex items-center gap-2 font-bold text-slate-900 dark:text-white"><Phone className="h-4 w-4 text-slate-400" /> Phone Visibility</div>
+                  <div className="text-slate-600 dark:text-slate-400 font-medium text-xs">{(profile.show_phone || profile.show_phone_publicly) ? "Public to verified members" : "Hidden"}</div>
                 </div>
                 <div className="rounded-2xl border border-slate-200 dark:border-slate-800 p-4 bg-slate-50/50 dark:bg-slate-950/50">
-                  <div className="mb-2 flex items-center gap-2 font-bold text-slate-900 dark:text-white"><Mail className="h-4 w-4 text-slate-400" /> Email</div>
-                  <div className="text-slate-600 dark:text-slate-400 font-medium text-xs">{profile.show_email_publicly ? "Public to verified members" : "Hidden"}</div>
-                </div>
-                <div className="rounded-2xl border border-slate-200 dark:border-slate-800 p-4 bg-slate-50/50 dark:bg-slate-950/50">
-                  <div className="mb-2 flex items-center gap-2 font-bold text-slate-900 dark:text-white"><Linkedin className="h-4 w-4 text-slate-400" /> LinkedIn</div>
-                  <div className="text-slate-600 dark:text-slate-400 font-medium text-xs">{profile.show_linkedin_publicly ? "Public to verified members" : "Hidden"}</div>
+                  <div className="mb-2 flex items-center gap-2 font-bold text-slate-900 dark:text-white"><Award className="h-4 w-4 text-slate-400" /> Mentorship</div>
+                  <div className="text-slate-600 dark:text-slate-400 font-medium text-xs">{profile.available_for_mentoring ? "Available for Mentoring" : "Not listed as mentor"}</div>
                 </div>
               </div>
             </CardContent>
@@ -177,7 +168,7 @@ export default async function MyProfilePage() {
             </CardHeader>
             <CardContent className="space-y-5 text-sm text-slate-700 dark:text-slate-300 pt-6">
               <div className="flex items-center gap-3"><div className="bg-slate-100 dark:bg-slate-800 p-2 rounded-full"><Mail className="h-4 w-4 text-primary dark:text-blue-400" /></div><span className="font-medium">{profile.email || user.email}</span></div>
-              <div className="flex items-center gap-3"><div className="bg-slate-100 dark:bg-slate-800 p-2 rounded-full"><Phone className="h-4 w-4 text-primary dark:text-blue-400" /></div><span className="font-medium">{profile.phone || "Not added"}</span></div>
+              <div className="flex items-center gap-3"><div className="bg-slate-100 dark:bg-slate-800 p-2 rounded-full"><Phone className="h-4 w-4 text-primary dark:text-blue-400" /></div><span className="font-medium">{profile.phone || profile.phone_number || "Not added"}</span></div>
               <div className="flex items-center gap-3"><div className="bg-slate-100 dark:bg-slate-800 p-2 rounded-full"><MapPin className="h-4 w-4 text-secondary" /></div><span className="font-medium">{profile.current_city || "Unknown city"}{profile.current_country ? `, ${profile.current_country}` : ""}</span></div>
             </CardContent>
           </Card>
@@ -194,7 +185,6 @@ export default async function MyProfilePage() {
             </CardContent>
           </Card>
 
-          {/* DANGER ZONE - ADDED BACK */}
           <Card className="rounded-3xl shadow-md border border-red-100 bg-red-50/40">
             <CardHeader className="border-b border-red-100/50 pb-4">
               <CardTitle className="text-lg text-red-800 flex items-center gap-2">
