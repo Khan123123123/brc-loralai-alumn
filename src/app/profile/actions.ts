@@ -47,26 +47,35 @@ export async function updateProfile(formData: FormData) {
 
     const languagesRaw = getString("languages");
     const languages = languagesRaw ? languagesRaw.split(',').map(s => s.trim()).filter(Boolean) : null;
+    
+    const subjectsRaw = getString("subjects_taught");
+    const subjects_taught = subjectsRaw ? subjectsRaw.split(',').map(s => s.trim()).filter(Boolean) : null;
 
-    // STRICT MAPPING: Only updates columns that physically exist in your DB
+    const accountType = getString("account_type") || "Alumni";
+
+    // Build the core updates payload matching database.ts exactly
     const updates: any = {
       full_name: getString("full_name"),
       bio: getString("bio"),
-      achievements: getString("achievements"),
-      account_type: getString("account_type"),
+      account_type: accountType,
       profile_photo_url: getString("profile_photo_url"),
       
+      // Shared Timeframe Fields (Used as Joining/Leaving for Faculty)
       entry_year: getInt("entry_year"),
       graduation_year: getInt("graduation_year"),
-      roll_number: getString("roll_number"),
-      regular_self_finance: getString("regular_self_finance"),
-      student_type: getString("student_type"),
       
+      // Engaging BRC Fields
+      achievements_brc: getString("achievements_brc"),
+      achievements_after: getString("achievements_after"),
+      message_for_koharians: getString("message_for_koharians"),
+      
+      // Location
       current_city: getString("current_city"),
       current_country: getString("current_country"),
       home_city: getString("home_city"),
       home_district: getString("home_district"),
       
+      // Professional
       profession: getString("profession"),
       industry: getString("industry"),
       current_position: getString("current_position"),
@@ -74,15 +83,21 @@ export async function updateProfile(formData: FormData) {
       employment_status: getString("employment_status"),
       experience_years: getInt("experience_years"),
       
+      // Arrays
       job_history,
       higher_education,
       languages,
       
+      // Contact & Social
       phone: getString("phone_number"), 
       linkedin_url: getString("linkedin_url"),
+      twitter_url: getString("twitter_url"),
+      website_url: getString("website_url"),
       
-      // PRIVACY SETTINGS: Hardcoded to true except phone
+      // PRIVACY SETTINGS: Hardcoded to true as requested, only phone is toggleable
+      show_phone: formData.get("show_phone") === "on",
       show_phone_publicly: formData.get("show_phone") === "on",
+      show_email: true,
       show_email_publicly: true,
       show_linkedin_publicly: true,
       show_in_directory: true, 
@@ -91,6 +106,21 @@ export async function updateProfile(formData: FormData) {
       is_profile_complete: true,
       updated_at: new Date().toISOString(),
     };
+
+    // Only apply student-specific fields if they are NOT faculty
+    if (accountType !== "Faculty") {
+      updates.roll_number = getString("roll_number");
+      updates.regular_self_finance = getString("regular_self_finance");
+      updates.student_type = getString("student_type");
+      updates.favorite_teacher = getString("favorite_teacher");
+      updates.subjects_taught = null; // Clear out subjects if they switched back to Student
+    } else {
+      updates.subjects_taught = subjects_taught;
+      updates.roll_number = null;
+      updates.regular_self_finance = null;
+      updates.student_type = null;
+      updates.favorite_teacher = null;
+    }
 
     if (!isVerified) {
       const houses = getString("verify_houses");
