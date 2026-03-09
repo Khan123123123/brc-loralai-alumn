@@ -16,10 +16,11 @@ export type EmploymentStatus =
 
 export interface VerificationAnswers {
   houses?: string;
-  teachers?: string;
-  staff?: string;
+  teachers_with_subjects?: string;
+  staff_member?: string;
   principal?: string;
-  established_year?: string;
+  hostel_after_principal?: string;
+  other_proof?: string;
 }
 
 export interface Education {

@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import { AdminApprovalActions } from "@/components/admin/AdminApprovalActions"; 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Search, ExternalLink, LogOut, Megaphone, Star, MessageSquare, Mail, AlertTriangle } from "lucide-react";
+import { Search, ExternalLink, LogOut, Megaphone, Star, MessageSquare, Mail, AlertTriangle, Trash2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import Link from "next/link";
 import { toggleFeaturedStatus } from "./action";
@@ -62,6 +62,18 @@ export default function AdminPage({
     window.location.replace("/auth/login");
   };
 
+  const handleDeleteMessage = async (id: number) => {
+    if (!confirm("Are you sure you want to delete this message? This cannot be undone.")) return;
+    
+    const { error } = await supabase.from("contact_messages").delete().eq("id", id);
+    
+    if (error) {
+      alert("Failed to delete message. Make sure you ran the SQL policy to allow admins to delete.");
+    } else {
+      setMessages(messages.filter(msg => msg.id !== id));
+    }
+  };
+
   if (loading) {
     return <div className="p-10 text-center text-slate-500 font-medium">Loading Dashboard...</div>;
   }
@@ -83,48 +95,7 @@ export default function AdminPage({
           </div>
         </div>
 
-        {/* INBOX & REPORTS SECTION (NEWLY ADDED UI) */}
-        <Card className="border-0 shadow-md mb-8">
-          <CardHeader className="border-b bg-slate-900 text-white rounded-t-xl pb-4">
-            <CardTitle className="text-xl flex items-center gap-2">
-              <MessageSquare className="w-5 h-5" /> Inbox & Profile Reports
-              <Badge className="ml-2 bg-rose-500 hover:bg-rose-600 text-white border-0">{messages.length} Total</Badge>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-0 max-h-[400px] overflow-y-auto">
-            {messages.length === 0 ? (
-              <div className="p-8 text-center text-slate-500 font-medium">No messages or reports yet.</div>
-            ) : (
-              <div className="divide-y divide-slate-100">
-                {messages.map((msg) => (
-                  <div key={msg.id} className="p-6 hover:bg-slate-50 transition-colors">
-                    <div className="flex justify-between items-start mb-2">
-                      <div className="flex items-center gap-2">
-                        {msg.subject.includes("Report") ? (
-                          <AlertTriangle className="w-5 h-5 text-rose-500" />
-                        ) : (
-                          <Mail className="w-5 h-5 text-blue-500" />
-                        )}
-                        <h4 className="font-bold text-slate-900 text-lg">{msg.subject}</h4>
-                      </div>
-                      <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-                        {new Date(msg.created_at).toLocaleDateString()}
-                      </span>
-                    </div>
-                    <div className="text-sm font-semibold text-slate-600 mb-3 flex items-center gap-1">
-                      From: <a href={`mailto:${msg.sender_email}`} className="text-blue-600 hover:underline">{msg.sender_email}</a>
-                    </div>
-                    <div className="p-4 bg-slate-100/50 rounded-xl border border-slate-200 text-slate-700 text-sm whitespace-pre-wrap">
-                      {msg.message}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* USER DASHBOARD SECTION (ORIGINAL CODE) */}
+        {/* USER DASHBOARD SECTION (MOVED TO TOP) */}
         <Card className="border-0 shadow-md mb-12">
           <CardHeader className="border-b bg-white rounded-t-xl pb-4">
             <div className="flex flex-col md:flex-row justify-between gap-4">
@@ -168,11 +139,17 @@ export default function AdminPage({
                           <ExternalLink className="w-3 h-3" /> View Profile
                         </Link>
                       </td>
+                      {/* UPDATED TO REFLECT NEW VERIFICATION QUESTIONS */}
                       <td className="px-6 py-4 align-top w-1/2">
-                        <div className="bg-amber-50 rounded-lg p-3 text-xs border border-amber-100 text-slate-800 space-y-1">
-                          <div><strong>House:</strong> {profile.verification_answers?.houses || "-"}</div>
-                          <div><strong>Teachers:</strong> {profile.verification_answers?.teachers || "-"}</div>
-                          <div><strong>Est. Year:</strong> {profile.verification_answers?.established_year || "-"}</div>
+                        <div className="bg-amber-50 rounded-lg p-3 text-xs border border-amber-100 text-slate-800 space-y-1.5">
+                          <div><strong>Houses:</strong> {profile.verification_answers?.houses || "-"}</div>
+                          <div><strong>Teachers:</strong> {profile.verification_answers?.teachers_with_subjects || "-"}</div>
+                          <div><strong>Staff:</strong> {profile.verification_answers?.staff_member || "-"}</div>
+                          <div><strong>Principal:</strong> {profile.verification_answers?.principal || "-"}</div>
+                          <div><strong>Hostel (after Principal):</strong> {profile.verification_answers?.hostel_after_principal || "-"}</div>
+                          {profile.verification_answers?.other_proof && (
+                             <div><strong>Other Proof:</strong> {profile.verification_answers.other_proof}</div>
+                          )}
                         </div>
                       </td>
                       <td className="px-6 py-4 align-top text-right w-1/4">
@@ -193,6 +170,58 @@ export default function AdminPage({
             </div>
           </CardContent>
         </Card>
+
+        {/* INBOX & REPORTS SECTION (MOVED TO BOTTOM & ADDED DELETE BUTTON) */}
+        <Card className="border-0 shadow-md mb-8">
+          <CardHeader className="border-b bg-slate-900 text-white rounded-t-xl pb-4">
+            <CardTitle className="text-xl flex items-center gap-2">
+              <MessageSquare className="w-5 h-5" /> Inbox & Profile Reports
+              <Badge className="ml-2 bg-rose-500 hover:bg-rose-600 text-white border-0">{messages.length} Total</Badge>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-0 max-h-[400px] overflow-y-auto">
+            {messages.length === 0 ? (
+              <div className="p-8 text-center text-slate-500 font-medium">No messages or reports yet.</div>
+            ) : (
+              <div className="divide-y divide-slate-100">
+                {messages.map((msg) => (
+                  <div key={msg.id} className="p-6 hover:bg-slate-50 transition-colors">
+                    <div className="flex justify-between items-start mb-2">
+                      <div className="flex items-center gap-2">
+                        {msg.subject.includes("Report") ? (
+                          <AlertTriangle className="w-5 h-5 text-rose-500" />
+                        ) : (
+                          <Mail className="w-5 h-5 text-blue-500" />
+                        )}
+                        <h4 className="font-bold text-slate-900 text-lg">{msg.subject}</h4>
+                      </div>
+                      <div className="flex items-center gap-4">
+                        <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                          {new Date(msg.created_at).toLocaleDateString()}
+                        </span>
+                        {/* NEW DELETE BUTTON */}
+                        <button 
+                          onClick={() => handleDeleteMessage(msg.id)} 
+                          className="text-slate-400 hover:text-rose-600 hover:bg-rose-50 p-2 rounded-lg transition-colors"
+                          title="Delete Message"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                    <div className="text-sm font-semibold text-slate-600 mb-3 flex items-center gap-1">
+                      From: <a href={`mailto:${msg.sender_email}`} className="text-blue-600 hover:underline">{msg.sender_email}</a>
+                    </div>
+                    <div className="p-4 bg-slate-100/50 rounded-xl border border-slate-200 text-slate-700 text-sm whitespace-pre-wrap">
+                      {msg.message}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
       </div>
     </div>
   );

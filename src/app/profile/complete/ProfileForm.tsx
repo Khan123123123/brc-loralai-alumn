@@ -463,18 +463,20 @@ export default function ProfileForm({ profile, answers, isVerified }: ProfileFor
             </CardContent>
           </Card>
 
+          {/* UPDATED VERIFICATION QUESTIONS WITH NEW FIELDS AND BETTER ENGLISH */}
           {!isVerified && (
             <Card className="rounded-3xl shadow-sm border-amber-200 bg-amber-50/30 mt-8">
               <CardHeader className="border-b border-amber-100 pb-4">
                 <CardTitle className="flex items-center gap-2 text-lg text-amber-900"><Lock className="w-5 h-5" /> Verification Questions</CardTitle>
-                <CardDescription className="text-amber-800 font-medium">Please answer at least two to help us verify you.</CardDescription>
+                <CardDescription className="text-amber-800 font-medium">Please answer the following questions to help us verify your identity. Providing detailed and accurate answers will speed up the verification process.</CardDescription>
               </CardHeader>
               <CardContent className="pt-6 grid gap-5 sm:grid-cols-2">
-                <div className="space-y-2"><Label className="text-amber-900">House</Label><Input name="verify_houses" defaultValue={answers?.houses || ""} onKeyDown={handleKeyDown} className="rounded-xl bg-white border-amber-200" /></div>
-                <div className="space-y-2"><Label className="text-amber-900">Two Teachers</Label><Input name="verify_teachers" defaultValue={answers?.teachers || ""} onKeyDown={handleKeyDown} className="rounded-xl bg-white border-amber-200" /></div>
-                <div className="space-y-2"><Label className="text-amber-900">Hostel Staff</Label><Input name="verify_staff" defaultValue={answers?.staff || ""} onKeyDown={handleKeyDown} className="rounded-xl bg-white border-amber-200" /></div>
-                <div className="space-y-2"><Label className="text-amber-900">Principal</Label><Input name="verify_principal" defaultValue={answers?.principal || ""} onKeyDown={handleKeyDown} className="rounded-xl bg-white border-amber-200" /></div>
-                <div className="space-y-2 sm:col-span-2"><Label className="text-amber-900">BRC Est. Year</Label><Input name="verify_established_year" defaultValue={answers?.established_year || ""} onKeyDown={handleKeyDown} className="rounded-xl bg-white border-amber-200" /></div>
+                <div className="space-y-2"><Label className="text-amber-900">Names of Houses/Hostels at BRC</Label><Input name="verify_houses" defaultValue={answers?.houses || ""} onKeyDown={handleKeyDown} className="rounded-xl bg-white border-amber-200" /></div>
+                <div className="space-y-2"><Label className="text-amber-900">Name Two Teachers with their Subjects</Label><Input name="verify_teachers_with_subjects" defaultValue={answers?.teachers_with_subjects || ""} onKeyDown={handleKeyDown} className="rounded-xl bg-white border-amber-200" /></div>
+                <div className="space-y-2"><Label className="text-amber-900">Name any famous or long-serving staff member</Label><Input name="verify_staff_member" defaultValue={answers?.staff_member || ""} onKeyDown={handleKeyDown} className="rounded-xl bg-white border-amber-200" /></div>
+                <div className="space-y-2"><Label className="text-amber-900">Name a Current or Past Principal</Label><Input name="verify_principal" defaultValue={answers?.principal || ""} onKeyDown={handleKeyDown} className="rounded-xl bg-white border-amber-200" /></div>
+                <div className="space-y-2 sm:col-span-2"><Label className="text-amber-900">Name the Hostel named after a former Principal</Label><Input name="verify_hostel_after_principal" defaultValue={answers?.hostel_after_principal || ""} onKeyDown={handleKeyDown} className="rounded-xl bg-white border-amber-200" /></div>
+                <div className="space-y-2 sm:col-span-2"><Label className="text-amber-900">Any other information proving you are a REAL Koharian</Label><Textarea name="verify_other_proof" defaultValue={answers?.other_proof || ""} rows={2} className="rounded-xl bg-white border-amber-200 resize-none" /></div>
               </CardContent>
             </Card>
           )}
