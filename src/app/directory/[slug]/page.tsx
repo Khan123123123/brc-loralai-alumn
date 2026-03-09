@@ -1,3 +1,4 @@
+import { ContactBox } from "@/components/ContactBox";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
@@ -324,6 +325,9 @@ export default async function DirectoryMemberPage({ params }: { params: { slug: 
           </div>
         </div>
       )}
+      
+      {/* Contact Form Rendered so Report Profile button works */}
+      <ContactBox userEmail={user.email || ""} />
     </div>
   );
 }

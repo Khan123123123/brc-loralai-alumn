@@ -22,7 +22,11 @@ export function Navbar({ isAdmin, userEmail }: { isAdmin: boolean; userEmail: st
             </Link>
             <div className="hidden md:flex items-center gap-6">
               <Link href="/directory" className={`text-sm font-bold ${pathname === '/directory' ? 'text-primary' : 'text-slate-600 hover:text-primary'}`}>Directory</Link>
-              <button onClick={openContact} className="text-sm font-bold text-slate-600 hover:text-primary">Contact Us</button>
+              
+              {/* Added Icon and improved styling to Contact Us button */}
+              <button onClick={openContact} className="text-sm font-bold text-slate-600 hover:text-primary flex items-center gap-1.5 transition-colors">
+                <MessageSquare className="w-4 h-4" /> Contact Us
+              </button>
             </div>
           </div>
 
